@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Samaat.App/Samaat.App.csproj" />
+    <Project Path="src/Samaat.Cli/Samaat.Cli.csproj" />
+    <Project Path="src/Samaat.Core/Samaat.Core.csproj" />
+    <Project Path="src/Samaat.Platform.Windows/Samaat.Platform.Windows.csproj" />
+    <Project Path="src/Samaat.Protocols.Standard/Samaat.Protocols.Standard.csproj" />
+    <Project Path="src/Samaat.Simulator/Samaat.Simulator.csproj" />
+    <Project Path="src/Samaat.Transport/Samaat.Transport.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Samaat.App.Tests/Samaat.App.Tests.csproj" />
+    <Project Path="tests/Samaat.Core.Tests/Samaat.Core.Tests.csproj" />
+    <Project Path="tests/Samaat.Protocols.Tests/Samaat.Protocols.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,43 @@
+# Samaat
+
+One app to monitor and control Bluetooth earbuds from any brand. Samaat identifies the connected device, works out what it can do, and shows only the controls that actually work. Everything else is greyed out with the reason.
+
+- Plan and architecture: [docs/PLAN.md](docs/PLAN.md)
+- Module 1, battery monitoring: [docs/modules/battery.md](docs/modules/battery.md)
+
+## Status
+
+| Module | State |
+|---|---|
+| Capability model and device registry | ✅ |
+| Battery monitoring: simulator, BLE Battery Service, battery reported by Windows | ✅ (Windows path not yet run on hardware) |
+| First vendor adapter (L/R/case, ANC) | waiting on the choice of target earbuds |
+
+## Build
+
+Requires the .NET 10 SDK.
+
+```bash
+dotnet build Samaat.slnx
+dotnet test Samaat.slnx
+
+dotnet run --project src/Samaat.App -f net10.0                          # simulator, any OS
+dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0      # real Bluetooth, Windows
+dotnet run --project src/Samaat.Cli -f net10.0 -- --simulate --watch    # CLI
+```
+
+The Windows-specific projects also *build* on Linux and macOS (`EnableWindowsTargeting`), but only run on Windows.
+
+## Layout
+
+```
+src/
+  Samaat.Core/                 capability model, battery model, low-battery alerts, device registry
+  Samaat.Transport/            GATT abstractions (RFCOMM to come with the first vendor adapter)
+  Samaat.Protocols.Standard/   BLE Battery Service
+  Samaat.Platform.Windows/     WinRT device discovery, OS battery, GATT client
+  Samaat.Simulator/            fake devices for UI work and tests
+  Samaat.App/                  Avalonia desktop app
+  Samaat.Cli/                  console tool for checking real hardware
+tests/                         xUnit; App tests render headless screenshots
+```

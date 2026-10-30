@@ -1,0 +1,93 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SamaatSurface" Color="#F4F5F7" />
+          <SolidColorBrush x:Key="SamaatCard" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SamaatMuted" Color="#5F6670" />
+          <SolidColorBrush x:Key="SamaatAccent" Color="#0F7B6C" />
+          <SolidColorBrush x:Key="SamaatWarn" Color="#B26B00" />
+          <SolidColorBrush x:Key="SamaatDanger" Color="#C42B1C" />
+          <SolidColorBrush x:Key="SamaatTrack" Color="#E3E5E8" />
+          <SolidColorBrush x:Key="SamaatAlertBg" Color="#FFF4E0" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SamaatSurface" Color="#16181C" />
+          <SolidColorBrush x:Key="SamaatCard" Color="#202328" />
+          <SolidColorBrush x:Key="SamaatMuted" Color="#9AA1AB" />
+          <SolidColorBrush x:Key="SamaatAccent" Color="#3CC9B0" />
+          <SolidColorBrush x:Key="SamaatWarn" Color="#F0B44C" />
+          <SolidColorBrush x:Key="SamaatDanger" Color="#FF6B5E" />
+          <SolidColorBrush x:Key="SamaatTrack" Color="#33373D" />
+          <SolidColorBrush x:Key="SamaatAlertBg" Color="#3A2E17" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource SamaatCard}" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatMuted}" />
+  </Style>
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource SamaatMuted}" />
+  </Style>
+
+  <!-- Battery tiles -->
+  <Style Selector="Border.tile">
+    <Setter Property="Width" Value="190" />
+    <Setter Property="Margin" Value="0,0,12,12" />
+  </Style>
+  <Style Selector="Border.tile.unavailable">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="ProgressBar.level">
+    <Setter Property="Height" Value="6" />
+    <Setter Property="MinHeight" Value="6" />
+    <!-- Fluent's default MinWidth is wider than a tile. -->
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Background" Value="{DynamicResource SamaatTrack}" />
+    <Setter Property="Foreground" Value="{DynamicResource SamaatAccent}" />
+  </Style>
+  <Style Selector="ProgressBar.level.low">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatWarn}" />
+  </Style>
+  <Style Selector="ProgressBar.level.critical">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatDanger}" />
+  </Style>
+  <Style Selector="TextBlock.percent">
+    <Setter Property="FontSize" Value="32" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.percent.low">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatWarn}" />
+  </Style>
+  <Style Selector="TextBlock.percent.critical">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatDanger}" />
+  </Style>
+  <Style Selector="TextBlock.stale">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatWarn}" />
+  </Style>
+
+  <!-- Status pill -->
+  <Style Selector="Border.pill">
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="Background" Value="{DynamicResource SamaatTrack}" />
+  </Style>
+  <Style Selector="Border.pill.connected">
+    <Setter Property="Background" Value="{DynamicResource SamaatAccent}" />
+  </Style>
+  <Style Selector="Border.pill.connected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource SamaatSurface}" />
+  </Style>
+</Styles>

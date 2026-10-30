@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(SamaatWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
+    <ProjectReference Include="..\Samaat.Transport\Samaat.Transport.csproj" />
+    <ProjectReference Include="..\Samaat.Protocols.Standard\Samaat.Protocols.Standard.csproj" />
+  </ItemGroup>
+</Project>

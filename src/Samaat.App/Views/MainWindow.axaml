@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Samaat.App.ViewModels"
+        x:Class="Samaat.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Samaat"
+        Width="1000" Height="660" MinWidth="720" MinHeight="480"
+        Background="{DynamicResource SamaatSurface}">
+  <Grid ColumnDefinitions="260,*" RowDefinitions="Auto,*">
+
+    <!-- Banners -->
+    <StackPanel Grid.ColumnSpan="2" Spacing="0">
+      <Border Background="{DynamicResource SamaatTrack}" Padding="16,6" IsVisible="{Binding ModeText, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <TextBlock Text="{Binding ModeText}" FontSize="12" />
+      </Border>
+      <Border Background="{DynamicResource SamaatAlertBg}" Padding="16,8" IsVisible="{Binding Alerts.Count}">
+        <Grid ColumnDefinitions="*,Auto">
+          <ItemsControl ItemsSource="{Binding Alerts}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding StringFormat='⚠ {0}'}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Grid.Column="1" Content="Dismiss" Command="{Binding DismissAlertsCommand}" VerticalAlignment="Top" />
+        </Grid>
+      </Border>
+    </StackPanel>
+
+    <!-- Device list -->
+    <Border Grid.Row="1" Padding="12" BorderBrush="{DynamicResource SamaatTrack}" BorderThickness="0,0,1,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Samaat" FontSize="22" FontWeight="Bold" Margin="4,0,0,12" />
+        <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="4,12,0,0">
+          <Button Content="Refresh devices" Command="{Binding RefreshDevicesCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          <TextBlock Text="{Binding StatusText}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+        </StackPanel>
+        <ListBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:DeviceViewModel">
+              <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                <StackPanel>
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding ConnectionText}" Classes="muted" FontSize="12" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding SummaryText}" VerticalAlignment="Center" Margin="8,0,0,0" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Dashboard -->
+    <ScrollViewer Grid.Row="1" Grid.Column="1">
+      <Panel Margin="24">
+        <TextBlock Text="Select a device" Classes="muted" IsVisible="{Binding !HasSelection}" />
+        <ContentControl Content="{Binding SelectedDevice}" IsVisible="{Binding HasSelection}">
+          <ContentControl.ContentTemplate>
+            <DataTemplate x:DataType="vm:DeviceViewModel">
+              <StackPanel Spacing="20">
+
+                <!-- Header -->
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontSize="26" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Subtitle}" Classes="muted" />
+                    <TextBlock Text="{Binding TierText}" Classes="muted" FontSize="12" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="8" HorizontalAlignment="Right">
+                    <Border Classes="pill" Classes.connected="{Binding IsConnected}" HorizontalAlignment="Right">
+                      <TextBlock Text="{Binding ConnectionText}" FontSize="12" />
+                    </Border>
+                    <Button Content="Refresh battery" Command="{Binding RefreshCommand}" />
+                  </StackPanel>
+                </Grid>
+
+                <!-- Battery -->
+                <StackPanel Spacing="10">
+                  <TextBlock Text="BATTERY" Classes="heading" />
+                  <ItemsControl ItemsSource="{Binding Tiles}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:BatteryTileViewModel">
+                        <Border Classes="card tile" Classes.unavailable="{Binding !IsAvailable}" IsVisible="{Binding IsVisible}">
+                          <StackPanel Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Text="{Binding Label}" Classes="muted" />
+                              <TextBlock Grid.Column="1" Text="⚡" IsVisible="{Binding IsCharging}" Foreground="{DynamicResource SamaatAccent}" />
+                            </Grid>
+                            <TextBlock Text="{Binding PercentText}" Classes="percent" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}" />
+                            <ProgressBar Classes="level" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}"
+                                         Minimum="0" Maximum="100" Value="{Binding Percent}" />
+                            <TextBlock Text="{Binding DetailText}" FontSize="12" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding UpdatedText}" Classes="muted" Classes.stale="{Binding IsStale}" FontSize="11" />
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock Text="{Binding SourceText}" Classes="muted" FontSize="12" />
+                </StackPanel>
+
+                <!-- Capabilities -->
+                <StackPanel Spacing="10">
+                  <TextBlock Text="CAPABILITIES" Classes="heading" />
+                  <Border Classes="card">
+                    <ItemsControl ItemsSource="{Binding Capabilities}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CapabilityItemViewModel">
+                          <Grid ColumnDefinitions="*,Auto" Margin="0,4" Opacity="{Binding IsEnabled, Converter={x:Static vm:Converters.EnabledOpacity}}">
+                            <TextBlock Text="{Binding Name}" />
+                            <TextBlock Grid.Column="1" Text="{Binding StatusText}" Classes="muted" FontSize="12" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                </StackPanel>
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.ContentTemplate>
+        </ContentControl>
+      </Panel>
+    </ScrollViewer>
+  </Grid>
+</Window>
