@@ -2,7 +2,10 @@
 
 One app to monitor and control Bluetooth earbuds from any brand. Samaat identifies the connected device, works out what it can do, and shows only the controls that actually work. Everything else is greyed out with the reason.
 
+![Samaat dashboard](docs/images/battery-buds-pro.png)
+
 - Plan and architecture: [docs/PLAN.md](docs/PLAN.md)
+- UI audit and design direction: [docs/design/ui-audit.md](docs/design/ui-audit.md)
 - Module 1, battery monitoring: [docs/modules/battery.md](docs/modules/battery.md)
 
 ## Status

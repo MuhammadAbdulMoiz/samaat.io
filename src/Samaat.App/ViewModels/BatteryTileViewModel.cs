@@ -21,13 +21,35 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
         _ => "Battery",
     };
 
-    public string Glyph { get; } = component switch
+    public string ShortLabel { get; } = component switch
     {
         BatteryComponent.Left => "L",
         BatteryComponent.Right => "R",
-        BatteryComponent.Case => "▭",
-        _ => "●",
+        BatteryComponent.Case => "Case",
+        _ => "",
     };
+
+    public bool IsBud => Component is BatteryComponent.Left or BatteryComponent.Right;
+
+    public bool IsCase => Component == BatteryComponent.Case;
+
+    public bool IsCombined => Component == BatteryComponent.Combined;
+
+    public bool IsLeftBud => Component == BatteryComponent.Left;
+
+    /// <summary>The right bud glyph is the left one mirrored.</summary>
+    public bool IsRightBud => Component == BatteryComponent.Right;
+
+    /// <summary>The device reports this component (it may still be temporarily unavailable).</summary>
+    [ObservableProperty]
+    public partial bool IsReported { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasLevel { get; set; }
+
+    /// <summary>Short text state, so low/critical/charging never rely on colour alone.</summary>
+    [ObservableProperty]
+    public partial string StateText { get; set; } = "";
 
     [ObservableProperty]
     public partial bool IsAvailable { get; set; }
@@ -63,6 +85,7 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
     public void Update(Capability capability, BatteryReading? reading, BatteryAlertPolicy policy, DateTimeOffset now)
     {
         IsAvailable = capability.UiState == CapabilityUiState.Enabled;
+        IsReported = capability.Device == DeviceSupport.Supported;
         _updatedAt = reading?.UpdatedAt;
 
         if (capability.UiState is CapabilityUiState.Unsupported or CapabilityUiState.Undetected
@@ -71,7 +94,8 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
             PercentText = "—";
             Percent = 0;
             DetailText = capability.DisabledReason ?? "";
-            IsLow = IsCritical = IsCharging = false;
+            IsLow = IsCritical = IsCharging = HasLevel = false;
+            StateText = "";
             UpdateAge(now);
             return;
         }
@@ -79,9 +103,11 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
         var percent = reading?.Percent;
         PercentText = percent is { } p ? $"{p}%" : "—";
         Percent = percent ?? 0;
+        HasLevel = percent is not null;
         IsCharging = reading?.Charging == ChargingState.Charging;
         IsCritical = percent <= policy.CriticalThreshold && !IsCharging;
         IsLow = percent <= policy.LowThreshold && !IsCharging && !IsCritical;
+        StateText = IsCritical ? "Critical" : IsLow ? "Low" : IsCharging ? "Charging" : reading?.Charging == ChargingState.Full ? "Full" : "";
         DetailText = capability.UiState == CapabilityUiState.Disabled
             ? capability.DisabledReason ?? ""
             : Describe(reading);

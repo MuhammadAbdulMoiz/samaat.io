@@ -66,6 +66,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     [RelayCommand]
     private void DismissAlerts() => Alerts.Clear();
 
+    [RelayCommand]
+    private void DismissAlert(string alert) => Alerts.Remove(alert);
+
     private void SyncDevices()
     {
         var current = _registry.Devices;

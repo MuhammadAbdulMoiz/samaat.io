@@ -55,7 +55,23 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         _ => "Basic support",
     };
 
+    public string TierEyebrow => TierText.ToUpperInvariant();
+
+    public string TierDescription => _device.Identity.Tier switch
+    {
+        SupportTier.Full => "Samaat speaks this model's own protocol",
+        SupportTier.Standard => "Standard Bluetooth services only",
+        _ => "What your operating system reports",
+    };
+
+    /// <summary>All four battery components, reported or not.</summary>
     public ObservableCollection<BatteryTileViewModel> Tiles { get; }
+
+    /// <summary>The components shown as gauges in the hero, in display order.</summary>
+    public ObservableCollection<BatteryTileViewModel> HeroTiles { get; } = [];
+
+    /// <summary>Components this device doesn't report, shown as small chips rather than empty gauges.</summary>
+    public ObservableCollection<BatteryTileViewModel> NotReported { get; } = [];
 
     public ObservableCollection<CapabilityItemViewModel> Capabilities { get; } = [];
 
@@ -65,12 +81,34 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string ConnectionText { get; set; } = "";
 
-    /// <summary>Short battery summary for the device list.</summary>
+    /// <summary>Short battery summary for the device switcher.</summary>
     [ObservableProperty]
     public partial string SummaryText { get; set; } = "";
 
     [ObservableProperty]
+    public partial double SummaryPercent { get; set; }
+
+    [ObservableProperty]
+    public partial bool SummaryIsLow { get; set; }
+
+    [ObservableProperty]
     public partial string SourceText { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string LastUpdatedText { get; set; } = "—";
+
+    /// <summary>The most urgent battery problem on this device right now, if any.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAlert))]
+    public partial string? AlertText { get; set; }
+
+    [ObservableProperty]
+    public partial bool AlertIsCritical { get; set; }
+
+    public bool HasAlert => AlertText is not null;
+
+    [ObservableProperty]
+    public partial bool HasNotReported { get; set; }
 
     [RelayCommand]
     private async Task RefreshAsync()
@@ -88,7 +126,11 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         {
             tile.UpdateAge(now);
         }
+
+        LastUpdatedText = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "") ?? "—";
     }
+
+    private BatteryTileViewModel Tile(BatteryComponent component) => Tiles.Single(t => t.Component == component);
 
     private void OnDeviceChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(Update);
 
@@ -114,34 +156,68 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             tile.Update(capability, state.Get(tile.Component), _alerts.Policy, now);
         }
 
-        // "Overall" only makes sense for devices that report a single level.
-        var combined = Tiles.Single(t => t.Component == BatteryComponent.Combined);
-        combined.IsVisible = capabilities.Get(FeatureId.BatteryCombined).Device == DeviceSupport.Supported;
+        // Buds layout when either bud is reported; otherwise a single gauge for the combined level.
+        var buds = Tile(BatteryComponent.Left).IsReported || Tile(BatteryComponent.Right).IsReported;
+        var hero = buds
+            ? Tiles.Where(t => t.Component != BatteryComponent.Combined && t.IsReported).OrderBy(t => t.Component).ToList()
+            : Tiles.Where(t => t.Component == BatteryComponent.Combined).ToList();
+        Tile(BatteryComponent.Combined).IsVisible = !buds;
+        Sync(HeroTiles, hero);
+        Sync(NotReported, Tiles.Where(t => !t.IsReported && !hero.Contains(t) && !(buds && t.IsCombined)).ToList());
+        HasNotReported = NotReported.Count > 0;
 
-        SummaryText = state.SummaryPercent is { } summary ? $"{summary}%" : IsConnected ? "Battery unknown" : "—";
+        var summary = state.SummaryPercent;
+        SummaryText = summary is { } s ? $"{s}%" : IsConnected ? "?" : "—";
+        SummaryPercent = summary ?? 0;
+        SummaryIsLow = summary <= _alerts.Policy.LowThreshold;
+
+        var urgent = HeroTiles.Where(t => t.IsCritical || t.IsLow).OrderBy(t => t.Percent).FirstOrDefault();
+        AlertText = urgent is null ? null : $"{urgent.Label} {(urgent.IsCritical ? "critically low" : "low")} · {urgent.PercentText}";
+        AlertIsCritical = urgent?.IsCritical == true;
+
         SourceText = _battery?.Source switch
         {
-            CapabilitySource.OperatingSystem => "Battery reported by Windows (single level)",
-            CapabilitySource.StandardService => "Battery from the Bluetooth Battery Service",
-            CapabilitySource.Simulator => "Simulated device",
-            null => "This device doesn't report battery to Samaat yet",
-            var source => $"Battery from {source}",
+            CapabilitySource.OperatingSystem => "Windows (single level)",
+            CapabilitySource.StandardService => "Bluetooth Battery Service",
+            CapabilitySource.Simulator => "Simulator",
+            CapabilitySource.Profile or CapabilitySource.RuntimeQuery => "Device protocol",
+            _ => "Not reported",
         };
 
-        Capabilities.Clear();
-        foreach (var capability in capabilities.All.OrderBy(c => c.UiState))
+        var capabilityItems = capabilities.All
+            .Where(c => !(buds && c.Feature == FeatureId.BatteryCombined))
+            .OrderBy(c => c.UiState)
+            .Select(c => new CapabilityItemViewModel(c))
+            .ToList();
+        if (!capabilityItems.Select(c => c.Key).SequenceEqual(Capabilities.Select(c => c.Key)))
         {
-            if (capability.Feature == FeatureId.BatteryCombined && capability.UiState != CapabilityUiState.Enabled && !combined.IsVisible)
+            Capabilities.Clear();
+            foreach (var item in capabilityItems)
             {
-                continue;
+                Capabilities.Add(item);
             }
-
-            Capabilities.Add(new CapabilityItemViewModel(capability));
         }
+
+        UpdateAges();
 
         foreach (var alert in _alerts.Evaluate(_device.Identity.Id, state))
         {
             _onAlert(this, alert);
+        }
+    }
+
+    /// <summary>Updates a collection in place only when its membership changed, so bound views don't flicker.</summary>
+    private static void Sync(ObservableCollection<BatteryTileViewModel> target, IReadOnlyList<BatteryTileViewModel> items)
+    {
+        if (target.SequenceEqual(items))
+        {
+            return;
+        }
+
+        target.Clear();
+        foreach (var item in items)
+        {
+            target.Add(item);
         }
     }
 
@@ -159,6 +235,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
 public sealed class CapabilityItemViewModel(Capability capability)
 {
+    /// <summary>Identity for change detection: same feature in the same state renders the same.</summary>
+    public string Key { get; } = $"{capability.Feature}:{capability.UiState}:{capability.DisabledReason}:{capability.Verified}";
+
     public string Name { get; } = capability.Feature.Value switch
     {
         "battery.left" => "Left bud battery",

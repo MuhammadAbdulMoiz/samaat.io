@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Styling;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Samaat.App.ViewModels;
@@ -57,18 +59,24 @@ public class MainWindowTests
         var (window, viewModel) = await ShowAsync();
         var directory = Environment.GetEnvironmentVariable("SAMAAT_SCREENSHOTS");
 
-        foreach (var device in viewModel.Devices.ToList())
+        foreach (var (variant, suffix) in new[] { (ThemeVariant.Dark, ""), (ThemeVariant.Light, "-light") })
         {
-            viewModel.SelectedDevice = device;
-            Dispatcher.UIThread.RunJobs();
-            var frame = window.CaptureRenderedFrame();
-            Assert.NotNull(frame);
-            if (directory is not null)
+            Application.Current!.RequestedThemeVariant = variant;
+            foreach (var device in viewModel.Devices.ToList())
             {
-                Directory.CreateDirectory(directory);
-                frame!.Save(Path.Combine(directory, $"{device.Device.Identity.Id}.png"));
+                viewModel.SelectedDevice = device;
+                Dispatcher.UIThread.RunJobs();
+                var frame = window.CaptureRenderedFrame();
+                Assert.NotNull(frame);
+                if (directory is not null)
+                {
+                    Directory.CreateDirectory(directory);
+                    frame!.Save(Path.Combine(directory, $"{device.Device.Identity.Id}{suffix}.png"));
+                }
             }
         }
+
+        Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
 
         window.Close();
         await viewModel.DisposeAsync();

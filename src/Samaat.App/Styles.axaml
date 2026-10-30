@@ -1,93 +1,226 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Styles.Resources>
-    <ResourceDictionary>
-      <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="SamaatSurface" Color="#F4F5F7" />
-          <SolidColorBrush x:Key="SamaatCard" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="SamaatMuted" Color="#5F6670" />
-          <SolidColorBrush x:Key="SamaatAccent" Color="#0F7B6C" />
-          <SolidColorBrush x:Key="SamaatWarn" Color="#B26B00" />
-          <SolidColorBrush x:Key="SamaatDanger" Color="#C42B1C" />
-          <SolidColorBrush x:Key="SamaatTrack" Color="#E3E5E8" />
-          <SolidColorBrush x:Key="SamaatAlertBg" Color="#FFF4E0" />
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="SamaatSurface" Color="#16181C" />
-          <SolidColorBrush x:Key="SamaatCard" Color="#202328" />
-          <SolidColorBrush x:Key="SamaatMuted" Color="#9AA1AB" />
-          <SolidColorBrush x:Key="SamaatAccent" Color="#3CC9B0" />
-          <SolidColorBrush x:Key="SamaatWarn" Color="#F0B44C" />
-          <SolidColorBrush x:Key="SamaatDanger" Color="#FF6B5E" />
-          <SolidColorBrush x:Key="SamaatTrack" Color="#33373D" />
-          <SolidColorBrush x:Key="SamaatAlertBg" Color="#3A2E17" />
-        </ResourceDictionary>
-      </ResourceDictionary.ThemeDictionaries>
-    </ResourceDictionary>
-  </Styles.Resources>
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Samaat.App.Controls">
 
-  <Style Selector="Border.card">
-    <Setter Property="Background" Value="{DynamicResource SamaatCard}" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="Padding" Value="16" />
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Bg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+
+  <!-- Type -->
+  <Style Selector="TextBlock.display">
+    <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="TextBlock.number">
+    <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+    <Setter Property="FontWeight" Value="Medium" />
   </Style>
   <Style Selector="TextBlock.muted">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatMuted}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
-  <Style Selector="TextBlock.heading">
-    <Setter Property="FontSize" Value="13" />
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="FontSize" Value="11" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Foreground" Value="{DynamicResource SamaatMuted}" />
+    <Setter Property="LetterSpacing" Value="1.2" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
 
-  <!-- Battery tiles -->
-  <Style Selector="Border.tile">
-    <Setter Property="Width" Value="190" />
-    <Setter Property="Margin" Value="0,0,12,12" />
+  <!-- Surfaces -->
+  <Style Selector="Border.surface">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="18" />
   </Style>
-  <Style Selector="Border.tile.unavailable">
-    <Setter Property="Opacity" Value="0.5" />
+
+  <!-- Chips and pills -->
+  <Style Selector="Border.chip">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="10,5" />
   </Style>
-  <Style Selector="ProgressBar.level">
-    <Setter Property="Height" Value="6" />
-    <Setter Property="MinHeight" Value="6" />
-    <!-- Fluent's default MinWidth is wider than a tile. -->
+  <Style Selector="Border.chip TextBlock">
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="Border.alert">
+    <Setter Property="Background" Value="{DynamicResource Samaat.WarnSoft}" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+  <Style Selector="Border.alert TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="Border.alert PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="Border.alert.critical">
+    <Setter Property="Background" Value="{DynamicResource Samaat.CriticalSoft}" />
+  </Style>
+  <Style Selector="Border.alert.critical TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
+  </Style>
+  <Style Selector="Border.alert.critical PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
+  </Style>
+  <Style Selector="Ellipse.dot">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Faint}" />
+  </Style>
+  <Style Selector="Ellipse.dot.on">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+
+  <!-- Buttons -->
+  <Style Selector="Button.icon">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.icon PathIcon">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="6" />
+  </Style>
+
+  <!-- Navigation rail -->
+  <Style Selector="Button.nav">
+    <Setter Property="Width" Value="56" />
+    <Setter Property="Height" Value="56" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.nav PathIcon">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.nav TextBlock">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.nav.active">
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+  </Style>
+  <Style Selector="Button.nav.active PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.nav.active TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.nav:disabled /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.nav:disabled PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Faint}" />
+  </Style>
+  <Style Selector="Button.nav:disabled TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Faint}" />
+  </Style>
+
+  <!-- Device switcher -->
+  <Style Selector="ListBox.devices">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,0,10,0" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem:selected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+
+  <Style Selector="ProgressBar.mini">
+    <Setter Property="Height" Value="4" />
+    <Setter Property="MinHeight" Value="4" />
     <Setter Property="MinWidth" Value="0" />
-    <Setter Property="CornerRadius" Value="3" />
-    <Setter Property="Background" Value="{DynamicResource SamaatTrack}" />
-    <Setter Property="Foreground" Value="{DynamicResource SamaatAccent}" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Track}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="ProgressBar.level.low">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatWarn}" />
+  <Style Selector="ProgressBar.mini.low">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
   </Style>
-  <Style Selector="ProgressBar.level.critical">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatDanger}" />
+
+  <!-- Battery gauges -->
+  <Style Selector="c|BatteryRing">
+    <Setter Property="TrackBrush" Value="{DynamicResource Samaat.Track}" />
+    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="TextBlock.percent">
-    <Setter Property="FontSize" Value="32" />
+  <Style Selector="c|BatteryRing.low">
+    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="c|BatteryRing.critical">
+    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Critical}" />
+  </Style>
+  <Style Selector="StackPanel.gauge.unavailable">
+    <Setter Property="Opacity" Value="0.55" />
+  </Style>
+  <Style Selector="TextBlock.state">
+    <Setter Property="FontSize" Value="11" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="TextBlock.percent.low">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatWarn}" />
+  <Style Selector="TextBlock.state.low">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
   </Style>
-  <Style Selector="TextBlock.percent.critical">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatDanger}" />
+  <Style Selector="TextBlock.state.critical">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
   </Style>
   <Style Selector="TextBlock.stale">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatWarn}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="Path.glyph">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Glyph}" />
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+  <Style Selector="Path.glyphDetail">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.GlyphDetail}" />
+    <Setter Property="Stroke" Value="{DynamicResource Samaat.GlyphDetail}" />
+    <Setter Property="Stretch" Value="Uniform" />
   </Style>
 
-  <!-- Status pill -->
-  <Style Selector="Border.pill">
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Padding" Value="8,2" />
-    <Setter Property="Background" Value="{DynamicResource SamaatTrack}" />
-  </Style>
-  <Style Selector="Border.pill.connected">
-    <Setter Property="Background" Value="{DynamicResource SamaatAccent}" />
-  </Style>
-  <Style Selector="Border.pill.connected TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource SamaatSurface}" />
+  <!-- Toasts -->
+  <Style Selector="Border.toast">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="12,8,6,8" />
+    <Setter Property="BoxShadow" Value="0 8 24 0 #40000000" />
   </Style>
 </Styles>
