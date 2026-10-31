@@ -52,6 +52,39 @@ public class MainWindowTests
         await viewModel.DisposeAsync();
     }
 
+    [AvaloniaFact]
+    public async Task NavigationSwitchesSections()
+    {
+        var (window, viewModel) = await ShowAsync();
+
+        Assert.True(viewModel.IsOverview);
+        viewModel.NavigateCommand.Execute(AppSection.Sound);
+        Assert.True(viewModel.IsSound);
+        Assert.False(viewModel.IsOverview);
+        viewModel.NavigateCommand.Execute(AppSection.Connections);
+        Assert.True(viewModel.IsConnections);
+
+        window.Close();
+        await viewModel.DisposeAsync();
+    }
+
+    [AvaloniaFact]
+    public async Task DevicesExposeModuleViewModels()
+    {
+        var (window, viewModel) = await ShowAsync();
+        var pro = viewModel.Devices.Single(d => d.Name == "Simulated Buds Pro");
+        var headset = viewModel.Devices.Single(d => d.Name == "Simulated Headset");
+
+        Assert.True(pro.NoiseControl.IsSelector);
+        Assert.True(pro.Connections.HasMultipoint);
+        Assert.True(headset.NoiseControl.IsUnavailable);
+        Assert.False(headset.Connections.HasMultipoint);
+        Assert.Equal(["Battery", "Noise control", "Connections"], pro.CapabilityGroups.Select(g => g.Title));
+
+        window.Close();
+        await viewModel.DisposeAsync();
+    }
+
     /// <summary>Set SAMAAT_SCREENSHOTS to a directory to save rendered screenshots for review.</summary>
     [AvaloniaFact]
     public async Task RendersScreenshots()
@@ -65,18 +98,24 @@ public class MainWindowTests
             foreach (var device in viewModel.Devices.ToList())
             {
                 viewModel.SelectedDevice = device;
-                Dispatcher.UIThread.RunJobs();
-                var frame = window.CaptureRenderedFrame();
-                Assert.NotNull(frame);
-                if (directory is not null)
+                foreach (var section in Enum.GetValues<AppSection>())
                 {
-                    Directory.CreateDirectory(directory);
-                    frame!.Save(Path.Combine(directory, $"{device.Device.Identity.Id}{suffix}.png"));
+                    viewModel.NavigateCommand.Execute(section);
+                    Dispatcher.UIThread.RunJobs();
+                    var frame = window.CaptureRenderedFrame();
+                    Assert.NotNull(frame);
+                    if (directory is not null)
+                    {
+                        Directory.CreateDirectory(directory);
+                        var page = section == AppSection.Overview ? "" : $"-{section.ToString().ToLowerInvariant()}";
+                        frame!.Save(Path.Combine(directory, $"{device.Device.Identity.Id}{page}{suffix}.png"));
+                    }
                 }
             }
         }
 
         Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        viewModel.NavigateCommand.Execute(AppSection.Overview);
 
         window.Close();
         await viewModel.DisposeAsync();

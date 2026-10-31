@@ -25,13 +25,17 @@ internal sealed class FakeBattery(IEnumerable<BatteryComponent> components, bool
     }
 }
 
-internal sealed class FakeDevice(IBatteryFeature? battery, ConnectionState connection = ConnectionState.Connected) : IEarbudDevice
+internal sealed class FakeDevice(
+    IBatteryFeature? battery,
+    ConnectionState connection = ConnectionState.Connected,
+    IEnumerable<IFeature>? extraFeatures = null) : IEarbudDevice
 {
     public DeviceIdentity Identity { get; } = new("fake", "Fake Buds");
 
     public ConnectionState Connection { get; } = connection;
 
-    public IReadOnlyCollection<IFeature> Features { get; } = battery is null ? [] : [battery];
+    public IReadOnlyCollection<IFeature> Features { get; } =
+        (battery is null ? Enumerable.Empty<IFeature>() : [battery]).Concat(extraFeatures ?? []).ToList();
 
     public event EventHandler? ConnectionChanged
     {

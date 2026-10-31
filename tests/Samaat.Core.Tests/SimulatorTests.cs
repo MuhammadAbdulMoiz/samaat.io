@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Time.Testing;
 using Samaat.Core.Battery;
+using Samaat.Core.Connections;
+using Samaat.Core.NoiseControl;
 using Samaat.Core.Devices;
 using Samaat.Simulator;
 
@@ -73,5 +75,26 @@ public class SimulatorTests
 
         Assert.Same(before, battery.Current);
         Assert.Equal(ConnectionState.Disconnected, device.Connection);
+    }
+
+    [Fact]
+    public async Task SourcePresets_CoverEachNoiseAndMultipointShape()
+    {
+        await using var source = new SimulatorDeviceSource(TimeSpan.FromHours(1), commandLatency: TimeSpan.Zero);
+        var devices = source.Devices.ToDictionary(d => d.Identity.Id);
+
+        var pro = devices["sim-buds-pro"];
+        Assert.Equal(NoiseControlLayout.Selector, NoiseControlPresentation.LayoutFor(pro.GetFeature<INoiseControlFeature>()!.Options));
+        var multipoint = pro.GetFeature<IMultipointFeature>()!;
+        Assert.True(multipoint.Current.MultipointEnabled);
+        Assert.Contains(multipoint.Current.Hosts, h => h.IsThisHost && h.State == HostLinkState.Active);
+
+        var lite = devices["sim-buds-lite"];
+        Assert.Equal(NoiseControlLayout.Toggle, NoiseControlPresentation.LayoutFor(lite.GetFeature<INoiseControlFeature>()!.Options));
+        Assert.Null(lite.GetFeature<IMultipointFeature>());
+
+        var headset = devices["sim-headset"];
+        Assert.Null(headset.GetFeature<INoiseControlFeature>());
+        Assert.Null(headset.GetFeature<IMultipointFeature>());
     }
 }

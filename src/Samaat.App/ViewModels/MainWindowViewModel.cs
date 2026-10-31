@@ -7,6 +7,13 @@ using Samaat.Core.Devices;
 
 namespace Samaat.App.ViewModels;
 
+public enum AppSection
+{
+    Overview,
+    Sound,
+    Connections,
+}
+
 public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDisposable
 {
     private const int MaxAlerts = 3;
@@ -59,6 +66,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     [ObservableProperty]
     public partial bool IsEmpty { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOverview), nameof(IsSound), nameof(IsConnections))]
+    public partial AppSection Section { get; set; }
+
+    public bool IsOverview => Section == AppSection.Overview;
+
+    public bool IsSound => Section == AppSection.Sound;
+
+    public bool IsConnections => Section == AppSection.Connections;
+
+    [RelayCommand]
+    private void Navigate(AppSection section) => Section = section;
 
     [RelayCommand]
     public Task RefreshDevicesAsync() => _registry.RefreshAsync();

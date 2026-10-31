@@ -4,7 +4,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
+using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.NoiseControl;
 
 namespace Samaat.App.ViewModels;
 
@@ -27,6 +29,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         Tiles = new ObservableCollection<BatteryTileViewModel>(
             new[] { BatteryComponent.Combined, BatteryComponent.Left, BatteryComponent.Right, BatteryComponent.Case }
                 .Select(c => new BatteryTileViewModel(c)));
+
+        NoiseControl = new NoiseControlViewModel(device, time: time);
+        Connections = new ConnectionsViewModel(device, time: time);
 
         _device.ConnectionChanged += OnDeviceChanged;
         if (_battery is not null)
@@ -73,7 +78,12 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>Components this device doesn't report, shown as small chips rather than empty gauges.</summary>
     public ObservableCollection<BatteryTileViewModel> NotReported { get; } = [];
 
-    public ObservableCollection<CapabilityItemViewModel> Capabilities { get; } = [];
+    public NoiseControlViewModel NoiseControl { get; }
+
+    public ConnectionsViewModel Connections { get; }
+
+    /// <summary>Every capability Samaat knows about for this device, grouped by module.</summary>
+    public ObservableCollection<CapabilityGroupViewModel> CapabilityGroups { get; } = [];
 
     [ObservableProperty]
     public partial bool IsConnected { get; set; }
@@ -184,17 +194,21 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             _ => "Not reported",
         };
 
-        var capabilityItems = capabilities.All
-            .Where(c => !(buds && c.Feature == FeatureId.BatteryCombined))
-            .OrderBy(c => c.UiState)
-            .Select(c => new CapabilityItemViewModel(c))
-            .ToList();
-        if (!capabilityItems.Select(c => c.Key).SequenceEqual(Capabilities.Select(c => c.Key)))
+        var groups = new[]
         {
-            Capabilities.Clear();
-            foreach (var item in capabilityItems)
+            new CapabilityGroupViewModel("Battery", capabilities.All
+                .Where(c => !(buds && c.Feature == FeatureId.BatteryCombined))
+                .OrderBy(c => c.UiState)
+                .Select(c => new CapabilityItemViewModel(c))),
+            new CapabilityGroupViewModel("Noise control", NoiseControlCapabilities.For(_device).OrderBy(c => c.UiState).Select(c => new CapabilityItemViewModel(c))),
+            new CapabilityGroupViewModel("Connections", ConnectionCapabilities.For(_device).OrderBy(c => c.UiState).Select(c => new CapabilityItemViewModel(c))),
+        };
+        if (!groups.Select(g => g.Key).SequenceEqual(CapabilityGroups.Select(g => g.Key)))
+        {
+            CapabilityGroups.Clear();
+            foreach (var group in groups)
             {
-                Capabilities.Add(item);
+                CapabilityGroups.Add(group);
             }
         }
 
@@ -230,7 +244,20 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         _alerts.Forget(_device.Identity.Id);
+        NoiseControl.Dispose();
+        Connections.Dispose();
     }
+}
+
+public sealed class CapabilityGroupViewModel(string title, IEnumerable<CapabilityItemViewModel> items)
+{
+    public string Title { get; } = title;
+
+    public IReadOnlyList<CapabilityItemViewModel> Items { get; } = items.ToList();
+
+    public string Key => Title + "|" + string.Join(",", Items.Select(i => i.Key));
+
+    public string SummaryText => $"{Items.Count(i => i.IsEnabled)} of {Items.Count} available";
 }
 
 public sealed class CapabilityItemViewModel(Capability capability)
@@ -244,6 +271,17 @@ public sealed class CapabilityItemViewModel(Capability capability)
         "battery.right" => "Right bud battery",
         "battery.case" => "Case battery",
         "battery.combined" => "Overall battery",
+        "noise.anc" => "Noise cancelling",
+        "noise.transparency" => "Transparency",
+        "noise.adaptive" => "Adaptive mode",
+        "noise.ancLevel" => "ANC strength",
+        "noise.ambientLevel" => "Ambient level",
+        "noise.wind" => "Wind reduction",
+        "noise.conversation" => "Conversation awareness",
+        "connections.hosts" => "Connected devices",
+        "connections.switch" => "Switch audio source",
+        "connections.disconnect" => "Disconnect a device",
+        "connections.multipoint" => "Multipoint on/off",
         var other => other,
     };
 

@@ -35,7 +35,13 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
     private readonly Dictionary<BatteryComponent, Cell> _cells;
     private ConnectionState _connection = ConnectionState.Connected;
 
-    public SimulatedEarbudDevice(DeviceIdentity identity, SimulatedBatteryLayout layout, TimeProvider? time = null)
+    private readonly IReadOnlyList<IFeature> _features;
+
+    public SimulatedEarbudDevice(
+        DeviceIdentity identity,
+        SimulatedBatteryLayout layout,
+        TimeProvider? time = null,
+        IEnumerable<IFeature>? extraFeatures = null)
     {
         Identity = identity;
         Layout = layout;
@@ -56,6 +62,7 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
             _ => new() { [BatteryComponent.Combined] = new(55, BudStatus.Unknown) },
         };
         _battery = new SimulatedBatteryFeature(_cells.Keys.ToHashSet());
+        _features = [_battery, .. extraFeatures ?? []];
         _battery.Publish(Snapshot());
     }
 
@@ -74,7 +81,7 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
         }
     }
 
-    public IReadOnlyCollection<IFeature> Features => [_battery];
+    public IReadOnlyCollection<IFeature> Features => _features;
 
     public event EventHandler? ConnectionChanged;
 

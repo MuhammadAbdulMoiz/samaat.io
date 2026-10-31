@@ -2,7 +2,7 @@
 
 Status: **implemented (v0.1)**. The simulator path is tested in CI. The Windows path compiles but has **not yet been run on real hardware**.
 
-![Battery dashboard with a simulated device](../images/battery-buds-pro.png)
+![Battery dashboard with a simulated device](../images/buds-pro.png)
 
 ## What it does
 

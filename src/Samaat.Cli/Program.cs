@@ -5,7 +5,9 @@
 
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
+using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.NoiseControl;
 using Samaat.Simulator;
 
 var watch = args.Contains("--watch");
@@ -82,10 +84,23 @@ static void Print(IEarbudDevice device)
         ? "  Battery: not reported"
         : $"  Battery ({battery.Source}): {Summarize(battery.Current)}");
 
-    foreach (var capability in BatteryCapabilities.For(device))
+    if (device.GetFeature<INoiseControlFeature>() is { } noise)
+    {
+        Console.WriteLine($"  Noise control: {NoiseControlPresentation.Label(noise.Current.Mode)}");
+    }
+
+    if (device.GetFeature<IMultipointFeature>() is { } multipoint)
+    {
+        Console.WriteLine($"  Hosts: {string.Join(", ", multipoint.Current.Hosts.Select(h => $"{h.Name} ({h.State})"))}");
+    }
+
+    var capabilities = BatteryCapabilities.For(device)
+        .Concat(NoiseControlCapabilities.For(device))
+        .Concat(ConnectionCapabilities.For(device));
+    foreach (var capability in capabilities)
     {
         var status = capability.UiState == CapabilityUiState.Enabled ? "available" : capability.DisabledReason;
-        Console.WriteLine($"    {capability.Feature,-18} {status}");
+        Console.WriteLine($"    {capability.Feature,-24} {status}");
     }
 
     Console.WriteLine();
