@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conn="using:Samaat.App.Features.Connections"
+             xmlns:overview="using:Samaat.App.Features.Overview"
+             xmlns:shared="using:Samaat.App.Shared"
+             x:Class="Samaat.App.Features.Connections.ConnectionsPage"
+             x:DataType="overview:DeviceViewModel">
+  <StackPanel Spacing="20" DataContext="{Binding Connections}" x:DataType="conn:ConnectionsViewModel">
+
+    <StackPanel Spacing="4">
+      <TextBlock Text="CONNECTIONS" Classes="eyebrow" />
+      <TextBlock Text="Connected devices" Classes="display" FontSize="32" />
+      <TextBlock Text="{Binding $parent[UserControl].((overview:DeviceViewModel)DataContext).Name}" Classes="muted" />
+    </StackPanel>
+
+    <!-- Multipoint -->
+    <Border Classes="surface" IsVisible="{Binding HasMultipoint}">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <Border Classes="modeIcon on" VerticalAlignment="Center">
+          <PathIcon Data="{StaticResource Icon.Link}" Width="20" Height="20" />
+        </Border>
+        <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" Spacing="2">
+          <TextBlock Text="Multipoint" FontWeight="SemiBold" FontSize="15" />
+          <TextBlock Text="{Binding LimitText}" Classes="muted" FontSize="12" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="2" IsChecked="{Binding MultipointEnabled}" OnContent="" OffContent=""
+                      IsEnabled="{Binding CanToggleMultipoint}" />
+      </Grid>
+    </Border>
+
+    <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+        <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" />
+      </StackPanel>
+    </Border>
+
+    <!-- Hosts -->
+    <ItemsControl ItemsSource="{Binding Hosts}" IsVisible="{Binding HasMultipoint}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="conn:HostViewModel">
+          <Border Classes="surface host" Classes.active="{Binding IsActive}" Margin="0,0,0,10" Padding="16,14">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Classes="modeIcon" Classes.on="{Binding IsActive}" VerticalAlignment="Center">
+                <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="20" Height="20" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" Spacing="3">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
+                  <Border Classes="chip" Padding="8,1" IsVisible="{Binding IsThisHost}">
+                    <TextBlock Text="This computer" FontSize="11" />
+                  </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding StateText}" Classes="muted" FontSize="12" />
+                </StackPanel>
+              </StackPanel>
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Classes="subtle" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding CanDisconnect}" />
+                <Button Classes="primary" Content="{Binding SwitchText}" Command="{Binding SwitchCommand}" IsVisible="{Binding CanSwitch}" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <!-- Without a protocol that exposes multipoint, only this computer's link is known -->
+    <Border Classes="surface" IsVisible="{Binding !HasMultipoint}">
+      <StackPanel Spacing="14">
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Classes="modeIcon" Classes.on="{Binding IsConnected}" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.Laptop}" Width="20" Height="20" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="This computer" FontWeight="SemiBold" FontSize="15" />
+            <TextBlock Text="{Binding ThisComputerText}" Classes="muted" FontSize="12" />
+          </StackPanel>
+        </Grid>
+        <TextBlock Text="{Binding UnavailableText}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <!-- Limits we always state (docs/PLAN.md §8) -->
+    <Border Classes="surface">
+      <StackPanel Spacing="8">
+        <TextBlock Text="GOOD TO KNOW" Classes="eyebrow" />
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   Text="• Samaat can list and switch other devices only when your earbuds' own protocol allows it." />
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   Text="• To forget a device completely, remove the pairing in that device's Bluetooth settings." />
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   Text="• To disconnect this computer, use your system's Bluetooth settings." />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

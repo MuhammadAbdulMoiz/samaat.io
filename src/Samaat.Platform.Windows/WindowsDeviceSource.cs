@@ -1,7 +1,9 @@
 using Samaat.Core.Battery;
 using Samaat.Core.Devices;
+using Samaat.Core.Drivers;
 using Samaat.Protocols.Standard;
 using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Rfcomm;
 using Windows.Devices.Enumeration;
 
 namespace Samaat.Platform.Windows;
@@ -20,16 +22,19 @@ public sealed class WindowsDeviceSource : IDeviceSource
 
     private readonly TimeProvider _time;
     private readonly bool _includeNonAudio;
+    private readonly DriverRegistry _registry;
     private readonly DeviceWatcher _pairedWatcher;
     private readonly Dictionary<string, WindowsEarbudDevice> _devices = [];
     private readonly SemaphoreSlim _discoverLock = new(1, 1);
     private bool _enumerationCompleted;
 
     /// <param name="includeNonAudio">Also list paired devices that aren't audio devices (for diagnostics).</param>
-    public WindowsDeviceSource(TimeProvider? time = null, bool includeNonAudio = false)
+    /// <param name="registry">Catalog and drivers used to recognise models. Defaults to none (generic only).</param>
+    public WindowsDeviceSource(TimeProvider? time = null, bool includeNonAudio = false, DriverRegistry? registry = null)
     {
         _time = time ?? TimeProvider.System;
         _includeNonAudio = includeNonAudio;
+        _registry = registry ?? new DriverRegistry(DeviceCatalog.Empty);
 
         _pairedWatcher = DeviceInformation.CreateWatcher(
             BluetoothDevice.GetDeviceSelectorFromPairingState(true), AepProperties, DeviceInformationKind.AssociationEndpoint);
@@ -116,21 +121,64 @@ public sealed class WindowsDeviceSource : IDeviceSource
             }
         }
 
+        var name = string.IsNullOrWhiteSpace(info.Name) ? bluetooth.Name : info.Name;
+        var signals = new DeviceSignals(
+            name,
+            bluetooth.ClassOfDevice.RawValue,
+            Manufacturer: info.Properties.TryGetValue(ManufacturerProperty, out var manufacturer) ? manufacturer as string : null,
+            ServiceUuids: await ReadServiceUuidsAsync(bluetooth, cancellationToken));
+        var resolution = _registry.Resolve(signals);
+
+        var features = new List<IFeature> { new DeviceDiagnostics(signals, resolution) };
         var tier = battery is null ? SupportTier.Basic : SupportTier.Standard;
-        if (battery is null && containerId is { } c)
+        if (resolution is { Kind: DriverResolutionKind.Driver, Driver: { } driver, Entry: { } entry })
+        {
+            // A driver supersedes the generic battery sources.
+            var opened = await driver.OpenAsync(new DriverContext(signals, entry, new WinRtDeviceTransports(bluetooth, gatt), _time), cancellationToken);
+            features.AddRange(opened);
+            tier = SupportTier.Full;
+            if (opened.Any(f => f is IBatteryFeature) && battery is IAsyncDisposable superseded)
+            {
+                await superseded.DisposeAsync();
+                battery = null;
+            }
+        }
+
+        if (battery is null && !features.Any(f => f is IBatteryFeature) && containerId is { } c)
         {
             battery = await OsBatteryFeature.CreateAsync(c, _time, cancellationToken);
         }
 
+        if (battery is not null)
+        {
+            features.Insert(0, battery);
+        }
+
         var identity = new DeviceIdentity(
             info.Id,
-            string.IsNullOrWhiteSpace(info.Name) ? bluetooth.Name : info.Name,
-            info.Properties.TryGetValue(ManufacturerProperty, out var manufacturer) ? manufacturer as string : null,
-            info.Properties.TryGetValue(ModelNameProperty, out var model) ? model as string : null,
+            name,
+            resolution.Entry?.Manufacturer ?? signals.Manufacturer,
+            resolution.Entry?.DisplayName ?? (info.Properties.TryGetValue(ModelNameProperty, out var model) ? model as string : null),
             FirmwareVersion: null,
             tier);
 
-        return new WindowsEarbudDevice(identity, bluetooth, battery, gatt);
+        return new WindowsEarbudDevice(identity, bluetooth, features, gatt);
+    }
+
+    /// <summary>RFCOMM service UUIDs from the cached SDP record: vendor protocols announce themselves here.</summary>
+    private static async Task<IReadOnlySet<Guid>> ReadServiceUuidsAsync(BluetoothDevice device, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await device.GetRfcommServicesAsync(BluetoothCacheMode.Cached).AsTask(cancellationToken);
+            return result.Error == BluetoothError.Success
+                ? result.Services.Select(s => s.ServiceId.Uuid).ToHashSet()
+                : new HashSet<Guid>();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return new HashSet<Guid>();
+        }
     }
 
     private static async Task<IReadOnlyDictionary<Guid, string>> FindPairedLowEnergyAsync(CancellationToken cancellationToken)

@@ -1,16 +1,20 @@
 # Samaat: status, remaining work and getting started
 
-Last updated: 2026-10-31
+Last updated: 2026-11-02
 
 ## TL;DR
 
 - **Done:** project foundation, the capability engine, and the first three modules (battery, noise control, multipoint), each with a UI and tests. All of it runs today against **simulated devices**.
 - **Not done:** controlling any **real** earbuds. Real Bluetooth on Windows reads paired devices and battery (written but **not yet run on hardware**). ANC and multipoint for real devices need the first **vendor adapter**, which needs a decision on which earbuds to target.
-- **Tests:** 123 automated tests, green on Linux, and CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Tests:** 146 automated tests, green on Linux, and CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Connections |
 |---|---|---|
 | ![](images/buds-pro.png) | ![](images/buds-pro-sound.png) | ![](images/buds-pro-connections.png) |
+
+| Info (diagnostics) |
+|---|
+| ![](images/buds-pro-info.png) |
 
 ---
 
@@ -33,6 +37,14 @@ Noise cancelling, adaptive, transparency and off. ANC strength and ambient level
 ### Module 3: Multipoint and connected devices ([details](modules/connections.md))
 Host list with states, switch / connect / disconnect, a multipoint switch, and a connection limit. Without device support, it honestly shows only this computer and explains why.
 
+### Architecture pass (OpenMouse patterns, [details](ARCHITECTURE.md))
+- **Driver registry and device catalog**: devices resolve to *generic*, *recognised (adapter not built yet)* or *driver*. `devices/**/*.json` entries carry a `verified` flag. Adding a model is a data change, and adding a vendor needs no UI changes.
+- **RFCOMM transport**: `IRfcommChannel` plus a WinRT implementation, ready for the first driver (unverified on hardware).
+- **Windows detection signals**: class of device and SDP service UUIDs, shown on the Info page and in the CLI.
+- **Feature-organised app**: `Shell/`, `Features/{Overview,Sound,Connections,Info}`, `Shared/`, `Styles/` split by area.
+- **Info page**: identity, detection, a capability table with source and verification, a live event log, and **Copy report** for hardware bug reports.
+- `CONTRIBUTING.md` sets the hardware-evidence rules for marking a model verified.
+
 ### Tools
 - `samaat-cli`: prints what Samaat detects for each device, with `--watch` for live changes. Used for hardware checks.
 
@@ -51,14 +63,14 @@ Host list with states, switch / connect / disconnect, a multipoint switch, and a
 | 1 | **Run on real Windows hardware** | `samaat-cli --watch` checklist in `modules/battery.md`. Confirms device discovery and the Windows battery property. |
 | 2 | **RFCOMM transport** | `IRfcommChannel` plus a WinRT implementation (open a vendor service UUID on a paired device). |
 | 3 | **First vendor adapter** | Framing and messages for the chosen earbuds, implementing `IBatteryFeature`, `INoiseControlFeature` and (if supported) `IMultipointFeature`. Recorded traces become tests. |
-| 4 | **Device profile database** | `devices/<vendor>/<model>.json` matching (PLAN §4.3) to pick adapters automatically. |
+| 4 | **First catalog entries** | Matching and loading are done; add real entries from hardware reports (Info → Copy report). |
 | 5 | **System tray and notifications** | Battery at a glance and OS notifications for low battery. |
 | 6 | **Reconnect handling** | Re-handshake after the earbuds drop and return. |
 
 ### Later modules (on the nav rail as "soon")
 - **Controls**: touch gesture remapping (vendor protocol only).
 - **Equalizer**: device EQ and Samaat EQ, kept separate.
-- **Info**: firmware, codec, hardware details.
+- **Info**: diagnostics are done; firmware and codec details come with drivers.
 - **Settings**: theme, alert thresholds, start with Windows.
 - Find my earbuds, wear detection, Android port, Linux (BlueZ).
 
@@ -149,7 +161,7 @@ src/
   Samaat.Protocols.Standard/   BLE Battery Service
   Samaat.Platform.Windows/     WinRT discovery, Windows-reported battery, GATT client
   Samaat.Simulator/            simulated devices for development and tests
-  Samaat.App/                  Avalonia desktop app (Views/, ViewModels/, Controls/, Assets/)
+  Samaat.App/                  Avalonia desktop app (Shell/, Features/, Shared/, Styles/, Assets/)
   Samaat.Cli/                  hardware check tool
 tests/                         Core, Protocols and App test projects
 docs/                          PLAN, STATUS (this file), design audit, per-module docs, screenshots

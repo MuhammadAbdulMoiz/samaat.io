@@ -10,13 +10,13 @@ internal sealed class WindowsEarbudDevice : IEarbudDevice, IAsyncDisposable
     private readonly IBatteryFeature? _battery;
     private readonly WinRtGattClient? _gatt;
 
-    public WindowsEarbudDevice(DeviceIdentity identity, BluetoothDevice bluetooth, IBatteryFeature? battery, WinRtGattClient? gatt)
+    public WindowsEarbudDevice(DeviceIdentity identity, BluetoothDevice bluetooth, IReadOnlyList<IFeature> features, WinRtGattClient? gatt)
     {
         Identity = identity;
         _bluetooth = bluetooth;
-        _battery = battery;
+        _battery = features.OfType<IBatteryFeature>().FirstOrDefault();
         _gatt = gatt;
-        Features = battery is null ? [] : [battery];
+        Features = features;
         _bluetooth.ConnectionStatusChanged += OnConnectionStatusChanged;
     }
 
@@ -49,14 +49,17 @@ internal sealed class WindowsEarbudDevice : IEarbudDevice, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _bluetooth.ConnectionStatusChanged -= OnConnectionStatusChanged;
-        switch (_battery)
+        foreach (var feature in Features)
         {
-            case IAsyncDisposable asyncDisposable:
-                await asyncDisposable.DisposeAsync();
-                break;
-            case IDisposable disposable:
-                disposable.Dispose();
-                break;
+            switch (feature)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync();
+                    break;
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
         }
 
         _gatt?.Dispose();

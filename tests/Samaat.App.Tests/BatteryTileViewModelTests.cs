@@ -1,4 +1,7 @@
-using Samaat.App.ViewModels;
+using Samaat.App.Features.Connections;
+using Samaat.App.Features.Overview;
+using Samaat.App.Features.Sound;
+using Samaat.App.Shell;
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
 

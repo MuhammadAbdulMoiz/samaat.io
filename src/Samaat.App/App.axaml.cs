@@ -1,8 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Samaat.App.ViewModels;
-using Samaat.App.Views;
+using Samaat.App.Shell;
 
 namespace Samaat.App;
 

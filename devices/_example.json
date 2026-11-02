@@ -1,0 +1,19 @@
+// Example catalog entry. Files starting with "_" are not loaded.
+// Copy to devices/<vendor>/<model>.json and fill in real, observed values only.
+{
+  "id": "acme.buds-2",
+  "displayName": "Acme Buds 2",
+  "manufacturer": "Acme",
+  // Must match an IEarbudDriver.Id. Without that driver the model is "recognised, adapter not built yet".
+  "driver": "acme-v1",
+  // Every criterion given must match. More specific signals win: vendor/product ID > service UUID > name.
+  "match": {
+    "namePattern": "^Acme Buds 2",
+    "serviceUuid": "00000000-0000-0000-0000-000000000000"
+  },
+  // true only with hardware evidence (see CONTRIBUTING.md).
+  "verified": false,
+  "verifiedFirmware": [],
+  // Feature IDs this model has (see src/Samaat.Core/Capabilities/FeatureId.cs).
+  "features": ["battery.left", "battery.right", "battery.case", "noise.anc", "noise.transparency"]
+}

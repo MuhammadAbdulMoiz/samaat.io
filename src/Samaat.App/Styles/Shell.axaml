@@ -1,0 +1,92 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Samaat.App.Shared.Controls">
+
+  <!-- Navigation rail -->
+  <Style Selector="Button.nav">
+    <Setter Property="Width" Value="56" />
+    <Setter Property="Height" Value="56" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.nav PathIcon">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.nav TextBlock">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.nav.active">
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+  </Style>
+  <Style Selector="Button.nav.active PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.nav.active TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.nav:disabled /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.nav:disabled PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Faint}" />
+  </Style>
+  <Style Selector="Button.nav:disabled TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Faint}" />
+  </Style>
+
+  <!-- Device switcher -->
+  <Style Selector="ListBox.devices">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,0,10,0" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="ListBox.devices ListBoxItem:selected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+
+  <Style Selector="ProgressBar.mini">
+    <Setter Property="Height" Value="4" />
+    <Setter Property="MinHeight" Value="4" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Track}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="ProgressBar.mini.low">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+
+  <!-- Toasts -->
+  <Style Selector="Border.toast">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="12,8,6,8" />
+    <Setter Property="BoxShadow" Value="0 8 24 0 #40000000" />
+  </Style>
+</Styles>

@@ -1,0 +1,89 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Samaat.App.Shared.Controls">
+
+  <!-- Mode cards and segments -->
+  <Style Selector="Button.modeCard">
+    <Setter Property="Width" Value="196" />
+    <Setter Property="Height" Value="136" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="Button.modeCard:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+  </Style>
+  <Style Selector="Button.modeCard.selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.modeCard.selected Border.modeIcon">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.modeCard.selected Border.modeIcon PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+  <Style Selector="Border.modeIcon">
+    <Setter Property="Width" Value="44" />
+    <Setter Property="Height" Value="44" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+  </Style>
+  <Style Selector="Border.modeIcon PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Border.modeIcon.on">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Border.modeIcon.on PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+  <Style Selector="Button.segment">
+    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.segment PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.segment.selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.segment.selected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+  <Style Selector="Button.segment.selected PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+    <Setter Property="Opacity" Value="0.9" />
+  </Style>
+  <Style Selector="Button.subtle">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="14,7" />
+  </Style>
+  <Style Selector="Border.host.active">
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+</Styles>

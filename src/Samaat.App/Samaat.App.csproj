@@ -26,4 +26,7 @@
     <ProjectReference Include="..\Samaat.Simulator\Samaat.Simulator.csproj" />
     <ProjectReference Include="..\Samaat.Platform.Windows\Samaat.Platform.Windows.csproj" Condition="'$(TargetFramework)' != 'net10.0'" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\devices\**\*.json" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

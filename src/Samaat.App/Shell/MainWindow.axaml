@@ -1,0 +1,133 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="using:Samaat.App.Shell"
+        xmlns:c="using:Samaat.App.Shared.Controls"
+        xmlns:overview="using:Samaat.App.Features.Overview"
+        xmlns:sound="using:Samaat.App.Features.Sound"
+        xmlns:conn="using:Samaat.App.Features.Connections"
+        xmlns:info="using:Samaat.App.Features.Info"
+        x:Class="Samaat.App.Shell.MainWindow"
+        x:DataType="shell:MainWindowViewModel"
+        Title="Samaat"
+        Width="1180" Height="760" MinWidth="860" MinHeight="560">
+  <Grid ColumnDefinitions="76,*">
+
+    <!-- Navigation rail: Overview is live; the other sections are on the roadmap. -->
+    <Border Background="{DynamicResource Samaat.Rail}" BorderBrush="{DynamicResource Samaat.Border}" BorderThickness="0,0,1,0">
+      <DockPanel Margin="0,16">
+        <Border DockPanel.Dock="Top" Width="40" Height="40" CornerRadius="12" Margin="0,0,0,24"
+                Background="{DynamicResource Samaat.Accent}" ToolTip.Tip="Samaat">
+          <TextBlock Text="S" Classes="display" FontSize="22" Foreground="{DynamicResource Samaat.OnAccent}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <StackPanel DockPanel.Dock="Bottom" Spacing="6" HorizontalAlignment="Center">
+          <Button Classes="nav" Classes.active="{Binding IsInfo}" ToolTip.Tip="Device info and diagnostics"
+                  Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Info}">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Info}" /><TextBlock Text="Info" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
+          <Button Classes="nav" IsEnabled="False" ToolTip.Tip="Settings · coming soon" ToolTip.ShowOnDisabled="True">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Settings}" /><TextBlock Text="Settings" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
+        </StackPanel>
+        <StackPanel Spacing="6" HorizontalAlignment="Center">
+          <Button Classes="nav" Classes.active="{Binding IsOverview}" ToolTip.Tip="Overview"
+                  Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Overview}">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Overview}" /><TextBlock Text="Overview" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
+          <Button Classes="nav" Classes.active="{Binding IsSound}" ToolTip.Tip="Noise control (EQ coming soon)"
+                  Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Sound}">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Sound}" /><TextBlock Text="Sound" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
+          <Button Classes="nav" IsEnabled="False" ToolTip.Tip="Touch gestures · coming soon" ToolTip.ShowOnDisabled="True">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Controls}" /><TextBlock Text="Controls" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
+          <Button Classes="nav" Classes.active="{Binding IsConnections}" ToolTip.Tip="Connected devices and multipoint"
+                  Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Connections}">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Connections}" /><TextBlock Text="Links" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <Grid Grid.Column="1" RowDefinitions="Auto,*">
+
+      <!-- Top bar: device switcher -->
+      <Grid Margin="32,24,32,0" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+        <TextBlock Text="YOUR DEVICES" Classes="eyebrow" Margin="0,0,0,10" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Top">
+          <Border Classes="chip" IsVisible="{Binding ModeText, Converter={x:Static ObjectConverters.IsNotNull}}" ToolTip.Tip="{Binding ModeText}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Ellipse Classes="dot" Fill="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
+              <TextBlock Text="Simulation" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
+          <ListBox Classes="devices" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="overview:DeviceViewModel">
+                <Grid Width="210" Margin="14,10" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="1" Text="{Binding SummaryText}" Classes="number" Margin="8,0,0,0" />
+                  <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="6" Margin="0,4,0,8">
+                    <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ConnectionText}" Classes="muted" FontSize="12" />
+                  </StackPanel>
+                  <ProgressBar Grid.Row="2" Grid.ColumnSpan="2" Classes="mini" Classes.low="{Binding SummaryIsLow}"
+                               Minimum="0" Maximum="100" Value="{Binding SummaryPercent}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Column="1" Classes="icon" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh devices"
+                  VerticalAlignment="Center" Margin="10,0,0,0">
+            <PathIcon Data="{StaticResource Icon.Refresh}" />
+          </Button>
+        </Grid>
+      </Grid>
+
+      <!-- Dashboard -->
+      <ScrollViewer Grid.Row="1" Margin="0,20,0,0">
+        <Panel Margin="32,0,32,32">
+
+          <!-- Empty state -->
+          <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" Margin="0,80,0,0" Spacing="12" MaxWidth="420">
+            <PathIcon Data="{StaticResource Icon.Headphones}" Width="48" Height="48" Foreground="{DynamicResource Samaat.Faint}" />
+            <TextBlock Text="No earbuds yet" Classes="display" FontSize="24" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding StatusText}" Classes="muted" TextWrapping="Wrap" TextAlignment="Center" />
+          </StackPanel>
+
+          <Panel IsVisible="{Binding HasSelection}">
+            <overview:OverviewPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsOverview}" />
+            <sound:SoundPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsSound}" />
+            <conn:ConnectionsPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsConnections}" />
+            <info:InfoPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsInfo}" />
+          </Panel>
+        </Panel>
+      </ScrollViewer>
+
+      <!-- Toasts: battery alerts from any device -->
+      <ItemsControl Grid.Row="0" Grid.RowSpan="2" ItemsSource="{Binding Alerts}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Margin="0,0,24,24" Width="340">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <Border Classes="toast" Margin="0,8,0,0">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <Button Grid.Column="2" Classes="ghost" ToolTip.Tip="Dismiss"
+                        Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).DismissAlertCommand}"
+                        CommandParameter="{Binding}">
+                  <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
+                </Button>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Grid>
+  </Grid>
+</Window>

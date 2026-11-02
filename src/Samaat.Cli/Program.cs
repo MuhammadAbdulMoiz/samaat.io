@@ -16,7 +16,9 @@ var includeNonAudio = args.Contains("--all-devices");
 
 var sources = new List<IDeviceSource>();
 #if SAMAAT_WINDOWS
-sources.Add(new Samaat.Platform.Windows.WindowsDeviceSource(includeNonAudio: includeNonAudio));
+var driverRegistry = new Samaat.Core.Drivers.DriverRegistry(
+    Samaat.Core.Drivers.DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
+sources.Add(new Samaat.Platform.Windows.WindowsDeviceSource(includeNonAudio: includeNonAudio, registry: driverRegistry));
 #else
 if (!simulate)
 {
@@ -79,6 +81,15 @@ static void Print(IEarbudDevice device)
         Console.WriteLine($"  {id.Manufacturer} {id.Model}".TrimEnd());
     }
 
+    if (device.GetFeature<Samaat.Core.Drivers.IDeviceDiagnostics>() is { } diagnostics)
+    {
+        Console.WriteLine($"  Detection: {diagnostics.Resolution.Description}");
+        if (diagnostics.Signals.Services.Count > 0)
+        {
+            Console.WriteLine($"  Services: {string.Join(", ", diagnostics.Signals.Services)}");
+        }
+    }
+
     var battery = device.GetFeature<IBatteryFeature>();
     Console.WriteLine(battery is null
         ? "  Battery: not reported"
@@ -94,9 +105,7 @@ static void Print(IEarbudDevice device)
         Console.WriteLine($"  Hosts: {string.Join(", ", multipoint.Current.Hosts.Select(h => $"{h.Name} ({h.State})"))}");
     }
 
-    var capabilities = BatteryCapabilities.For(device)
-        .Concat(NoiseControlCapabilities.For(device))
-        .Concat(ConnectionCapabilities.For(device));
+    var capabilities = DeviceCapabilities.For(device);
     foreach (var capability in capabilities)
     {
         var status = capability.UiState == CapabilityUiState.Enabled ? "available" : capability.DisabledReason;

@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:overview="using:Samaat.App.Features.Overview"
+             xmlns:shared="using:Samaat.App.Shared"
+             xmlns:sound="using:Samaat.App.Features.Sound"
+             xmlns:c="using:Samaat.App.Shared.Controls"
+             x:Class="Samaat.App.Features.Sound.SoundPage"
+             x:DataType="overview:DeviceViewModel">
+  <StackPanel Spacing="20" DataContext="{Binding NoiseControl}" x:DataType="sound:NoiseControlViewModel">
+
+    <StackPanel Spacing="4">
+      <TextBlock Text="SOUND" Classes="eyebrow" />
+      <TextBlock Text="Noise control" Classes="display" FontSize="32" />
+      <TextBlock Text="{Binding $parent[UserControl].((overview:DeviceViewModel)DataContext).Name}" Classes="muted" />
+    </StackPanel>
+
+    <!-- Mode -->
+    <Border CornerRadius="24" Background="{DynamicResource Samaat.HeroBg}" BorderBrush="{DynamicResource Samaat.Border}"
+            BorderThickness="1" ClipToBounds="True">
+      <Panel>
+        <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.10" Count="7" Origin="90%,30%" />
+        <StackPanel Margin="28,24" Spacing="18">
+
+          <!-- Several modes: one card per mode -->
+          <ItemsControl ItemsSource="{Binding Modes}" IsVisible="{Binding IsSelector}" IsEnabled="{Binding CanControl}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="sound:NoiseModeOptionViewModel">
+                <Button Classes="modeCard" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}" Margin="0,0,12,12">
+                  <StackPanel Spacing="12">
+                    <Border Classes="modeIcon">
+                      <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="22" Height="22" />
+                    </Border>
+                    <StackPanel Spacing="2">
+                      <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="15" />
+                      <TextBlock Text="{Binding Description}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </StackPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Noise cancelling on/off only -->
+          <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding IsToggle}">
+            <Border Classes="modeIcon" Classes.on="{Binding IsAncOn}" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource Icon.NoiseCancelling}" Width="22" Height="22" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" Spacing="2">
+              <TextBlock Text="Noise cancelling" FontWeight="SemiBold" FontSize="15" />
+              <TextBlock Text="This model has a single on/off switch for noise cancelling." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsAncOn}" IsEnabled="{Binding CanControl}" OnContent="" OffContent="" />
+          </Grid>
+
+          <!-- Nothing to control -->
+          <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding IsUnavailable}">
+            <Border Classes="modeIcon">
+              <PathIcon Data="{StaticResource Icon.CircleOff}" Width="22" Height="22" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" Spacing="2">
+              <TextBlock Text="Noise control unavailable" FontWeight="SemiBold" FontSize="15" />
+              <TextBlock Text="{Binding UnavailableText}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+
+          <WrapPanel IsVisible="{Binding !IsUnavailable}">
+            <Border Classes="chip" Margin="0,0,8,0">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Ellipse Classes="dot" Classes.on="{Binding CanControl}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding StatusText}" />
+              </StackPanel>
+            </Border>
+            <Border Classes="alert critical" IsVisible="{Binding HasError}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+                <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" />
+              </StackPanel>
+            </Border>
+          </WrapPanel>
+        </StackPanel>
+      </Panel>
+    </Border>
+
+    <!-- Levels -->
+    <Border Classes="surface" IsVisible="{Binding ShowAncLevel}">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Noise cancelling strength" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Text="{Binding AncLevel, StringFormat='{}{0:0}'}" Classes="number" FontSize="18" />
+        </Grid>
+        <Slider Minimum="{Binding AncMin}" Maximum="{Binding AncMax}" Value="{Binding AncLevel}" IsEnabled="{Binding CanControl}"
+                TickFrequency="1" IsSnapToTickEnabled="True" />
+        <TextBlock Text="Lower it if you hear pressure or hiss in quiet rooms." Classes="muted" FontSize="12" />
+      </StackPanel>
+    </Border>
+    <Border Classes="surface" IsVisible="{Binding ShowAmbientLevel}">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Ambient sound level" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Text="{Binding AmbientLevel, StringFormat='{}{0:0}'}" Classes="number" FontSize="18" />
+        </Grid>
+        <Slider Minimum="{Binding AmbientMin}" Maximum="{Binding AmbientMax}" Value="{Binding AmbientLevel}" IsEnabled="{Binding CanControl}"
+                TickFrequency="1" IsSnapToTickEnabled="True" />
+        <TextBlock Text="How much of your surroundings passes through." Classes="muted" FontSize="12" />
+      </StackPanel>
+    </Border>
+
+    <!-- Extras -->
+    <Border Classes="surface" IsVisible="{Binding HasExtras}">
+      <StackPanel Spacing="14">
+        <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowWind}">
+          <PathIcon Data="{StaticResource Icon.Wind}" Width="18" Height="18" Foreground="{DynamicResource Samaat.Muted}" VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" Margin="12,0" Spacing="2">
+            <TextBlock Text="Wind noise reduction" FontWeight="SemiBold" />
+            <TextBlock Text="Cuts the rumble of wind on the microphones." Classes="muted" FontSize="12" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="2" IsChecked="{Binding WindReduction}" IsEnabled="{Binding CanControl}" OnContent="" OffContent="" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding ShowConversation}">
+          <PathIcon Data="{StaticResource Icon.Conversation}" Width="18" Height="18" Foreground="{DynamicResource Samaat.Muted}" VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" Margin="12,0" Spacing="2">
+            <TextBlock Text="Conversation awareness" FontWeight="SemiBold" />
+            <TextBlock Text="Lowers your audio and lets voices through when you start talking." Classes="muted" FontSize="12" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="2" IsChecked="{Binding ConversationAwareness}" IsEnabled="{Binding CanControl}" OnContent="" OffContent="" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- Roadmap -->
+    <Border Classes="surface" Opacity="0.7">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <PathIcon Data="{StaticResource Icon.Sound}" Width="18" Height="18" Foreground="{DynamicResource Samaat.Faint}" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="1" Margin="12,0" Spacing="2">
+          <TextBlock Text="Equalizer" FontWeight="SemiBold" />
+          <TextBlock Text="Device EQ and Samaat EQ are planned for a later module." Classes="muted" FontSize="12" />
+        </StackPanel>
+        <Border Grid.Column="2" Classes="chip"><TextBlock Text="Soon" /></Border>
+      </Grid>
+    </Border>
+  </StackPanel>
+</UserControl>

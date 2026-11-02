@@ -3,8 +3,10 @@ using Avalonia.Headless;
 using Avalonia.Styling;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
-using Samaat.App.ViewModels;
-using Samaat.App.Views;
+using Samaat.App.Features.Connections;
+using Samaat.App.Features.Overview;
+using Samaat.App.Features.Sound;
+using Samaat.App.Shell;
 using Samaat.Core.Battery;
 
 namespace Samaat.App.Tests;

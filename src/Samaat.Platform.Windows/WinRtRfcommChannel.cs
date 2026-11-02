@@ -1,0 +1,118 @@
+using Samaat.Transport;
+using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Rfcomm;
+using Windows.Networking.Sockets;
+using Windows.Storage.Streams;
+
+namespace Samaat.Platform.Windows;
+
+/// <summary><see cref="IRfcommChannel"/> over a WinRT <see cref="StreamSocket"/>. Unverified on hardware.</summary>
+internal sealed class WinRtRfcommChannel : IRfcommChannel
+{
+    private const uint ReadChunk = 1024;
+
+    private readonly StreamSocket _socket;
+    private readonly DataWriter _writer;
+    private readonly CancellationTokenSource _stop = new();
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private int _closed;
+
+    private WinRtRfcommChannel(Guid serviceUuid, StreamSocket socket)
+    {
+        ServiceUuid = serviceUuid;
+        _socket = socket;
+        _writer = new DataWriter(socket.OutputStream);
+        _ = ReadLoopAsync();
+    }
+
+    public Guid ServiceUuid { get; }
+
+    public event EventHandler<ReadOnlyMemory<byte>>? Received;
+
+    public event EventHandler? Closed;
+
+    public static async Task<WinRtRfcommChannel?> OpenAsync(BluetoothDevice device, Guid serviceUuid, CancellationToken cancellationToken)
+    {
+        var services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.FromUuid(serviceUuid), BluetoothCacheMode.Uncached)
+            .AsTask(cancellationToken);
+        if (services.Error != BluetoothError.Success || services.Services.Count == 0)
+        {
+            return null;
+        }
+
+        var service = services.Services[0];
+        var socket = new StreamSocket();
+        await socket.ConnectAsync(service.ConnectionHostName, service.ConnectionServiceName).AsTask(cancellationToken);
+        return new WinRtRfcommChannel(serviceUuid, socket);
+    }
+
+    public async Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    {
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            _writer.WriteBytes(data.ToArray());
+            await _writer.StoreAsync().AsTask(cancellationToken);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    private async Task ReadLoopAsync()
+    {
+        try
+        {
+            using var reader = new DataReader(_socket.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            while (!_stop.IsCancellationRequested)
+            {
+                var count = await reader.LoadAsync(ReadChunk).AsTask(_stop.Token);
+                if (count == 0)
+                {
+                    break;
+                }
+
+                var buffer = new byte[count];
+                reader.ReadBytes(buffer);
+                Received?.Invoke(this, buffer);
+            }
+        }
+        catch (Exception)
+        {
+            // Link dropped or channel disposed; reported through Closed.
+        }
+        finally
+        {
+            RaiseClosed();
+        }
+    }
+
+    private void RaiseClosed()
+    {
+        if (Interlocked.Exchange(ref _closed, 1) == 0)
+        {
+            Closed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _stop.Cancel();
+        _writer.DetachStream();
+        _writer.Dispose();
+        _socket.Dispose();
+        _stop.Dispose();
+        _writeLock.Dispose();
+        RaiseClosed();
+        return ValueTask.CompletedTask;
+    }
+}
+
+internal sealed class WinRtDeviceTransports(BluetoothDevice device, Samaat.Transport.IGattClient? gatt) : IDeviceTransports
+{
+    public Samaat.Transport.IGattClient? Gatt { get; } = gatt;
+
+    public async Task<IRfcommChannel?> OpenRfcommAsync(Guid serviceUuid, CancellationToken cancellationToken = default) =>
+        await WinRtRfcommChannel.OpenAsync(device, serviceUuid, cancellationToken);
+}

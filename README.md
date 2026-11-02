@@ -5,7 +5,7 @@ One app to monitor and control Bluetooth earbuds from any brand. Samaat identifi
 ![Samaat dashboard](docs/images/buds-pro.png)
 
 - **Status, remaining work and how to start the app: [docs/STATUS.md](docs/STATUS.md)**
-- Plan and architecture: [docs/PLAN.md](docs/PLAN.md)
+- Plan: [docs/PLAN.md](docs/PLAN.md) · Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Device catalog](devices/README.md)
 - UI audit and design direction: [docs/design/ui-audit.md](docs/design/ui-audit.md)
 - Modules: [battery](docs/modules/battery.md) · [noise control](docs/modules/noise-control.md) · [connections](docs/modules/connections.md)
 
@@ -17,6 +17,7 @@ One app to monitor and control Bluetooth earbuds from any brand. Samaat identifi
 | 1. Battery monitoring | ✅ simulator, BLE Battery Service, Windows-reported level (Windows not yet run on hardware) |
 | 2. Noise control (ANC / transparency / adaptive, levels, extras) | ✅ simulator; real devices need a vendor adapter |
 | 3. Multipoint and connected devices | ✅ simulator; real devices need a vendor adapter |
+| Driver registry, device catalog, RFCOMM transport, Info/diagnostics page | ✅ (RFCOMM unverified on hardware) |
 | First vendor adapter | waiting on the choice of target earbuds |
 
 ## Build

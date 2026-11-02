@@ -1,5 +1,6 @@
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
 
 namespace Samaat.Simulator;
@@ -43,16 +44,24 @@ public sealed class SimulatorDeviceSource : IDeviceSource
         _devices =
         [
             new(new DeviceIdentity("sim-buds-pro", "Simulated Buds Pro", "Samaat", "Buds Pro (simulated)", "1.0.0", SupportTier.Full),
-                SimulatedBatteryLayout.BudsAndCase, time, [proNoise, proMultipoint]),
+                SimulatedBatteryLayout.BudsAndCase, time, [proNoise, proMultipoint, Diagnostics("Simulated Buds Pro")]),
             new(new DeviceIdentity("sim-buds-lite", "Simulated Buds Lite", "Samaat", "Buds Lite (simulated)", "1.0.0", SupportTier.Standard),
-                SimulatedBatteryLayout.BudsOnly, time, [liteNoise]),
+                SimulatedBatteryLayout.BudsOnly, time, [liteNoise, Diagnostics("Simulated Buds Lite")]),
             new(new DeviceIdentity("sim-headset", "Simulated Headset", "Samaat", "Headset (simulated)", null, SupportTier.Basic),
-                SimulatedBatteryLayout.CombinedOnly, time),
+                SimulatedBatteryLayout.CombinedOnly, time, [Diagnostics("Simulated Headset")]),
         ];
         _timer = time.CreateTimer(_ => Tick(), null, tickInterval, tickInterval);
     }
 
     public string Name => "Simulator";
+
+    private static DeviceDiagnostics Diagnostics(string name)
+    {
+        var entry = new CatalogEntry($"samaat.{name.ToLowerInvariant().Replace(' ', '-')}", name, "Samaat", SimulatorDriver.Instance.Id,
+            new DeviceMatch(NamePattern: $"^{name}$"), Verified: true, VerifiedFirmware: ["1.0.0"], Features: new HashSet<Core.Capabilities.FeatureId>());
+        return new DeviceDiagnostics(new DeviceSignals(name, Manufacturer: "Samaat"),
+            new DriverResolution(DriverResolutionKind.Driver, entry, SimulatorDriver.Instance));
+    }
 
     public IReadOnlyList<SimulatedEarbudDevice> Devices => _devices;
 

@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:overview="using:Samaat.App.Features.Overview"
+             xmlns:info="using:Samaat.App.Features.Info"
+             x:Class="Samaat.App.Features.Info.InfoPage"
+             x:DataType="overview:DeviceViewModel">
+  <StackPanel Spacing="20" DataContext="{Binding Info}" x:DataType="info:DeviceInfoViewModel">
+
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="4">
+        <TextBlock Text="DEVICE INFO" Classes="eyebrow" />
+        <TextBlock Text="Diagnostics" Classes="display" FontSize="32" />
+        <TextBlock Text="What Samaat sees, how it matched your device, and every capability with its source." Classes="muted" />
+      </StackPanel>
+      <Button Grid.Column="1" Classes="subtle" VerticalAlignment="Bottom" Click="OnCopyReport"
+              ToolTip.Tip="Copy a report to attach to a hardware bug report">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <PathIcon Data="{StaticResource Icon.Copy}" Width="14" Height="14" />
+          <TextBlock x:Name="CopyLabel" Text="Copy report" />
+        </StackPanel>
+      </Button>
+    </Grid>
+
+    <!-- Identity and detection -->
+    <Grid ColumnDefinitions="*,16,*">
+      <Border Classes="surface">
+        <StackPanel Spacing="10">
+          <TextBlock Text="IDENTITY" Classes="eyebrow" />
+          <ItemsControl ItemsSource="{Binding Identity}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="info:InfoRow">
+                <Grid ColumnDefinitions="140,*" Margin="0,3">
+                  <TextBlock Text="{Binding Label}" Classes="muted" />
+                  <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="2" Classes="surface">
+        <StackPanel Spacing="10">
+          <TextBlock Text="DETECTION" Classes="eyebrow" />
+          <Border Classes="chip" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Ellipse Classes="dot" Classes.on="{Binding IsDriverMatch}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding VerifiedText}" />
+            </StackPanel>
+          </Border>
+          <TextBlock Text="{Binding ResolutionText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+          <ItemsControl ItemsSource="{Binding Signals}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="info:InfoRow">
+                <Grid ColumnDefinitions="140,*" Margin="0,3">
+                  <TextBlock Text="{Binding Label}" Classes="muted" />
+                  <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" FontSize="12" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- Capability ledger -->
+    <Border Classes="surface" Padding="0">
+      <StackPanel>
+        <Grid ColumnDefinitions="2*,3*,1.3*,1.1*,0.8*" Margin="18,14,18,8">
+          <TextBlock Text="CAPABILITY" Classes="eyebrow" />
+          <TextBlock Grid.Column="1" Text="STATE" Classes="eyebrow" />
+          <TextBlock Grid.Column="2" Text="SOURCE" Classes="eyebrow" />
+          <TextBlock Grid.Column="3" Text="ACCESS" Classes="eyebrow" />
+          <TextBlock Grid.Column="4" Text="VERIFIED" Classes="eyebrow" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Ledger}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="info:LedgerRow">
+              <Border Classes="ledgerRow">
+                <Grid ColumnDefinitions="2*,3*,1.3*,1.1*,0.8*">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" IsVisible="{Binding IsEnabled}" Foreground="{DynamicResource Samaat.Accent}" />
+                    <PathIcon Data="{StaticResource Icon.Dash}" Width="12" Height="12" IsVisible="{Binding !IsEnabled}" Foreground="{DynamicResource Samaat.Faint}" />
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" ToolTip.Tip="{Binding Feature}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding State}" Classes="muted" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding State}" />
+                  <TextBlock Grid.Column="2" Text="{Binding Source}" Classes="muted" />
+                  <TextBlock Grid.Column="3" Text="{Binding Access}" Classes="muted" />
+                  <TextBlock Grid.Column="4" Text="✓" IsVisible="{Binding Verified}" Foreground="{DynamicResource Samaat.Accent}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <!-- Event log -->
+    <Border Classes="surface">
+      <StackPanel Spacing="10">
+        <TextBlock Text="EVENT LOG" Classes="eyebrow" />
+        <TextBlock Text="Waiting for the device to report something…" Classes="muted" FontSize="12"
+                   IsVisible="{Binding !Events.Count}" />
+        <ItemsControl ItemsSource="{Binding Events}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="info:EventRow">
+              <Grid ColumnDefinitions="80,*" Margin="0,2">
+                <TextBlock Text="{Binding Time}" Classes="number muted" FontSize="12" />
+                <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="12" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

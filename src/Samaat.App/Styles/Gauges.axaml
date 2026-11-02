@@ -1,0 +1,42 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Samaat.App.Shared.Controls">
+
+  <!-- Battery gauges -->
+  <Style Selector="c|BatteryRing">
+    <Setter Property="TrackBrush" Value="{DynamicResource Samaat.Track}" />
+    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="c|BatteryRing.low">
+    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="c|BatteryRing.critical">
+    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Critical}" />
+  </Style>
+  <Style Selector="StackPanel.gauge.unavailable">
+    <Setter Property="Opacity" Value="0.55" />
+  </Style>
+  <Style Selector="TextBlock.state">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="TextBlock.state.low">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="TextBlock.state.critical">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
+  </Style>
+  <Style Selector="TextBlock.stale">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="Path.glyph">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Glyph}" />
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+  <Style Selector="Path.glyphDetail">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.GlyphDetail}" />
+    <Setter Property="Stroke" Value="{DynamicResource Samaat.GlyphDetail}" />
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+</Styles>
