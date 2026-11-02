@@ -45,10 +45,15 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
     public partial bool IsReported { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AccessibleText))]
     public partial bool HasLevel { get; set; }
+
+    /// <summary>What a screen reader announces for the gauge.</summary>
+    public string AccessibleText => $"{Label}: {PercentText}{(StateText.Length > 0 ? $", {StateText}" : "")}";
 
     /// <summary>Short text state, so low/critical/charging never rely on colour alone.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AccessibleText))]
     public partial string StateText { get; set; } = "";
 
     [ObservableProperty]
@@ -59,6 +64,7 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
     public partial bool IsVisible { get; set; } = true;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AccessibleText))]
     public partial string PercentText { get; set; } = "—";
 
     [ObservableProperty]

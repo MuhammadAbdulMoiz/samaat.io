@@ -13,6 +13,8 @@
       <TextBlock Text="{Binding $parent[UserControl].((overview:DeviceViewModel)DataContext).Name}" Classes="muted" />
     </StackPanel>
 
+    <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+
     <!-- Multipoint -->
     <Border Classes="surface" IsVisible="{Binding HasMultipoint}">
       <Grid ColumnDefinitions="Auto,*,Auto">

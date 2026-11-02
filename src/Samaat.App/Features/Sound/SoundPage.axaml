@@ -19,6 +19,7 @@
             BorderThickness="1" ClipToBounds="True">
       <Panel>
         <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.10" Count="7" Origin="90%,30%" />
+        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" />
         <StackPanel Margin="28,24" Spacing="18">
 
           <!-- Several modes: one card per mode -->

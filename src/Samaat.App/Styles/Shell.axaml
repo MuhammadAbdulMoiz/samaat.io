@@ -89,4 +89,25 @@
     <Setter Property="Padding" Value="12,8,6,8" />
     <Setter Property="BoxShadow" Value="0 8 24 0 #40000000" />
   </Style>
+
+  <!-- Top-bar alert counter -->
+  <Style Selector="Button.alertChip">
+    <Setter Property="Padding" Value="10,4" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.WarnSoft}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.alertChip TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="Button.alertChip PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="ProgressBar.mini">
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Value" Duration="0:0:0.45" Easing="CubicEaseOut" />
+      </Transitions>
+    </Setter>
+  </Style>
 </Styles>

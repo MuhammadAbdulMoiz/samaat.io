@@ -87,6 +87,16 @@ public class MainWindowTests
         await viewModel.DisposeAsync();
     }
 
+    /// <summary>Lets page cross-fades and value transitions finish (headless time only moves when ticked).</summary>
+    private static void SettleAnimations()
+    {
+        for (var i = 0; i < 60; i++)
+        {
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Dispatcher.UIThread.RunJobs();
+        }
+    }
+
     /// <summary>Set SAMAAT_SCREENSHOTS to a directory to save rendered screenshots for review.</summary>
     [AvaloniaFact]
     public async Task RendersScreenshots()
@@ -103,7 +113,7 @@ public class MainWindowTests
                 foreach (var section in Enum.GetValues<AppSection>())
                 {
                     viewModel.NavigateCommand.Execute(section);
-                    Dispatcher.UIThread.RunJobs();
+                    SettleAnimations();
                     var frame = window.CaptureRenderedFrame();
                     Assert.NotNull(frame);
                     if (directory is not null)
@@ -118,6 +128,17 @@ public class MainWindowTests
 
         Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
         viewModel.NavigateCommand.Execute(AppSection.Overview);
+
+        // Narrow window: the hero stacks and the stat strip wraps.
+        window.Width = 720;
+        viewModel.SelectedDevice = viewModel.Devices[0];
+        SettleAnimations();
+        var narrow = window.CaptureRenderedFrame();
+        Assert.NotNull(narrow);
+        if (directory is not null)
+        {
+            narrow!.Save(Path.Combine(directory, "sim-buds-pro-narrow.png"));
+        }
 
         window.Close();
         await viewModel.DisposeAsync();

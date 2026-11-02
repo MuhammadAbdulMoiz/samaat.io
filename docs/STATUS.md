@@ -6,7 +6,7 @@ Last updated: 2026-11-02
 
 - **Done:** project foundation, the capability engine, and the first three modules (battery, noise control, multipoint), each with a UI and tests. All of it runs today against **simulated devices**.
 - **Not done:** controlling any **real** earbuds. Real Bluetooth on Windows reads paired devices and battery (written but **not yet run on hardware**). ANC and multipoint for real devices need the first **vendor adapter**, which needs a decision on which earbuds to target.
-- **Tests:** 146 automated tests, green on Linux, and CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Tests:** 167 automated tests, green on Linux, and CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Connections |
 |---|---|---|
@@ -44,6 +44,9 @@ Host list with states, switch / connect / disconnect, a multipoint switch, and a
 - **Feature-organised app**: `Shell/`, `Features/{Overview,Sound,Connections,Info}`, `Shared/`, `Styles/` split by area.
 - **Info page**: identity, detection, a capability table with source and verification, a live event log, and **Copy report** for hardware bug reports.
 - `CONTRIBUTING.md` sets the hardware-evidence rules for marking a model verified.
+
+### UI polish ([details](design/ui-audit.md#round-3-polish-2026-11-02))
+Redrawn earbud artwork and charging badges, a compact stat strip, toasts that hide themselves plus an alert counter, animated rings and page cross-fades, layouts that work down to 640 px, and automated WCAG contrast tests.
 
 ### Tools
 - `samaat-cli`: prints what Samaat detects for each device, with `--watch` for live changes. Used for hardware checks.

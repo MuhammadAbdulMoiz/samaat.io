@@ -16,9 +16,25 @@ public enum AppSection
     Info,
 }
 
+/// <summary>What the content area shows: one page of one device. Switching pages cross-fades.</summary>
+public abstract record PageModel(DeviceViewModel Device);
+
+public sealed record OverviewPageModel(DeviceViewModel Device) : PageModel(Device);
+
+public sealed record SoundPageModel(DeviceViewModel Device) : PageModel(Device);
+
+public sealed record ConnectionsPageModel(DeviceViewModel Device) : PageModel(Device);
+
+public sealed record InfoPageModel(DeviceViewModel Device) : PageModel(Device);
+
 public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDisposable
 {
     private const int MaxAlerts = 3;
+
+    /// <summary>Toasts disappear on their own; the alert counter in the top bar keeps the state.</summary>
+    public static readonly TimeSpan ToastLifetime = TimeSpan.FromSeconds(8);
+
+    private readonly List<ITimer> _toastTimers = [];
 
     private readonly DeviceRegistry _registry;
     private readonly TimeProvider _time;
@@ -57,6 +73,50 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
     public partial DeviceViewModel? SelectedDevice { get; set; }
+
+    [ObservableProperty]
+    public partial PageModel? CurrentPage { get; set; }
+
+    /// <summary>How many devices currently have a low or critical battery.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAlertingDevices), nameof(AlertCountText))]
+    public partial int AlertingDeviceCount { get; set; }
+
+    public bool HasAlertingDevices => AlertingDeviceCount > 0;
+
+    public string AlertCountText => AlertingDeviceCount == 1 ? "1 low battery" : $"{AlertingDeviceCount} low batteries";
+
+    partial void OnSelectedDeviceChanged(DeviceViewModel? value) => UpdatePage();
+
+    partial void OnSectionChanged(AppSection value) => UpdatePage();
+
+    private void UpdatePage() => CurrentPage = SelectedDevice is not { } device ? null : Section switch
+    {
+        AppSection.Sound => new SoundPageModel(device),
+        AppSection.Connections => new ConnectionsPageModel(device),
+        AppSection.Info => new InfoPageModel(device),
+        _ => new OverviewPageModel(device),
+    };
+
+    [RelayCommand]
+    private void ShowAlertingDevice()
+    {
+        if (Devices.FirstOrDefault(d => d.HasAlert) is { } device)
+        {
+            SelectedDevice = device;
+            Section = AppSection.Overview;
+        }
+    }
+
+    private void UpdateAlertCount() => AlertingDeviceCount = Devices.Count(d => d.HasAlert);
+
+    private void OnDevicePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DeviceViewModel.HasAlert))
+        {
+            UpdateAlertCount();
+        }
+    }
 
     public bool HasSelection => SelectedDevice is not null;
 
@@ -98,13 +158,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         var current = _registry.Devices;
         foreach (var stale in Devices.Where(vm => !current.Contains(vm.Device)).ToList())
         {
+            stale.PropertyChanged -= OnDevicePropertyChanged;
             stale.Dispose();
             Devices.Remove(stale);
         }
 
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
-            Devices.Add(new DeviceViewModel(device, _alerts, _time, OnAlert));
+            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert);
+            vm.PropertyChanged += OnDevicePropertyChanged;
+            Devices.Add(vm);
         }
 
         SelectedDevice ??= Devices.FirstOrDefault();
@@ -113,6 +176,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
             SelectedDevice = Devices.FirstOrDefault();
         }
 
+        UpdateAlertCount();
         IsEmpty = Devices.Count == 0;
         StatusText = IsEmpty
             ? "No paired Bluetooth audio devices found. Pair your earbuds in system settings, then refresh."
@@ -131,7 +195,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         };
         var level = alert.Level == BatteryAlertLevel.Critical ? "critically low" : "low";
 
-        Alerts.Insert(0, $"{device.Name}: {part} {level} ({alert.Percent}%)");
+        var text = $"{device.Name}: {part} {level} ({alert.Percent}%)";
+        Alerts.Insert(0, text);
+        ITimer? timer = null;
+        timer = _time.CreateTimer(_ => Dispatcher.UIThread.Post(() =>
+        {
+            Alerts.Remove(text);
+            _toastTimers.Remove(timer!);
+            timer!.Dispose();
+        }), null, ToastLifetime, Timeout.InfiniteTimeSpan);
+        _toastTimers.Add(timer);
         while (Alerts.Count > MaxAlerts)
         {
             Alerts.RemoveAt(Alerts.Count - 1);
@@ -141,6 +214,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public async ValueTask DisposeAsync()
     {
         _ageTimer.Stop();
+        foreach (var timer in _toastTimers)
+        {
+            timer.Dispose();
+        }
+
+        _toastTimers.Clear();
         foreach (var device in Devices)
         {
             device.Dispose();

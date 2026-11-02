@@ -9,7 +9,7 @@
         x:Class="Samaat.App.Shell.MainWindow"
         x:DataType="shell:MainWindowViewModel"
         Title="Samaat"
-        Width="1180" Height="760" MinWidth="860" MinHeight="560">
+        Width="1180" Height="780" MinWidth="640" MinHeight="520">
   <Grid ColumnDefinitions="76,*">
 
     <!-- Navigation rail: Overview is live; the other sections are on the roadmap. -->
@@ -55,6 +55,13 @@
       <Grid Margin="32,24,32,0" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
         <TextBlock Text="YOUR DEVICES" Classes="eyebrow" Margin="0,0,0,10" />
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Top">
+          <Button Classes="alertChip" IsVisible="{Binding HasAlertingDevices}" Command="{Binding ShowAlertingDeviceCommand}"
+                  ToolTip.Tip="Show the device with a low battery" AutomationProperties.Name="{Binding AlertCountText}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Data="{StaticResource Icon.Warning}" Width="13" Height="13" />
+              <TextBlock Text="{Binding AlertCountText}" FontSize="12" FontWeight="SemiBold" />
+            </StackPanel>
+          </Button>
           <Border Classes="chip" IsVisible="{Binding ModeText, Converter={x:Static ObjectConverters.IsNotNull}}" ToolTip.Tip="{Binding ModeText}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <Ellipse Classes="dot" Fill="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
@@ -63,7 +70,9 @@
           </Border>
         </StackPanel>
         <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
-          <ListBox Classes="devices" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}">
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <ListBox Classes="devices" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}"
+                   AutomationProperties.Name="Your devices">
             <ListBox.ItemsPanel>
               <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
             </ListBox.ItemsPanel>
@@ -82,7 +91,9 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
+          </ScrollViewer>
           <Button Grid.Column="1" Classes="icon" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh devices"
+                  AutomationProperties.Name="Refresh devices"
                   VerticalAlignment="Center" Margin="10,0,0,0">
             <PathIcon Data="{StaticResource Icon.Refresh}" />
           </Button>
@@ -100,12 +111,17 @@
             <TextBlock Text="{Binding StatusText}" Classes="muted" TextWrapping="Wrap" TextAlignment="Center" />
           </StackPanel>
 
-          <Panel IsVisible="{Binding HasSelection}">
-            <overview:OverviewPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsOverview}" />
-            <sound:SoundPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsSound}" />
-            <conn:ConnectionsPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsConnections}" />
-            <info:InfoPage DataContext="{Binding SelectedDevice}" IsVisible="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).IsInfo}" />
-          </Panel>
+          <TransitioningContentControl Content="{Binding CurrentPage}" IsVisible="{Binding HasSelection}">
+            <TransitioningContentControl.PageTransition>
+              <CrossFade Duration="0:0:0.18" />
+            </TransitioningContentControl.PageTransition>
+            <TransitioningContentControl.DataTemplates>
+              <DataTemplate DataType="shell:OverviewPageModel"><overview:OverviewPage DataContext="{Binding Device}" /></DataTemplate>
+              <DataTemplate DataType="shell:SoundPageModel"><sound:SoundPage DataContext="{Binding Device}" /></DataTemplate>
+              <DataTemplate DataType="shell:ConnectionsPageModel"><conn:ConnectionsPage DataContext="{Binding Device}" /></DataTemplate>
+              <DataTemplate DataType="shell:InfoPageModel"><info:InfoPage DataContext="{Binding Device}" /></DataTemplate>
+            </TransitioningContentControl.DataTemplates>
+          </TransitioningContentControl>
         </Panel>
       </ScrollViewer>
 
@@ -118,7 +134,7 @@
               <Grid ColumnDefinitions="Auto,*,Auto">
                 <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Classes="ghost" ToolTip.Tip="Dismiss"
+                <Button Grid.Column="2" Classes="ghost" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
                         Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).DismissAlertCommand}"
                         CommandParameter="{Binding}">
                   <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />

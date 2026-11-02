@@ -39,4 +39,40 @@
     <Setter Property="Stroke" Value="{DynamicResource Samaat.GlyphDetail}" />
     <Setter Property="Stretch" Value="Uniform" />
   </Style>
+
+  <!-- Motion: levels glide to new values instead of jumping -->
+  <Style Selector="c|BatteryRing">
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Value" Duration="0:0:0.45" Easing="CubicEaseOut" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Border.chargeBadge">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.HeroBase}" />
+    <Setter Property="BorderThickness" Value="3" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Margin" Value="0,8,8,0" />
+  </Style>
+  <Style Selector="Border.chargeBadge PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+
+  <!-- Compact stat strip -->
+  <Style Selector="StackPanel.stat">
+    <Setter Property="Spacing" Value="6" />
+  </Style>
+  <Style Selector="StackPanel.stat PathIcon">
+    <Setter Property="Width" Value="13" />
+    <Setter Property="Height" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="StackPanel.stat TextBlock.value">
+    <Setter Property="FontSize" Value="17" />
+  </Style>
 </Styles>

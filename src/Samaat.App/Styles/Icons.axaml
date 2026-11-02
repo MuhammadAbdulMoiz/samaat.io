@@ -33,8 +33,11 @@
   <StreamGeometry x:Key="Icon.Copy">M8.5 8.5H5.25C4.2835 8.5 3.5 9.2835 3.5 10.25V18.75C3.5 19.7165 4.2835 20.5 5.25 20.5H11.25C12.2165 20.5 13 19.7165 13 18.75V18H14.5V18.75C14.5 20.5449 13.0449 22 11.25 22H5.25C3.45507 22 2 20.5449 2 18.75V10.25C2 8.45507 3.45507 7 5.25 7H8.5V8.5ZM18.75 2C20.5449 2 22 3.45507 22 5.25V13.75C22 15.5449 20.5449 17 18.75 17H12.75C10.9551 17 9.5 15.5449 9.5 13.75V5.25C9.5 3.45507 10.9551 2 12.75 2H18.75ZM12.75 3.5C11.7835 3.5 11 4.2835 11 5.25V13.75C11 14.7165 11.7835 15.5 12.75 15.5H18.75C19.7165 15.5 20.5 14.7165 20.5 13.75V5.25C20.5 4.2835 19.7165 3.5 18.75 3.5H12.75Z</StreamGeometry>
 
   <!-- Samaat device glyphs (original artwork). -->
-  <StreamGeometry x:Key="Glyph.Bud">M20,2 C30.5,2 38,9.5 38,19.5 C38,27.6 32.9,33.4 27,35.4 L27,52 C27,54.2 25.2,56 23,56 L17,56 C14.8,56 13,54.2 13,52 L13,35.4 C7.1,33.4 2,27.6 2,19.5 C2,9.5 9.5,2 20,2 Z</StreamGeometry>
-  <StreamGeometry x:Key="Glyph.BudTip">M20,11 C24.4,11 28,14.6 28,19 C28,23.4 24.4,27 20,27 C15.6,27 12,23.4 12,19 C12,14.6 15.6,11 20,11 Z</StreamGeometry>
+  <StreamGeometry x:Key="Glyph.Bud">M17,3 C26,1 35,7 36,16 C37,23 33,29 28,31 L29,51 C29.1,53.8 27,56 24.2,56 L21.8,56 C19,56 16.9,53.9 17,51.1 L17.6,33 C9,32 3,25.6 3,17.5 C3,10 9,4.4 17,3 Z</StreamGeometry>
+  <StreamGeometry x:Key="Glyph.BudTip">M1,19 C1,14.6 3.7,11.5 7,11.5 C10.3,11.5 12.5,14.6 12.5,19 C12.5,23.4 10.3,26.5 7,26.5 C3.7,26.5 1,23.4 1,19 Z</StreamGeometry>
+  <StreamGeometry x:Key="Glyph.BudGrille">M26.5,11 L31,11 C31.8,11 32.5,11.7 32.5,12.5 C32.5,13.3 31.8,14 31,14 L26.5,14 C25.7,14 25,13.3 25,12.5 C25,11.7 25.7,11 26.5,11 Z</StreamGeometry>
+  <StreamGeometry x:Key="Glyph.BudShine">M11,8 C14,6 18.5,5.2 22.5,5.8</StreamGeometry>
+  <StreamGeometry x:Key="Glyph.StemShine">M21,36 L20.6,50</StreamGeometry>
   <StreamGeometry x:Key="Glyph.Case">M12,4 L52,4 C58.6,4 64,9.4 64,16 L64,32 C64,38.6 58.6,44 52,44 L12,44 C5.4,44 0,38.6 0,32 L0,16 C0,9.4 5.4,4 12,4 Z</StreamGeometry>
   <StreamGeometry x:Key="Glyph.CaseSeam">M2,17 L62,17</StreamGeometry>
 </ResourceDictionary>

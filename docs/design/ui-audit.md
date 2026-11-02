@@ -55,3 +55,16 @@ Principles:
 2. **Dark-first with one signal colour.** Ink surfaces and a "signal lime" accent for charge. Amber means low, coral means critical, and each also gets an icon and a label.
 3. **Honest but quiet.** Unsupported components shrink to chips. They don't disappear.
 4. **The roadmap is visible.** The nav rail shows Sound, Controls and Connections as "Soon".
+
+## Round 3: polish (2026-11-02)
+
+| Area | Change |
+|---|---|
+| Hero artwork | Earbuds redrawn with an angled stem, eartip, speaker grille, gradient body and highlights. The case gets a gradient body. A charging badge appears on any ring that's charging. |
+| Density | The four stat cards became one compact strip that wraps to 2×2 in narrow windows. |
+| Alerts | Toasts hide themselves after 8 s. A top-bar "N low battery" chip keeps the state and jumps to the affected device. |
+| Motion | Battery rings and device-card bars glide to new values (0.45 s ease-out), pages cross-fade (0.18 s), and a thin busy bar shows while a command waits for the device. |
+| Narrow windows | The hero stacks below about 260 px of text width (`SplitPanel`). Stat and Info columns adapt (`AdaptiveColumns`), the device strip scrolls, and the minimum window width dropped from 860 to 640 px. |
+| Accessibility | Automated WCAG AA contrast tests for every text/background token pair in both themes. They caught light-theme amber (4.14:1) and red (4.48:1) on alert pills, both fixed. Screen-reader names added to icon-only buttons and battery gauges. |
+
+![Overview](../images/buds-pro.png) ![Narrow](../images/buds-pro-narrow.png)
