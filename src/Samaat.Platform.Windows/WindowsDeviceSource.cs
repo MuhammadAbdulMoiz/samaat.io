@@ -66,7 +66,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
             {
                 if (_devices.TryGetValue(info.Id, out var existing))
                 {
-                    if (existing.Features.Count > 0)
+                    if (existing.GetFeature<IBatteryFeature>() is not null)
                     {
                         seen.Add(info.Id);
                         continue;
