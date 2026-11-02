@@ -1,3 +1,4 @@
+using Samaat.App.Features.Details;
 using Samaat.App.Features.Info;
 using Samaat.App.Shared;
 using Samaat.App.Features.Connections;
@@ -11,6 +12,7 @@ using Samaat.Core.Capabilities;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
+using Samaat.Core.Profiles;
 
 namespace Samaat.App.Features.Overview;
 
@@ -22,9 +24,13 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly TimeProvider _time;
     private readonly Action<DeviceViewModel, BatteryAlert> _onAlert;
 
-    public DeviceViewModel(IEarbudDevice device, LowBatteryDetector alerts, TimeProvider time, Action<DeviceViewModel, BatteryAlert> onAlert)
+    private readonly DeviceProfile? _profile;
+
+    public DeviceViewModel(IEarbudDevice device, LowBatteryDetector alerts, TimeProvider time, Action<DeviceViewModel, BatteryAlert> onAlert,
+        DeviceProfile? profile = null)
     {
         _device = device;
+        _profile = profile;
         _battery = device.GetFeature<IBatteryFeature>();
         _alerts = alerts;
         _time = time;
@@ -37,6 +43,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         NoiseControl = new NoiseControlViewModel(device, time: time);
         Connections = new ConnectionsViewModel(device, time: time);
         Info = new DeviceInfoViewModel(device, time: time);
+        Details = new BluetoothDetailsViewModel(this, profile);
 
         _device.ConnectionChanged += OnDeviceChanged;
         if (_battery is not null)
@@ -54,7 +61,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public string Subtitle => string.Join(" · ", new[]
     {
         _device.Identity.Manufacturer,
-        _device.Identity.Model,
+        // The profile names the model when Windows didn't report maker or model.
+        _device.Identity.Manufacturer is null && _device.Identity.Model is null ? _profile?.DisplayName : _device.Identity.Model,
         _device.Identity.FirmwareVersion is { } fw ? $"Firmware {fw}" : null,
     }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
@@ -88,6 +96,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public ConnectionsViewModel Connections { get; }
 
     public DeviceInfoViewModel Info { get; }
+
+    /// <summary>Bluetooth IDs, address and services; separate from <see cref="Info"/>, the diagnostics page.</summary>
+    public BluetoothDetailsViewModel Details { get; }
 
     /// <summary>Every capability Samaat knows about for this device, grouped by module.</summary>
     public ObservableCollection<CapabilityGroupViewModel> CapabilityGroups { get; } = [];

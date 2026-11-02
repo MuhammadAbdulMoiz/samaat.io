@@ -1,10 +1,14 @@
 using Samaat.App.Features.Overview;
+using Samaat.App.Features.Settings;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Samaat.Core.Battery;
 using Samaat.Core.Devices;
+using Samaat.Core.Platform;
+using Samaat.Core.Profiles;
+using Samaat.Core.Settings;
 
 namespace Samaat.App.Shell;
 
@@ -14,18 +18,28 @@ public enum AppSection
     Sound,
     Connections,
     Info,
+    Details,
+    Settings,
 }
 
-/// <summary>What the content area shows: one page of one device. Switching pages cross-fades.</summary>
-public abstract record PageModel(DeviceViewModel Device);
+/// <summary>What the content area shows. Switching pages cross-fades.</summary>
+public abstract record PageModel;
 
-public sealed record OverviewPageModel(DeviceViewModel Device) : PageModel(Device);
+/// <summary>One page of one device.</summary>
+public abstract record DevicePageModel(DeviceViewModel Device) : PageModel;
 
-public sealed record SoundPageModel(DeviceViewModel Device) : PageModel(Device);
+public sealed record OverviewPageModel(DeviceViewModel Device) : DevicePageModel(Device);
 
-public sealed record ConnectionsPageModel(DeviceViewModel Device) : PageModel(Device);
+public sealed record SoundPageModel(DeviceViewModel Device) : DevicePageModel(Device);
 
-public sealed record InfoPageModel(DeviceViewModel Device) : PageModel(Device);
+public sealed record ConnectionsPageModel(DeviceViewModel Device) : DevicePageModel(Device);
+
+public sealed record InfoPageModel(DeviceViewModel Device) : DevicePageModel(Device);
+
+/// <summary>Bluetooth IDs, address and services (master's Info page is the diagnostics page).</summary>
+public sealed record DetailsPageModel(DeviceViewModel Device) : DevicePageModel(Device);
+
+public sealed record SettingsPageModel(SettingsViewModel Settings) : PageModel;
 
 public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDisposable
 {
@@ -41,9 +55,24 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     private readonly LowBatteryDetector _alerts = new();
     private readonly DispatcherTimer _ageTimer;
 
-    public MainWindowViewModel(AppOptions options, TimeProvider? time = null)
+    private readonly DeviceProfileDb _profiles;
+    private readonly INotifier _notifier;
+
+    /// <param name="settings">Defaults to %APPDATA%/Samaat/settings.json; tests pass a temp-directory store.</param>
+    /// <param name="profiles">Defaults to the devices/ folder next to the executable.</param>
+    public MainWindowViewModel(
+        AppOptions options,
+        TimeProvider? time = null,
+        SettingsStore? settings = null,
+        IStartupRegistration? startup = null,
+        DeviceProfileDb? profiles = null,
+        INotifier? notifier = null)
     {
         _time = time ?? TimeProvider.System;
+        _notifier = notifier ?? options.CreateNotifier();
+        _profiles = profiles ?? DeviceProfileDb.Load(Path.Combine(AppContext.BaseDirectory, "devices"));
+        Settings = new SettingsViewModel(
+            settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration());
         _registry = new DeviceRegistry(options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
@@ -66,6 +95,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         _ageTimer.Start();
     }
 
+    public SettingsViewModel Settings { get; }
+
     public ObservableCollection<DeviceViewModel> Devices { get; } = [];
 
     public ObservableCollection<string> Alerts { get; } = [];
@@ -75,6 +106,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public partial DeviceViewModel? SelectedDevice { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPage))]
     public partial PageModel? CurrentPage { get; set; }
 
     /// <summary>How many devices currently have a low or critical battery.</summary>
@@ -90,13 +122,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     partial void OnSectionChanged(AppSection value) => UpdatePage();
 
-    private void UpdatePage() => CurrentPage = SelectedDevice is not { } device ? null : Section switch
-    {
-        AppSection.Sound => new SoundPageModel(device),
-        AppSection.Connections => new ConnectionsPageModel(device),
-        AppSection.Info => new InfoPageModel(device),
-        _ => new OverviewPageModel(device),
-    };
+    private void UpdatePage() => CurrentPage = Section == AppSection.Settings ? new SettingsPageModel(Settings)
+        : SelectedDevice is not { } device ? null
+        : Section switch
+        {
+            AppSection.Sound => new SoundPageModel(device),
+            AppSection.Connections => new ConnectionsPageModel(device),
+            AppSection.Info => new InfoPageModel(device),
+            AppSection.Details => new DetailsPageModel(device),
+            _ => new OverviewPageModel(device),
+        };
 
     [RelayCommand]
     private void ShowAlertingDevice()
@@ -120,6 +155,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public bool HasSelection => SelectedDevice is not null;
 
+    public bool HasPage => CurrentPage is not null;
+
     [ObservableProperty]
     public partial string? ModeText { get; set; }
 
@@ -127,10 +164,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public partial string StatusText { get; set; } = "Looking for devices…";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowEmptyState))]
     public partial bool IsEmpty { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsOverview), nameof(IsSound), nameof(IsConnections), nameof(IsInfo))]
+    [NotifyPropertyChangedFor(nameof(IsOverview), nameof(IsSound), nameof(IsConnections), nameof(IsInfo), nameof(IsDetails), nameof(IsSettings), nameof(ShowEmptyState))]
     public partial AppSection Section { get; set; }
 
     public bool IsOverview => Section == AppSection.Overview;
@@ -140,6 +178,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public bool IsConnections => Section == AppSection.Connections;
 
     public bool IsInfo => Section == AppSection.Info;
+
+    public bool IsDetails => Section == AppSection.Details;
+
+    public bool IsSettings => Section == AppSection.Settings;
+
+    /// <summary>Settings has no device, so the "no earbuds" message must not cover it.</summary>
+    public bool ShowEmptyState => IsEmpty && !IsSettings;
 
     [RelayCommand]
     private void Navigate(AppSection section) => Section = section;
@@ -165,7 +210,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
-            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert);
+            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity));
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
         }
@@ -197,6 +242,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
         var text = $"{device.Name}: {part} {level} ({alert.Percent}%)";
         Alerts.Insert(0, text);
+        if (Settings.SystemNotifications)
+        {
+            _notifier.Show("Samaat", text);
+        }
+
         ITimer? timer = null;
         timer = _time.CreateTimer(_ => Dispatcher.UIThread.Post(() =>
         {

@@ -31,17 +31,17 @@ public sealed record BatteryAlertPolicy
 /// </summary>
 public sealed class LowBatteryDetector(BatteryAlertPolicy? policy = null)
 {
-    private readonly BatteryAlertPolicy _policy = policy ?? new BatteryAlertPolicy();
     private readonly Dictionary<(string DeviceId, BatteryComponent Component), BatteryAlertLevel> _alerted = [];
 
-    public BatteryAlertPolicy Policy => _policy;
+    /// <summary>Replaceable at runtime (settings changes); alert state already recorded is kept.</summary>
+    public BatteryAlertPolicy Policy { get; set; } = policy ?? new BatteryAlertPolicy();
 
     public IReadOnlyList<BatteryAlert> Evaluate(string deviceId, BatteryState state)
     {
         var alerts = new List<BatteryAlert>();
         foreach (var reading in state.Readings)
         {
-            if (reading.Percent is not { } percent || (reading.Component == BatteryComponent.Case && !_policy.IncludeCase))
+            if (reading.Percent is not { } percent || (reading.Component == BatteryComponent.Case && !Policy.IncludeCase))
             {
                 continue;
             }
@@ -50,11 +50,11 @@ public sealed class LowBatteryDetector(BatteryAlertPolicy? policy = null)
             var previous = _alerted.TryGetValue(key, out var level) ? level : (BatteryAlertLevel?)null;
 
             if (reading.Charging is ChargingState.Charging or ChargingState.Full
-                || percent >= _policy.LowThreshold + _policy.RearmMargin)
+                || percent >= Policy.LowThreshold + Policy.RearmMargin)
             {
                 _alerted.Remove(key);
             }
-            else if (percent <= _policy.CriticalThreshold)
+            else if (percent <= Policy.CriticalThreshold)
             {
                 if (previous != BatteryAlertLevel.Critical)
                 {
@@ -62,14 +62,14 @@ public sealed class LowBatteryDetector(BatteryAlertPolicy? policy = null)
                     alerts.Add(new BatteryAlert(deviceId, reading.Component, percent, BatteryAlertLevel.Critical));
                 }
             }
-            else if (percent <= _policy.LowThreshold)
+            else if (percent <= Policy.LowThreshold)
             {
                 if (previous is null)
                 {
                     _alerted[key] = BatteryAlertLevel.Low;
                     alerts.Add(new BatteryAlert(deviceId, reading.Component, percent, BatteryAlertLevel.Low));
                 }
-                else if (previous == BatteryAlertLevel.Critical && percent >= _policy.CriticalThreshold + _policy.RearmMargin)
+                else if (previous == BatteryAlertLevel.Critical && percent >= Policy.CriticalThreshold + Policy.RearmMargin)
                 {
                     // Recovered from critical without charging (e.g. a noisy reading): allow critical to fire again.
                     _alerted[key] = BatteryAlertLevel.Low;

@@ -43,11 +43,14 @@ public sealed class SimulatorDeviceSource : IDeviceSource
 
         _devices =
         [
-            new(new DeviceIdentity("sim-buds-pro", "Simulated Buds Pro", "Samaat", "Buds Pro (simulated)", "1.0.0", SupportTier.Full),
+            new(new DeviceIdentity("sim-buds-pro", "Simulated Buds Pro", "Samaat", "Buds Pro (simulated)", "1.0.0", SupportTier.Full,
+                new DeviceDetails { Address = "02:00:5E:10:00:01", VendorId = 0x00D7, ProductId = 0x1001, Services = ["A2DP", "AVRCP", "HFP", "Vendor (simulated)"] }),
                 SimulatedBatteryLayout.BudsAndCase, time, [proNoise, proMultipoint, Diagnostics("Simulated Buds Pro")]),
-            new(new DeviceIdentity("sim-buds-lite", "Simulated Buds Lite", "Samaat", "Buds Lite (simulated)", "1.0.0", SupportTier.Standard),
+            new(new DeviceIdentity("sim-buds-lite", "Simulated Buds Lite", "Samaat", "Buds Lite (simulated)", "1.0.0", SupportTier.Standard,
+                new DeviceDetails { Address = "02:00:5E:10:00:02", VendorId = 0x00D7, ProductId = 0x1002, Services = ["A2DP", "AVRCP", "HFP"] }),
                 SimulatedBatteryLayout.BudsOnly, time, [liteNoise, Diagnostics("Simulated Buds Lite")]),
-            new(new DeviceIdentity("sim-headset", "Simulated Headset", "Samaat", "Headset (simulated)", null, SupportTier.Basic),
+            new(new DeviceIdentity("sim-headset", "Simulated Headset", "Samaat", "Headset (simulated)", null, SupportTier.Basic,
+                new DeviceDetails { Address = "02:00:5E:10:00:03", VendorId = 0x005D, ProductId = 0x2001, Services = ["A2DP", "HSP"] }),
                 SimulatedBatteryLayout.CombinedOnly, time, [Diagnostics("Simulated Headset")]),
         ];
         _timer = time.CreateTimer(_ => Tick(), null, tickInterval, tickInterval);

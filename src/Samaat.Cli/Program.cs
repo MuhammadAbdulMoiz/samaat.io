@@ -4,10 +4,12 @@
 //   samaat-cli [--watch] [--simulate] [--all-devices]
 
 using Samaat.Core.Battery;
+using Samaat.Core.Bluetooth;
 using Samaat.Core.Capabilities;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
+using Samaat.Core.Profiles;
 using Samaat.Simulator;
 
 var watch = args.Contains("--watch");
@@ -43,9 +45,15 @@ if (registry.Devices.Count == 0)
     return;
 }
 
+var profiles = DeviceProfileDb.Load(Path.Combine(AppContext.BaseDirectory, "devices"));
+foreach (var error in profiles.Errors)
+{
+    Console.Error.WriteLine($"[device profiles] {error}");
+}
+
 foreach (var device in registry.Devices)
 {
-    Print(device);
+    Print(device, profiles);
 }
 
 if (!watch)
@@ -72,7 +80,7 @@ Console.CancelKeyPress += (_, e) =>
 };
 await done.Task;
 
-static void Print(IEarbudDevice device)
+static void Print(IEarbudDevice device, DeviceProfileDb profiles)
 {
     var id = device.Identity;
     Console.WriteLine($"{id.Name}  [{device.Connection}, {id.Tier} support]");
@@ -88,6 +96,18 @@ static void Print(IEarbudDevice device)
         {
             Console.WriteLine($"  Services: {string.Join(", ", diagnostics.Signals.Services)}");
         }
+    }
+
+    if (profiles.Match(id) is { } profile)
+    {
+        Console.WriteLine($"  Identified as {profile.DisplayName} ({profile.Id})");
+    }
+
+    if (id.Details is { } details)
+    {
+        Console.WriteLine($"  Address: {details.Address ?? "not reported"}");
+        Console.WriteLine($"  VID/PID: {(details.VendorId is { } v && details.ProductId is { } p ? $"0x{v:X4}/0x{p:X4} ({BluetoothVendors.Name(v) ?? "unknown vendor"})" : "not reported")}");
+        Console.WriteLine($"  Bluetooth services: {(details.Services.Count > 0 ? string.Join(", ", details.Services) : "not reported")}");
     }
 
     var battery = device.GetFeature<IBatteryFeature>();

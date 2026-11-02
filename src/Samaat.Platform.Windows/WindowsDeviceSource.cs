@@ -1,4 +1,5 @@
 using Samaat.Core.Battery;
+using Samaat.Core.Bluetooth;
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Protocols.Standard;
@@ -17,6 +18,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
     private const string ContainerIdProperty = "System.Devices.Aep.ContainerId";
     private const string ManufacturerProperty = "System.Devices.Aep.Manufacturer";
     private const string ModelNameProperty = "System.Devices.Aep.ModelName";
+    private const string HardwareIdsProperty = "System.Devices.HardwareIds";
 
     private static readonly string[] AepProperties = [ContainerIdProperty, ManufacturerProperty, ModelNameProperty];
 
@@ -167,7 +169,8 @@ public sealed class WindowsDeviceSource : IDeviceSource
             resolution.Entry?.Manufacturer ?? signals.Manufacturer,
             resolution.Entry?.DisplayName ?? (info.Properties.TryGetValue(ModelNameProperty, out var model) ? model as string : null),
             FirmwareVersion: null,
-            tier);
+            tier,
+            await ReadDetailsAsync(bluetooth, containerId, cancellationToken));
 
         return new WindowsEarbudDevice(identity, bluetooth, features, gatt);
     }
@@ -186,6 +189,51 @@ public sealed class WindowsDeviceSource : IDeviceSource
         {
             return new HashSet<Guid>();
         }
+    }
+
+    /// <summary>Best effort: any part that can't be read stays unknown rather than failing the device.</summary>
+    private static async Task<DeviceDetails> ReadDetailsAsync(BluetoothDevice bluetooth, Guid? containerId, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Guid> uuids = [];
+        try
+        {
+            uuids = bluetooth.SdpRecords
+                .Select(buffer => SdpRecord.Parse(WinRtGattClient.ToArray(buffer)))
+                .OfType<SdpRecord>()
+                .SelectMany(record => record.ServiceClasses)
+                .Distinct()
+                .ToList();
+        }
+        catch (Exception)
+        {
+            // Unreadable records just mean the services show as not reported.
+        }
+
+        (int Vid, int Pid)? ids = null;
+        if (containerId is { } container)
+        {
+            try
+            {
+                var nodes = await DeviceInformation.FindAllAsync(
+                    $"System.Devices.ContainerId:=\"{{{container}}}\"", [HardwareIdsProperty], DeviceInformationKind.Device)
+                    .AsTask(cancellationToken);
+                ids = HardwareIds.TryParseVidPid(nodes
+                    .SelectMany(n => n.Properties.TryGetValue(HardwareIdsProperty, out var v) && v is string[] s ? s : []));
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                // VID/PID stay unknown.
+            }
+        }
+
+        return new DeviceDetails
+        {
+            Address = DeviceDetails.FormatAddress(bluetooth.BluetoothAddress),
+            VendorId = ids?.Vid,
+            ProductId = ids?.Pid,
+            Services = BluetoothServices.Labels(uuids),
+            ServiceUuids = uuids,
+        };
     }
 
     private static async Task<IReadOnlyDictionary<Guid, string>> FindPairedLowEnergyAsync(CancellationToken cancellationToken)

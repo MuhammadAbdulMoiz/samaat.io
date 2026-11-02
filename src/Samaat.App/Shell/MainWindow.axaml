@@ -6,13 +6,15 @@
         xmlns:sound="using:Samaat.App.Features.Sound"
         xmlns:conn="using:Samaat.App.Features.Connections"
         xmlns:info="using:Samaat.App.Features.Info"
+        xmlns:details="using:Samaat.App.Features.Details"
+        xmlns:settings="using:Samaat.App.Features.Settings"
         x:Class="Samaat.App.Shell.MainWindow"
         x:DataType="shell:MainWindowViewModel"
         Title="Samaat"
         Width="1180" Height="780" MinWidth="640" MinHeight="520">
   <Grid ColumnDefinitions="76,*">
 
-    <!-- Navigation rail: Overview is live; the other sections are on the roadmap. -->
+    <!-- Navigation rail: Controls is the only section still on the roadmap. -->
     <Border Background="{DynamicResource Samaat.Rail}" BorderBrush="{DynamicResource Samaat.Border}" BorderThickness="0,0,1,0">
       <DockPanel Margin="0,16">
         <Border DockPanel.Dock="Top" Width="40" Height="40" CornerRadius="12" Margin="0,0,0,24"
@@ -21,11 +23,16 @@
                      HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
         <StackPanel DockPanel.Dock="Bottom" Spacing="6" HorizontalAlignment="Center">
+          <Button Classes="nav" Classes.active="{Binding IsDetails}" ToolTip.Tip="Bluetooth details: IDs, address, services"
+                  Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Details}">
+            <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Bluetooth}" /><TextBlock Text="Details" HorizontalAlignment="Center" /></StackPanel>
+          </Button>
           <Button Classes="nav" Classes.active="{Binding IsInfo}" ToolTip.Tip="Device info and diagnostics"
                   Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Info}">
             <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Info}" /><TextBlock Text="Info" HorizontalAlignment="Center" /></StackPanel>
           </Button>
-          <Button Classes="nav" IsEnabled="False" ToolTip.Tip="Settings · coming soon" ToolTip.ShowOnDisabled="True">
+          <Button Classes="nav" Classes.active="{Binding IsSettings}" ToolTip.Tip="Settings"
+                  Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Settings}">
             <StackPanel Spacing="3"><PathIcon Data="{StaticResource Icon.Settings}" /><TextBlock Text="Settings" HorizontalAlignment="Center" /></StackPanel>
           </Button>
         </StackPanel>
@@ -105,13 +112,13 @@
         <Panel Margin="32,0,32,32">
 
           <!-- Empty state -->
-          <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" Margin="0,80,0,0" Spacing="12" MaxWidth="420">
+          <StackPanel IsVisible="{Binding ShowEmptyState}" HorizontalAlignment="Center" Margin="0,80,0,0" Spacing="12" MaxWidth="420">
             <PathIcon Data="{StaticResource Icon.Headphones}" Width="48" Height="48" Foreground="{DynamicResource Samaat.Faint}" />
             <TextBlock Text="No earbuds yet" Classes="display" FontSize="24" HorizontalAlignment="Center" />
             <TextBlock Text="{Binding StatusText}" Classes="muted" TextWrapping="Wrap" TextAlignment="Center" />
           </StackPanel>
 
-          <TransitioningContentControl Content="{Binding CurrentPage}" IsVisible="{Binding HasSelection}">
+          <TransitioningContentControl Content="{Binding CurrentPage}" IsVisible="{Binding HasPage}">
             <TransitioningContentControl.PageTransition>
               <CrossFade Duration="0:0:0.18" />
             </TransitioningContentControl.PageTransition>
@@ -120,6 +127,8 @@
               <DataTemplate DataType="shell:SoundPageModel"><sound:SoundPage DataContext="{Binding Device}" /></DataTemplate>
               <DataTemplate DataType="shell:ConnectionsPageModel"><conn:ConnectionsPage DataContext="{Binding Device}" /></DataTemplate>
               <DataTemplate DataType="shell:InfoPageModel"><info:InfoPage DataContext="{Binding Device}" /></DataTemplate>
+              <DataTemplate DataType="shell:DetailsPageModel"><details:BluetoothDetailsPage DataContext="{Binding Device}" /></DataTemplate>
+              <DataTemplate DataType="shell:SettingsPageModel"><settings:SettingsPage DataContext="{Binding Settings}" /></DataTemplate>
             </TransitioningContentControl.DataTemplates>
           </TransitioningContentControl>
         </Panel>

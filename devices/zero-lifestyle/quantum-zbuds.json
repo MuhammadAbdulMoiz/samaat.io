@@ -1,0 +1,20 @@
+{
+  // Read by both DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details); keep it valid for each.
+  "id": "zero-lifestyle.quantum-zbuds",
+  "displayName": "Zero Lifestyle Quantum Zbuds",
+  "manufacturer": "Zero Lifestyle",
+  // No vendor protocol found, so no driver exists: DeviceCatalog shows it as recognised.
+  "driver": "none",
+  "match": {
+    "deviceId": { "vid": "0x05D6", "pid": "0x000A" },
+    "vendorId": "0x05D6",
+    "productId": "0x000A",
+    "sdpUuids": [],
+    "namePattern": "^Quantum$"
+  },
+  "adapter": null,
+  "verified": false,
+  "features": [],
+  "verifiedFirmware": [],
+  "notes": "Basic tier only: one combined battery level from Windows. No vendor protocol identified; see docs/hardware-tests/2026-11-02-quantum.md."
+}

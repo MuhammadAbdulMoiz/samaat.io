@@ -26,7 +26,28 @@ public sealed record DeviceIdentity(
     string? Manufacturer = null,
     string? Model = null,
     string? FirmwareVersion = null,
-    SupportTier Tier = SupportTier.Basic);
+    SupportTier Tier = SupportTier.Basic,
+    DeviceDetails? Details = null);
+
+/// <summary>Technical facts for the Info page. Any of them may be unknown.</summary>
+public sealed record DeviceDetails
+{
+    /// <summary>Colon-separated hex, e.g. F2:28:99:5A:7E:79.</summary>
+    public string? Address { get; init; }
+
+    public int? VendorId { get; init; }
+
+    public int? ProductId { get; init; }
+
+    /// <summary>Readable service names (A2DP, HFP, ...).</summary>
+    public IReadOnlyList<string> Services { get; init; } = [];
+
+    /// <summary>The raw service class UUIDs behind <see cref="Services"/>, for profile matching.</summary>
+    public IReadOnlyList<Guid> ServiceUuids { get; init; } = [];
+
+    public static string FormatAddress(ulong address) =>
+        string.Join(":", Enumerable.Range(0, 6).Reverse().Select(i => ((address >> (i * 8)) & 0xFF).ToString("X2")));
+}
 
 /// <summary>Marker for a capability module an adapter exposes (battery, noise control, ...).</summary>
 public interface IFeature;

@@ -8,6 +8,7 @@ using Samaat.App.Features.Overview;
 using Samaat.App.Features.Sound;
 using Samaat.App.Shell;
 using Samaat.Core.Battery;
+using Samaat.Core.Settings;
 
 namespace Samaat.App.Tests;
 
@@ -15,7 +16,9 @@ public class MainWindowTests
 {
     private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync()
     {
-        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false));
+        // A temp-directory store, so tests never read or write the real %APPDATA% settings.
+        var settings = new SettingsStore(Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"), "settings.json"));
+        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), settings: settings);
         var window = new MainWindow { DataContext = viewModel };
         window.Show();
         await viewModel.RefreshDevicesAsync();
@@ -65,6 +68,13 @@ public class MainWindowTests
         Assert.False(viewModel.IsOverview);
         viewModel.NavigateCommand.Execute(AppSection.Connections);
         Assert.True(viewModel.IsConnections);
+        viewModel.NavigateCommand.Execute(AppSection.Info);
+        Assert.True(viewModel.IsInfo);
+        viewModel.NavigateCommand.Execute(AppSection.Details);
+        Assert.IsType<DetailsPageModel>(viewModel.CurrentPage);
+        viewModel.NavigateCommand.Execute(AppSection.Settings);
+        Assert.True(viewModel.IsSettings);
+        Assert.False(viewModel.ShowEmptyState);
 
         window.Close();
         await viewModel.DisposeAsync();

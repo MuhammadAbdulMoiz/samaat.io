@@ -1,14 +1,17 @@
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
+using Samaat.Core.Platform;
 using Samaat.Simulator;
 
 namespace Samaat.App;
 
-public sealed record AppOptions(bool Simulate, bool IncludeNonAudio)
+public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimized = false, bool TestNotification = false)
 {
     public static AppOptions Parse(string[] args) => new(
         Simulate: args.Contains("--simulate"),
-        IncludeNonAudio: args.Contains("--all-devices"));
+        IncludeNonAudio: args.Contains("--all-devices"),
+        Minimized: args.Contains("--minimized"),
+        TestNotification: args.Contains("--test-notification"));
 
 #if SAMAAT_WINDOWS
     public bool HasRealBluetooth => true;
@@ -36,4 +39,19 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio)
 
         return sources;
     }
+
+    /// <param name="iconPng">Supplies the toast icon on first use; the icon is drawn by the UI layer.</param>
+    public INotifier CreateNotifier(Func<byte[]?>? iconPng = null) =>
+#if SAMAAT_WINDOWS
+        new Samaat.Platform.Windows.WindowsToastNotifier(iconPng);
+#else
+        new NoNotifier();
+#endif
+
+    public IStartupRegistration CreateStartupRegistration() =>
+#if SAMAAT_WINDOWS
+        new Samaat.Platform.Windows.WindowsStartupRegistration();
+#else
+        new NoStartupRegistration();
+#endif
 }

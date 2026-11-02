@@ -4,9 +4,9 @@ Last updated: 2026-11-02
 
 ## TL;DR
 
-- **Done:** project foundation, the capability engine, and the first three modules (battery, noise control, multipoint), each with a UI and tests. All of it runs today against **simulated devices**.
-- **Not done:** controlling any **real** earbuds. Real Bluetooth on Windows reads paired devices and battery (written but **not yet run on hardware**). ANC and multipoint for real devices need the first **vendor adapter**, which needs a decision on which earbuds to target.
-- **Tests:** 167 automated tests, green on Linux, and CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. Everything else runs against **simulated devices**.
+- **Not done:** controlling any **real** earbuds beyond that. ANC, multipoint and L/R/case battery need a vendor adapter; the Quantum Zbuds turned out to have no usable vendor protocol, so a different target model is needed.
+- **Tests:** 233 automated tests (Protocols 16, Core 136, App 81). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Connections |
 |---|---|---|
@@ -41,47 +41,56 @@ Host list with states, switch / connect / disconnect, a multipoint switch, and a
 - **Driver registry and device catalog**: devices resolve to *generic*, *recognised (adapter not built yet)* or *driver*. `devices/**/*.json` entries carry a `verified` flag. Adding a model is a data change, and adding a vendor needs no UI changes.
 - **RFCOMM transport**: `IRfcommChannel` plus a WinRT implementation, ready for the first driver (unverified on hardware).
 - **Windows detection signals**: class of device and SDP service UUIDs, shown on the Info page and in the CLI.
-- **Feature-organised app**: `Shell/`, `Features/{Overview,Sound,Connections,Info}`, `Shared/`, `Styles/` split by area.
+- **Feature-organised app**: `Shell/`, `Features/{Overview,Sound,Connections,Info,Details,Settings}`, `Shared/`, `Styles/` split by area.
 - **Info page**: identity, detection, a capability table with source and verification, a live event log, and **Copy report** for hardware bug reports.
 - `CONTRIBUTING.md` sets the hardware-evidence rules for marking a model verified.
 
 ### UI polish ([details](design/ui-audit.md#round-3-polish-2026-11-02))
 Redrawn earbud artwork and charging badges, a compact stat strip, toasts that hide themselves plus an alert counter, animated rings and page cross-fades, layouts that work down to 640 px, and automated WCAG contrast tests.
 
+### Settings ([details](modules/settings.md))
+Theme, battery alert thresholds, case alerts, system notifications, keep running in the tray, start with Windows. Saved to `%APPDATA%/Samaat/settings.json`; bad files fall back to defaults.
+
+### Bluetooth details and device profiles ([details](modules/info.md))
+The **Details** page shows vendor and product ID, address, advertised services, support tier and battery source, and the `devices/<vendor>/<model>.json` profile DB names known models. First profile: Zero Lifestyle Quantum Zbuds. Two device databases exist for now: master's `DeviceCatalog` (driver resolution) and our `DeviceProfileDb` (display name and details). They read the same `devices/` folder and should be unified later.
+
+### Tray and notifications ([details](modules/tray.md))
+Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windows notifications for low battery (verified on one PC only).
+
 ### Tools
-- `samaat-cli`: prints what Samaat detects for each device, with `--watch` for live changes. Used for hardware checks.
+- `samaat-cli`: prints what Samaat detects for each device (including identified profile, IDs and services), with `--watch` for live changes. Used for hardware checks.
 
 ---
 
 ## 2. What's remaining
 
 ### Blocking: needs a decision from you
-1. **Which earbuds to target first** (PLAN §13 Q1). Every real ANC, multipoint and L/R/case battery feature depends on it.
+1. **Which earbuds to target first** (PLAN §13 Q1). Every real ANC, multipoint and L/R/case battery feature depends on it. The Quantum Zbuds were tested and have no usable vendor protocol; pick a model with a companion app or a BLE side.
 2. **Windows-first or Android-first** (§13 Q2). The core and the UI are portable; the platform layer isn't.
 3. **License / open source** (§13 Q4). This affects which references we can learn from (§11).
 
 ### Next engineering steps
 | # | Item | Notes |
 |---|---|---|
-| 1 | **Run on real Windows hardware** | `samaat-cli --watch` checklist in `modules/battery.md`. Confirms device discovery and the Windows battery property. |
+| 1 | **Run on real Windows hardware** | Done once with the Quantum Zbuds. Re-check Samaat's battery refresh after a reconnect (`--watch` during a case-lid test), the Start with Windows toggle, and a notification on a clean Windows profile. |
 | 2 | **RFCOMM transport** | `IRfcommChannel` plus a WinRT implementation (open a vendor service UUID on a paired device). |
-| 3 | **First vendor adapter** | Framing and messages for the chosen earbuds, implementing `IBatteryFeature`, `INoiseControlFeature` and (if supported) `IMultipointFeature`. Recorded traces become tests. |
+| 3 | **First vendor adapter** | Framing and messages for the chosen earbuds, implementing `IBatteryFeature`, `INoiseControlFeature` and (if supported) `IMultipointFeature`. Recorded traces become tests. Wire the profile DB's `adapter` field to it. |
 | 4 | **First catalog entries** | Matching and loading are done; add real entries from hardware reports (Info → Copy report). |
-| 5 | **System tray and notifications** | Battery at a glance and OS notifications for low battery. |
-| 6 | **Reconnect handling** | Re-handshake after the earbuds drop and return. |
+| 5 | **Reconnect handling** | Re-handshake after the earbuds drop and return. |
+| 6 | **Unify the device databases** | Fold `DeviceProfileDb` into `DeviceCatalog` so one `devices/**/*.json` schema and loader serves driver resolution and the Details page. |
 
 ### Later modules (on the nav rail as "soon")
 - **Controls**: touch gesture remapping (vendor protocol only).
 - **Equalizer**: device EQ and Samaat EQ, kept separate.
 - **Info**: diagnostics are done; firmware and codec details come with drivers.
-- **Settings**: theme, alert thresholds, start with Windows.
 - Find my earbuds, wear detection, Android port, Linux (BlueZ).
 
 ### Known limitations today
-- Nothing has been run on real Bluetooth hardware yet.
 - Windows gives a single combined battery level only. L/R/case needs a vendor adapter.
+- A disconnected device still shows the last battery level Windows stored (Windows Settings hides it).
 - This computer can't be connected or disconnected from Samaat (no public WinRT API for classic audio).
 - A device that starts reporting battery after launch appears on the next **Refresh**.
+- System notifications are verified on one PC only.
 
 ---
 
@@ -108,7 +117,7 @@ dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0
 # Windows: real devices plus the simulated ones
 dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0 -- --simulate
 ```
-Options: `--simulate` adds simulated devices; `--all-devices` also lists paired non-audio devices.
+Options: `--simulate` adds simulated devices; `--all-devices` also lists paired non-audio devices; `--minimized` starts in the tray; `--test-notification` shows one system notification.
 
 In the simulator, try:
 - **Overview**: batteries drain and recharge live, and the right bud of *Buds Lite* triggers a low-battery alert.

@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Samaat.App.Features.Settings"
+             xmlns:set="using:Samaat.Core.Settings"
+             x:Class="Samaat.App.Features.Settings.SettingsPage"
+             x:DataType="vm:SettingsViewModel">
+  <StackPanel Spacing="20" MaxWidth="640" HorizontalAlignment="Left">
+
+    <StackPanel Spacing="4">
+      <TextBlock Text="SETTINGS" Classes="eyebrow" />
+      <TextBlock Text="Settings" Classes="display" FontSize="32" />
+      <TextBlock Text="Changes apply and save straight away." Classes="muted" />
+    </StackPanel>
+
+    <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+        <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <!-- Appearance -->
+    <Border Classes="surface">
+      <StackPanel Spacing="12">
+        <TextBlock Text="APPEARANCE" Classes="eyebrow" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="segment" Classes.selected="{Binding IsSystemTheme}" Content="System"
+                  Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.System}" />
+          <Button Classes="segment" Classes.selected="{Binding IsLightTheme}" Content="Light"
+                  Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.Light}" />
+          <Button Classes="segment" Classes.selected="{Binding IsDarkTheme}" Content="Dark"
+                  Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.Dark}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Battery alerts -->
+    <Border Classes="surface">
+      <StackPanel Spacing="14">
+        <TextBlock Text="BATTERY ALERTS" Classes="eyebrow" />
+        <Grid ColumnDefinitions="*,60" RowDefinitions="Auto,Auto">
+          <TextBlock Text="Low battery warning" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Text="{Binding LowThreshold, StringFormat={}{0:0}%}" Classes="number" TextAlignment="Right" />
+          <Slider Grid.Row="1" Grid.ColumnSpan="2" Minimum="5" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True"
+                  Value="{Binding LowThreshold}" />
+        </Grid>
+        <Grid ColumnDefinitions="*,60" RowDefinitions="Auto,Auto">
+          <TextBlock Text="Critical battery warning" FontWeight="SemiBold" />
+          <TextBlock Grid.Column="1" Text="{Binding CriticalThreshold, StringFormat={}{0:0}%}" Classes="number" TextAlignment="Right" />
+          <Slider Grid.Row="1" Grid.ColumnSpan="2" Minimum="1" Maximum="{Binding CriticalMax}" TickFrequency="1" IsSnapToTickEnabled="True"
+                  Value="{Binding CriticalThreshold}" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="Include the charging case" FontWeight="SemiBold" />
+            <TextBlock Text="A low case is less urgent than low buds, so it is off by default." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding IncludeCase}" OnContent="" OffContent="" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <!-- Background -->
+    <Border Classes="surface">
+      <StackPanel Spacing="14">
+        <TextBlock Text="BACKGROUND" Classes="eyebrow" />
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="System notifications" FontWeight="SemiBold" />
+            <TextBlock Text="Also show battery alerts as system notifications." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding SystemNotifications}" OnContent="" OffContent="" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="Keep running in the tray" FontWeight="SemiBold" />
+            <TextBlock Text="Closing the window hides Samaat instead of quitting." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" OnContent="" OffContent="" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="Start with Windows" FontWeight="SemiBold" />
+            <TextBlock Text="Opens Samaat minimized when you sign in." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding StartupNote}" Classes="muted" FontSize="12" IsVisible="{Binding !StartupSupported}" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartWithWindows}" IsEnabled="{Binding StartupSupported}"
+                        OnContent="" OffContent="" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

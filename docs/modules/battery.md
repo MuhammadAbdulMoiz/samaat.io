@@ -55,4 +55,4 @@ Please send the output back. These are the unverified assumptions in this module
 - The Windows battery value is a single level. Windows doesn't expose separate left, right or case levels.
 - A device that starts reporting battery only after Samaat started is picked up on the next **Refresh devices**.
 - LE-Audio-only devices with no Classic side aren't listed yet.
-- No system tray icon or OS notifications yet. Alerts show as an in-app banner (planned for Phase 3).
+- Alerts show as an in-app banner and, when enabled in Settings, as a system notification; the tray tooltip shows each device's level ([tray and notifications](tray.md)). Thresholds are set in [Settings](settings.md).
