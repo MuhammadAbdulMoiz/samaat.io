@@ -311,6 +311,7 @@ samaat.io/
 ## 13. Open decisions (to settle in the next iteration)
 
 1. **Which earbuds do you physically own?** This picks the first adapter and is the most important input. Phase 0 can't start without real hardware.
+   **Answer (2026-11-02):** Zero Lifestyle **Quantum Zbuds** (Bluetooth name "Quantum", VID `0x05D6`). Classic-only (A2DP/AVRCP/HFP), no paired BLE side; Windows reports one combined battery level. See docs/hardware-tests/2026-11-02-quantum.md. Its control protocol is still unknown.
 2. **Windows-first or Android-first?** Windows is easier to develop and debug on. Android is where most earbud users are. This also decides .NET/Avalonia versus Kotlin.
 3. **Target market and brands.** Global flagships (Samsung, Sony, Nothing, Soundcore) or budget brands popular in a specific region (e.g. QCY, Xiaomi/Redmi, realme, Lenovo, local brands)? This sets the order of adapters.
 4. **License and business model.** Open source (GPL-compatible, community-driven device support) or closed/commercial? This affects §11 and whether contributors can help.
