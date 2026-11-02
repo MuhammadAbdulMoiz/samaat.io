@@ -57,10 +57,17 @@ public sealed class WindowsDeviceSource : IDeviceSource
             var seen = new HashSet<string>();
             foreach (var info in classic)
             {
-                if (_devices.ContainsKey(info.Id))
+                if (_devices.TryGetValue(info.Id, out var existing))
                 {
-                    seen.Add(info.Id);
-                    continue;
+                    if (existing.Features.Count > 0)
+                    {
+                        seen.Add(info.Id);
+                        continue;
+                    }
+
+                    // Built before Windows had a battery level for it; rebuild so a Refresh can pick one up.
+                    await existing.DisposeAsync();
+                    _devices.Remove(info.Id);
                 }
 
                 var device = await CreateDeviceAsync(info, bleByContainer, cancellationToken);
