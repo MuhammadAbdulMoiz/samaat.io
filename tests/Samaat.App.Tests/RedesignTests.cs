@@ -273,7 +273,7 @@ public class RedesignShellTests
 
         var toggles = All<ToggleButton>(window).Where(t => t.Classes.Contains("disclosure")).ToList();
         var names = toggles.Select(AutomationProperties.GetName).ToList();
-        Assert.Equal(["Battery · 3 features", "Noise control · 7 features", "Connections · 4 features", "Technical details", "Event log"], names);
+        Assert.Equal(["Battery · 3 features", "Noise control · 7 features", "Equalizer · 1 feature", "Connections · 4 features", "Technical details", "Event log"], names);
         Assert.All(toggles, t => Assert.False(t.IsChecked));
 
         IEnumerable<string?> Visible() => All<TextBlock>(window).Where(t => t.IsEffectivelyVisible).Select(t => t.Text);
@@ -304,13 +304,13 @@ public class RedesignShellTests
             Pump();
         }
 
-        PressSpace(toggles[3]);
-        Assert.True(toggles[3].IsChecked);
+        PressSpace(toggles[4]);
+        Assert.True(toggles[4].IsChecked);
         Assert.Contains("Device ID", Visible());
 
         var eventsBefore = Visible().Count();
-        PressSpace(toggles[4]);
-        Assert.True(toggles[4].IsChecked);
+        PressSpace(toggles[5]);
+        Assert.True(toggles[5].IsChecked);
         Assert.True(Visible().Count() > eventsBefore, "opening the event log shows its entries");
         await CloseAsync(window, vm);
     }

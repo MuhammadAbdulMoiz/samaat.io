@@ -5,8 +5,8 @@ using Samaat.Transport;
 namespace Samaat.Protocols.Jieli;
 
 /// <summary>
-/// Jieli's raw (unframed) auth handshake over AE01/AE02. These are the only bytes the adapter ever
-/// writes to the earbuds: <c>00 | random</c>, <c>02 "pass"</c>, <c>01 | cipher(challenge)</c>.
+/// Jieli's raw (unframed) auth handshake over AE01/AE02. These steps, and the framed commands in
+/// <see cref="RcspCommands"/>, are the only bytes the adapter ever writes to the earbuds: <c>00 | random</c>, <c>02 "pass"</c>, <c>01 | cipher(challenge)</c>.
 /// </summary>
 public static class RcspAuth
 {

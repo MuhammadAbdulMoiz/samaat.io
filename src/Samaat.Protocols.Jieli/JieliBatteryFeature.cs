@@ -1,38 +1,28 @@
-using System.Threading.Channels;
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
-using Samaat.Transport;
 
 namespace Samaat.Protocols.Jieli;
 
 /// <summary>
-/// Left, right and case battery from Jieli's AdvInfo push (<c>0xC2</c>) over the RCSP BLE service.
-/// A session is: subscribe AE02, authenticate, then listen. The only writes are the auth steps.
+/// Left, right and case battery from Jieli's AdvInfo push (<c>0xC2</c>) over the RCSP session. It owns
+/// the session: disposing it disposes the session the noise and EQ features share.
 /// </summary>
 public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
 {
     // Device-initiated frames carry flags 0x80; 0x40 marks a command that expects our response, which we never send.
     private const byte ExpectsResponse = 0x40;
 
-    private readonly IGattCharacteristic _write;
-    private readonly IGattCharacteristic _notify;
+    private readonly RcspSession _session;
     private readonly TimeProvider _time;
-    private readonly TimeSpan _authStepTimeout;
     private readonly Lock _gate = new();
-    private readonly SemaphoreSlim _session = new(1, 1);
     private readonly TaskCompletionSource _firstReading = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private IAsyncDisposable? _subscription;
-    private Channel<byte[]>? _authInbox;
-    private RcspFrameParser _parser = new();
     private BatteryState _current = BatteryState.Empty;
-    private bool _disposed;
 
-    private JieliBatteryFeature(IGattCharacteristic write, IGattCharacteristic notify, TimeProvider time, TimeSpan authStepTimeout)
+    private JieliBatteryFeature(RcspSession session, TimeProvider time)
     {
-        _write = write;
-        _notify = notify;
+        _session = session;
         _time = time;
-        _authStepTimeout = authStepTimeout;
+        _session.Packet += OnPacket;
     }
 
     public IReadOnlySet<BatteryComponent> Components { get; } =
@@ -58,22 +48,17 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
     public event EventHandler<BatteryState>? Changed;
 
     /// <summary>
-    /// Runs a session and waits for the first valid battery push. Returns null (with everything released)
-    /// on any failure or when <paramref name="cancellationToken"/> expires first; never throws.
+    /// Starts <paramref name="session"/> and waits for the first valid battery push. Returns null (with the
+    /// session disposed) on any failure or when <paramref name="cancellationToken"/> expires first; never throws.
     /// </summary>
-    public static async Task<JieliBatteryFeature?> CreateAsync(
-        IGattCharacteristic write,
-        IGattCharacteristic notify,
-        TimeProvider time,
-        TimeSpan authStepTimeout,
-        CancellationToken cancellationToken)
+    public static async Task<JieliBatteryFeature?> CreateAsync(RcspSession session, TimeProvider time, CancellationToken cancellationToken)
     {
-        var feature = new JieliBatteryFeature(write, notify, time, authStepTimeout);
+        var feature = Attach(session, time);
         try
         {
-            if (await feature.RunSessionAsync(cancellationToken))
+            if (await session.StartAsync(cancellationToken))
             {
-                await feature._firstReading.Task.WaitAsync(cancellationToken);
+                await feature.FirstReadingAsync(cancellationToken);
                 return feature;
             }
         }
@@ -86,12 +71,21 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
         return null;
     }
 
+    /// <summary>
+    /// Listens on a session that isn't started yet, so the push the buds send right after auth isn't missed.
+    /// The caller starts the session and awaits <see cref="FirstReadingAsync"/>.
+    /// </summary>
+    public static JieliBatteryFeature Attach(RcspSession session, TimeProvider time) => new(session, time);
+
+    /// <summary>Completes with the first valid battery push; throws if <paramref name="cancellationToken"/> expires first.</summary>
+    public Task FirstReadingAsync(CancellationToken cancellationToken) => _firstReading.Task.WaitAsync(cancellationToken);
+
     /// <summary>Re-runs the session; the buds push their battery again after authentication.</summary>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            await RunSessionAsync(cancellationToken);
+            await _session.RestartAsync(cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -99,71 +93,11 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
         }
     }
 
-    private async Task<bool> RunSessionAsync(CancellationToken cancellationToken)
+    private void OnPacket(RcspPacket packet)
     {
-        await _session.WaitAsync(cancellationToken);
-        try
+        if (packet.Op == AdvInfo.Op && (packet.Flags & ExpectsResponse) == 0 && AdvInfo.TryParse(packet.Params, out var info))
         {
-            if (_disposed)
-            {
-                return false;
-            }
-
-            await ReleaseSubscriptionAsync();
-            var inbox = Channel.CreateUnbounded<byte[]>();
-            lock (_gate)
-            {
-                _authInbox = inbox;
-                _parser = new RcspFrameParser();
-            }
-
-            _subscription = await _notify.SubscribeAsync(OnChunk, cancellationToken);
-            var authenticated = await RcspAuth.RunAsync(_write, inbox.Reader, _authStepTimeout, cancellationToken);
-
-            var early = new List<RcspPacket>();
-            lock (_gate)
-            {
-                _authInbox = null;
-                while (authenticated && inbox.Reader.TryRead(out var chunk))
-                {
-                    early.AddRange(_parser.Feed(chunk));
-                }
-            }
-
-            Handle(early);
-            return authenticated;
-        }
-        finally
-        {
-            _session.Release();
-        }
-    }
-
-    private void OnChunk(byte[] chunk)
-    {
-        IReadOnlyList<RcspPacket> packets;
-        lock (_gate)
-        {
-            if (_authInbox is { } inbox)
-            {
-                inbox.Writer.TryWrite(chunk);
-                return;
-            }
-
-            packets = _parser.Feed(chunk);
-        }
-
-        Handle(packets);
-    }
-
-    private void Handle(IReadOnlyList<RcspPacket> packets)
-    {
-        foreach (var packet in packets)
-        {
-            if (packet.Op == AdvInfo.Op && (packet.Flags & ExpectsResponse) == 0 && AdvInfo.TryParse(packet.Params, out var info))
-            {
-                Apply(info);
-            }
+            Apply(info);
         }
     }
 
@@ -201,17 +135,9 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
         Changed?.Invoke(this, updated);
     }
 
-    private async Task ReleaseSubscriptionAsync()
-    {
-        if (Interlocked.Exchange(ref _subscription, null) is { } subscription)
-        {
-            await subscription.DisposeAsync();
-        }
-    }
-
     public async ValueTask DisposeAsync()
     {
-        _disposed = true;
-        await ReleaseSubscriptionAsync();
+        _session.Packet -= OnPacket;
+        await _session.DisposeAsync();
     }
 }

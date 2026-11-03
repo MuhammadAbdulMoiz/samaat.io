@@ -31,3 +31,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Jieli RCSP noise control and EQ commands
+
+The command and attribute layouts used by `src/Samaat.Protocols.Jieli` for noise control and EQ (GetSysInfo/SetSysInfo, the noise-mode and EQ attributes) were learned from Jieli Technology's official SDKs, [Android-JL_Bluetooth](https://github.com/Jieli-Tech/Android-JL_Bluetooth) and [iOS-JL_Bluetooth](https://github.com/Jieli-Tech/iOS-JL_Bluetooth), both licensed under the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). No SDK code is included; Samaat's implementation is its own. Details: [docs/protocols/jieli-rcsp.md](docs/protocols/jieli-rcsp.md).

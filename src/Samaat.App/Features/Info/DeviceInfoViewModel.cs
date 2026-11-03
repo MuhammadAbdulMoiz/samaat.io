@@ -215,7 +215,7 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
     }
 
     private static readonly (string Module, string Prefix)[] Modules =
-        [("Battery", "battery."), ("Noise control", "noise."), ("Connections", "connections.")];
+        [("Battery", "battery."), ("Noise control", "noise."), ("Equalizer", "eq."), ("Connections", "connections.")];
 
     private static readonly FeatureId[] BudBatteries = [FeatureId.BatteryLeft, FeatureId.BatteryRight, FeatureId.BatteryCase];
 

@@ -6,4 +6,7 @@
     <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
     <ProjectReference Include="..\Samaat.Transport\Samaat.Transport.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Samaat.Protocols.Tests" />
+  </ItemGroup>
 </Project>

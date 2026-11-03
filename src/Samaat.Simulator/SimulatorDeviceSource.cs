@@ -1,6 +1,7 @@
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
+using Samaat.Core.Equalizer;
 using Samaat.Core.NoiseControl;
 
 namespace Samaat.Simulator;
@@ -39,13 +40,16 @@ public sealed class SimulatorDeviceSource : IDeviceSource
                 new HostLink("tablet", "Living-room tablet", HostKind.Tablet, HostLinkState.Unavailable, IsThisHost: false),
             ]),
             latency, time);
+        var proEq = new SimulatedEqualizer(
+            [new EqPreset(0, "Standard"), new EqPreset(1, "Bass boost"), new EqPreset(2, "Voice"), new EqPreset(3, "Treble boost")],
+            latency, time);
         var liteNoise = new SimulatedNoiseControl(new NoiseControlOptions([NoiseMode.Off, NoiseMode.NoiseCancelling]), latency, time);
 
         _devices =
         [
             new(new DeviceIdentity("sim-buds-pro", "Simulated Buds Pro", "Samaat", "Buds Pro (simulated)", "1.0.0", SupportTier.Full,
                 new DeviceDetails { Address = "02:00:5E:10:00:01", VendorId = 0x00D7, ProductId = 0x1001, Services = ["A2DP", "AVRCP", "HFP", "Vendor (simulated)"] }),
-                SimulatedBatteryLayout.BudsAndCase, time, [proNoise, proMultipoint, Diagnostics("Simulated Buds Pro")]),
+                SimulatedBatteryLayout.BudsAndCase, time, [proNoise, proEq, proMultipoint, Diagnostics("Simulated Buds Pro")]),
             new(new DeviceIdentity("sim-buds-lite", "Simulated Buds Lite", "Samaat", "Buds Lite (simulated)", "1.0.0", SupportTier.Standard,
                 new DeviceDetails { Address = "02:00:5E:10:00:02", VendorId = 0x00D7, ProductId = 0x1002, Services = ["A2DP", "AVRCP", "HFP"] }),
                 SimulatedBatteryLayout.BudsOnly, time, [liteNoise, Diagnostics("Simulated Buds Lite")]),

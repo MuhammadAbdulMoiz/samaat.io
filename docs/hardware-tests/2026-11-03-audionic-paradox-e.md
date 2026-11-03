@@ -31,6 +31,7 @@ auth5  tx 01 ‖ encrypt(challenge)
 GetTargetInfo
        tx FEDCBA C0 02 0005 00 FFFFFFFF EF
        rx FEDCBA 00 02 0002 02 00 EF                  status 0x02, no attributes
+                                                      (later found: op 0x02 is GetTargetFeatureMap; see below)
 push   rx FEDCBA 80 C2 0013 01 05D6 01D2 004A 22 305F277C717E 02 64 64 00 62 EF
 push   rx FEDCBA 80 09 0005 02 00 02 07 01 EF         (6 s later; not decoded)
 ```
@@ -46,4 +47,42 @@ The ParadoX-E speaks Jieli RCSP over BLE, and per-bud (and probably case) batter
 
 - Adapter: done for battery (`src/Samaat.Protocols.Jieli`, see docs/plans/2026-11-03-jieli-battery-adapter.md): BLE, RCSP framing, JieLi auth, battery from `0xC2` (L/R, case when reported, charging), Full tier. Note the AdvInfo bytes are L=[14], R=[15], case=[16] of the params after sn.
 - Map the `0x09` push and the case byte by watching while buds go in and out of the case.
-- Find the ANC/transparency commands (Jieli SDK sources or the Audionic app) before any write.
+- ~~Find the ANC/transparency commands~~ done, see below.
+
+## Noise control and EQ (second session, same day)
+
+Protocol from Jieli's Apache-2.0 SDK; details and sources in [docs/protocols/jieli-rcsp.md](../protocols/jieli-rcsp.md).
+
+### Read-only probe
+
+```
+GetTargetInfo (op 0x03)  tx FEDCBA C0 03 0006 01 FFFFFFFF 00 EF
+                         rx status 00: protocol 0x20, EDR 305F277C717E, attr 10 (vid/pid) = 01D2 004A,
+                            project "jl_sdk_ac697_publish", attr 13 = 0110021C
+GetSysInfo 0x6000        tx FEDCBA C0 07 0006 02 FF 00006000 EF
+                         rx FEDCBA 00 07 002C 00 02 FF 0A0D 000000000000000000
+                                                   1D0E 03 000000000000000000 014000400040004000 024000400040004000 EF
+GetSysInfo 0x1010        tx FEDCBA C0 07 0006 03 FF 00001010 EF
+                         rx FEDCBA 00 07 0074 00 03 FF 0C04 0300080804000000000202
+                                                   630C 0A 0019003A00940168035C05F00BB817701F4035E8 (10 freqs) + 7 × 11 preset bytes EF
+GetSysInfo 0xFFF7        also battery 0x64, volume 0x06, phone status 0, and the attributes above
+```
+
+So: modes Off / Noise cancelling / Transparency, current Off; EQ preset 3 (Classical) of 7. The `0x09` push from the first session (`00 | 02 07 01`) is Bluetooth-mode attribute 7, music play status, not ANC.
+
+### Writes (approved by the owner, exact frames listed to them first)
+
+```
+SET noise cancelling  tx FEDCBA C0 08 000D 05 FF 0A 0D 01 4000 4000 4000 4000 EF
+                      rx FEDCBA 00 08 0002 00 05 EF                         status 00
+                      rx FEDCBA 80 09 000D .. FF 0A0D 014000400040004000 EF  push of the new mode
+                      readback 0x2000 → 01 4000 4000 4000 4000
+SET transparency      tx FEDCBA C0 08 000D 07 FF 0A 0D 02 4000 4000 4000 4000 EF → status 00, push, readback 02
+SET off               tx FEDCBA C0 08 000D 09 FF 0A 0D 00 0000 0000 0000 0000 EF → status 00, push, readback 00
+SET EQ Rock           tx FEDCBA C0 08 000F 0B FF 0C 04 01 FE 00 02 04 FE FE 00 00 04 04 EF → status 00, push, readback mode 01
+SET EQ Classical      tx FEDCBA C0 08 000F 0D FF 0C 04 03 00 08 08 04 00 00 00 00 02 02 EF → status 00, push, readback mode 03
+```
+
+The owner, wearing the buds with music playing, heard every change. Also seen while listening: `0x09` function `0x00` pushes with the track title and artist (attrs 0 and 1), a `0xC4` device request (flags `0xC0`, params `04`) that Samaat leaves unanswered, and the `0xC2` battery push again (case still `00`; the unknown last byte went from `62` to `66`).
+
+The touch-control capture (ANC toggled on the buds while listening) was skipped; changes made on the buds are expected to arrive as the same `0x09` push, but that is unverified.
