@@ -45,7 +45,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 {
     private const int MaxAlerts = 3;
 
-    /// <summary>Toasts disappear on their own; the alert counter in the top bar keeps the state.</summary>
+    /// <summary>Toasts disappear on their own; the alert counter in the sidebar keeps the state.</summary>
     public static readonly TimeSpan ToastLifetime = TimeSpan.FromSeconds(8);
 
     private readonly List<ITimer> _toastTimers = [];
@@ -66,13 +66,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         SettingsStore? settings = null,
         IStartupRegistration? startup = null,
         DeviceProfileDb? profiles = null,
-        INotifier? notifier = null)
+        INotifier? notifier = null,
+        IMotionPreference? motion = null)
     {
         _time = time ?? TimeProvider.System;
         _notifier = notifier ?? options.CreateNotifier();
         _profiles = profiles ?? DeviceProfileDb.Load(Path.Combine(AppContext.BaseDirectory, "devices"));
         Settings = new SettingsViewModel(
-            settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration());
+            settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration(),
+            motion ?? options.CreateMotionPreference());
         _registry = new DeviceRegistry(options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
@@ -106,7 +108,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public partial DeviceViewModel? SelectedDevice { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPage))]
+    [NotifyPropertyChangedFor(nameof(HasPage), nameof(DevicePage), nameof(ShowDevicePage))]
     public partial PageModel? CurrentPage { get; set; }
 
     /// <summary>How many devices currently have a low or critical battery.</summary>
@@ -118,9 +120,26 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public string AlertCountText => AlertingDeviceCount == 1 ? "1 low battery" : $"{AlertingDeviceCount} low batteries";
 
-    partial void OnSelectedDeviceChanged(DeviceViewModel? value) => UpdatePage();
+    partial void OnSelectedDeviceChanged(DeviceViewModel? value)
+    {
+        UpdatePage();
+        UpdateCurrent();
+    }
 
-    partial void OnSectionChanged(AppSection value) => UpdatePage();
+    partial void OnSectionChanged(AppSection value)
+    {
+        UpdatePage();
+        UpdateCurrent();
+    }
+
+    /// <summary>Only the sidebar row of the device being shown is highlighted; in Settings none is.</summary>
+    private void UpdateCurrent()
+    {
+        foreach (var device in Devices)
+        {
+            device.IsCurrent = ReferenceEquals(device, SelectedDevice) && !IsSettings;
+        }
+    }
 
     private void UpdatePage() => CurrentPage = Section == AppSection.Settings ? new SettingsPageModel(Settings)
         : SelectedDevice is not { } device ? null
@@ -157,6 +176,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public bool HasPage => CurrentPage is not null;
 
+    /// <summary>The page of the selected device; null in Settings and when there is no device.</summary>
+    public DevicePageModel? DevicePage => CurrentPage as DevicePageModel;
+
+    public bool ShowDevicePage => DevicePage is not null;
+
+    /// <summary>Set by the window when it is narrower than 900 px: the sidebar becomes an icon rail.</summary>
+    [ObservableProperty]
+    public partial bool IsSidebarCompact { get; set; }
+
     [ObservableProperty]
     public partial string? ModeText { get; set; }
 
@@ -188,6 +216,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     [RelayCommand]
     private void Navigate(AppSection section) => Section = section;
+
+    [RelayCommand]
+    private void SelectDevice(DeviceViewModel device)
+    {
+        SelectedDevice = device;
+        if (IsSettings)
+        {
+            Section = AppSection.Overview;
+        }
+    }
 
     [RelayCommand]
     public Task RefreshDevicesAsync() => _registry.RefreshAsync();
@@ -222,6 +260,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         }
 
         UpdateAlertCount();
+        UpdateCurrent();
         IsEmpty = Devices.Count == 0;
         StatusText = IsEmpty
             ? "No paired Bluetooth audio devices found. Pair your earbuds in system settings, then refresh."

@@ -64,10 +64,10 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
             :
             [
                 new("Name", signals.Name),
-                new("Manufacturer", signals.Manufacturer ?? "—"),
-                new("Class of device", signals.ClassOfDevice is { } cod ? $"0x{cod:X6}" : "—"),
-                new("Vendor / product ID", signals.VendorId is { } vid ? $"0x{vid:X4} / 0x{signals.ProductId ?? 0:X4}" : "—"),
-                new("Services", signals.Services.Count == 0 ? "—" : string.Join(", ", signals.Services)),
+                new("Manufacturer", signals.Manufacturer ?? "–"),
+                new("Class of device", signals.ClassOfDevice is { } cod ? $"0x{cod:X6}" : "–"),
+                new("Vendor / product ID", signals.VendorId is { } vid ? $"0x{vid:X4} / 0x{signals.ProductId ?? 0:X4}" : "–"),
+                new("Services", signals.Services.Count == 0 ? "–" : string.Join(", ", signals.Services)),
             ];
 
         ResolutionKind = _diagnostics?.Resolution.Kind ?? DriverResolutionKind.Generic;

@@ -2,112 +2,118 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="using:Samaat.App.Shared.Controls">
 
-  <!-- Navigation rail -->
+  <!-- Sidebar: labelled and 240 wide; the window collapses it to a 68 px icon rail (class "compact") -->
+  <Style Selector="Border.sidebar">
+    <Setter Property="Width" Value="240" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Rail}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+  <Style Selector="Border.sidebar.compact">
+    <Setter Property="Width" Value="68" />
+  </Style>
+  <Style Selector="Border.sidebar.compact :is(Control).full">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="Border.sidebar.compact StackPanel.chipRow">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.sidebar.compact StackPanel.brand">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.sidebar:not(.compact) :is(Control).compactOnly">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Button.nav, Button.deviceRow">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
   <Style Selector="Button.nav">
-    <Setter Property="Width" Value="56" />
-    <Setter Property="Height" Value="56" />
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+  <Style Selector="Border.sidebar.compact Button.nav">
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.deviceRow">
+    <Setter Property="MinHeight" Value="52" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="Button.nav /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="HorizontalContentAlignment" Value="Center" />
-    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+  </Style>
+  <Style Selector="Button.nav.current /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow.current /template/ ContentPresenter#PART_ContentPresenter, Button.nav.current:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow.current:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
   </Style>
   <Style Selector="Button.nav PathIcon">
-    <Setter Property="Width" Value="20" />
-    <Setter Property="Height" Value="20" />
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
   <Style Selector="Button.nav TextBlock">
-    <Setter Property="FontSize" Value="10" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
-  <Style Selector="Button.nav.active">
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
-  </Style>
-  <Style Selector="Button.nav.active PathIcon">
+  <Style Selector="Button.nav.current PathIcon, Button.deviceRow.current Border.initials PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="Button.nav.active TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
-  <Style Selector="Button.nav:disabled /template/ ContentPresenter">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-  <Style Selector="Button.nav:disabled PathIcon">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Faint}" />
-  </Style>
-  <Style Selector="Button.nav:disabled TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Faint}" />
-  </Style>
-
-  <!-- Device switcher -->
-  <Style Selector="ListBox.devices">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Padding" Value="0" />
-  </Style>
-  <Style Selector="ListBox.devices ListBoxItem">
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="Margin" Value="0,0,10,0" />
-    <Setter Property="CornerRadius" Value="14" />
-  </Style>
-  <Style Selector="ListBox.devices ListBoxItem /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="14" />
-  </Style>
-  <Style Selector="ListBox.devices ListBoxItem:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-  </Style>
-  <Style Selector="ListBox.devices ListBoxItem:selected /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
-  <Style Selector="ListBox.devices ListBoxItem:selected TextBlock">
+  <Style Selector="Button.nav.current TextBlock, Button.deviceRow.current TextBlock.name">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Border.initials">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+  </Style>
+  <Style Selector="Button.deviceRow.current Border.initials">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Button.deviceRow.current Border.initials TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
   </Style>
 
-  <Style Selector="ProgressBar.mini">
-    <Setter Property="Height" Value="4" />
-    <Setter Property="MinHeight" Value="4" />
-    <Setter Property="MinWidth" Value="0" />
-    <Setter Property="CornerRadius" Value="2" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.Track}" />
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  <!-- Alert counter: a real state, so it may use a status colour -->
+  <Style Selector="Button.alertChip">
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
-  <Style Selector="ProgressBar.mini.low">
+  <Style Selector="Border.sidebar.compact Button.alertChip">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.alertChip /template/ ContentPresenter#PART_ContentPresenter, Button.alertChip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.WarnSoft}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.alertChip TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.alertChip PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
   </Style>
 
   <!-- Toasts -->
   <Style Selector="Border.toast">
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.PanelEdge}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="12,8,6,8" />
     <Setter Property="BoxShadow" Value="0 8 24 0 #40000000" />
-  </Style>
-
-  <!-- Top-bar alert counter -->
-  <Style Selector="Button.alertChip">
-    <Setter Property="Padding" Value="10,4" />
-    <Setter Property="CornerRadius" Value="999" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.WarnSoft}" />
-    <Setter Property="BorderThickness" Value="0" />
-  </Style>
-  <Style Selector="Button.alertChip TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
-  </Style>
-  <Style Selector="Button.alertChip PathIcon">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
-  </Style>
-  <Style Selector="ProgressBar.mini">
-    <Setter Property="Transitions">
-      <Transitions>
-        <DoubleTransition Property="Value" Duration="0:0:0.45" Easing="CubicEaseOut" />
-      </Transitions>
-    </Setter>
   </Style>
 </Styles>

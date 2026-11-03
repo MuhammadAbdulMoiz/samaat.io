@@ -68,3 +68,16 @@ Principles:
 | Accessibility | Automated WCAG AA contrast tests for every text/background token pair in both themes. They caught light-theme amber (4.14:1) and red (4.48:1) on alert pills, both fixed. Screen-reader names added to icon-only buttons and battery gauges. |
 
 ![Overview](../images/buds-pro.png) ![Narrow](../images/buds-pro-narrow.png)
+
+## OpenMouse-style redesign (2026-11-03)
+
+Benchmark: OpenMouse's design notes (ideas only; no code, assets or colours copied, as OpenMouse is AGPL). Plan: `docs/plans/2026-11-03-ui-redesign.md`.
+
+| Area | Change |
+|---|---|
+| Navigation | A 240 px labelled sidebar (devices, alert counter, refresh, settings) replaces the icon rail and top strip. It collapses to a 68 px rail below 900 px. |
+| Device page | A 260 px rail (name, artwork on the canvas inside the level ring, battery figure, status line) beside a workspace with a segmented tab well: Overview, Sound, Links, Details, Diagnostics. The rail stacks above the workspace below 760 px. |
+| Content | Numbers first (label, value, unit, meta, tabular figures), "–" for unreported values, sentence case everywhere, flat unnested panels, switch rows. Capability chips live only in Diagnostics. |
+| Shape | 4 px grid, 16 px panel padding and gaps, rows 40 px or more, buttons 32 px, switches 36x20, radii 6 / 10 / 14. |
+| Theme | Accent presets Lime, Emerald, Ice and Mono, all checked against the WCAG AA tests in both themes. |
+| Motion | New "Reduce motion" setting (follows Windows until changed): no page fade and no gliding values. |

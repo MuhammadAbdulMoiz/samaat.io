@@ -113,41 +113,52 @@ public class MainWindowTests
     {
         var (window, viewModel) = await ShowAsync();
         var directory = Environment.GetEnvironmentVariable("SAMAAT_SCREENSHOTS");
+        // The docs know the simulated devices without their "sim-" prefix.
+        static string FileName(DeviceViewModel d) => d.Device.Identity.Id.Replace("sim-", "");
 
         foreach (var (variant, suffix) in new[] { (ThemeVariant.Dark, ""), (ThemeVariant.Light, "-light") })
         {
             Application.Current!.RequestedThemeVariant = variant;
-            foreach (var device in viewModel.Devices.ToList())
+
+            void Capture(string name)
             {
-                viewModel.SelectedDevice = device;
-                foreach (var section in Enum.GetValues<AppSection>())
+                SettleAnimations();
+                var frame = window.CaptureRenderedFrame();
+                Assert.NotNull(frame);
+                if (directory is not null)
                 {
-                    viewModel.NavigateCommand.Execute(section);
-                    SettleAnimations();
-                    var frame = window.CaptureRenderedFrame();
-                    Assert.NotNull(frame);
-                    if (directory is not null)
-                    {
-                        Directory.CreateDirectory(directory);
-                        var page = section == AppSection.Overview ? "" : $"-{section.ToString().ToLowerInvariant()}";
-                        frame!.Save(Path.Combine(directory, $"{device.Device.Identity.Id}{page}{suffix}.png"));
-                    }
+                    Directory.CreateDirectory(directory);
+                    frame!.Save(Path.Combine(directory, $"{name}{suffix}.png"));
                 }
             }
+
+            foreach (var device in viewModel.Devices.ToList())
+            {
+                viewModel.SelectDeviceCommand.Execute(device);
+                foreach (var section in Enum.GetValues<AppSection>().Where(s => s != AppSection.Settings))
+                {
+                    viewModel.NavigateCommand.Execute(section);
+                    var page = section == AppSection.Overview ? "" : $"-{section.ToString().ToLowerInvariant()}";
+                    Capture($"{FileName(device)}{page}");
+                }
+            }
+
+            viewModel.NavigateCommand.Execute(AppSection.Settings);
+            Capture("settings");
         }
 
         Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        viewModel.SelectDeviceCommand.Execute(viewModel.Devices[0]);
         viewModel.NavigateCommand.Execute(AppSection.Overview);
 
-        // Narrow window: the hero stacks and the stat strip wraps.
+        // Narrow window: the sidebar collapses to a rail and the device rail stacks above the workspace.
         window.Width = 720;
-        viewModel.SelectedDevice = viewModel.Devices[0];
         SettleAnimations();
         var narrow = window.CaptureRenderedFrame();
         Assert.NotNull(narrow);
         if (directory is not null)
         {
-            narrow!.Save(Path.Combine(directory, "sim-buds-pro-narrow.png"));
+            narrow!.Save(Path.Combine(directory, "buds-pro-narrow.png"));
         }
 
         window.Close();

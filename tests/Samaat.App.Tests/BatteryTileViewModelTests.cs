@@ -38,7 +38,7 @@ public class BatteryTileViewModelTests
         tile.Update(Cap(DeviceSupport.Unsupported), null, Policy, Now);
 
         Assert.False(tile.IsAvailable);
-        Assert.Equal("—", tile.PercentText);
+        Assert.Equal("–", tile.PercentText);
         Assert.Equal("Not supported by this model", tile.DetailText);
     }
 

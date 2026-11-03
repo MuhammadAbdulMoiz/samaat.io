@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Headless.XUnit;
+using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Samaat.App.Features.Overview;
 using Samaat.App.Features.Settings;
@@ -27,6 +29,11 @@ internal sealed class FakeStartup(bool supported = true, bool enabled = false, b
     }
 }
 
+internal sealed class FakeMotion(bool reduce) : IMotionPreference
+{
+    public bool ReduceMotion { get; } = reduce;
+}
+
 public sealed class SettingsViewModelTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"));
@@ -41,8 +48,9 @@ public sealed class SettingsViewModelTests : IDisposable
 
     private SettingsStore Store() => new(Path.Combine(_dir, "settings.json"));
 
-    private static SettingsViewModel Create(SettingsStore store, LowBatteryDetector? detector = null, IStartupRegistration? startup = null) =>
-        new(store, detector ?? new LowBatteryDetector(), startup ?? new FakeStartup());
+    private static SettingsViewModel Create(SettingsStore store, LowBatteryDetector? detector = null, IStartupRegistration? startup = null,
+        IMotionPreference? motion = null) =>
+        new(store, detector ?? new LowBatteryDetector(), startup ?? new FakeStartup(), motion);
 
     [AvaloniaFact]
     public void LoadsSavedSettings_AndAppliesThemAtStartup()
@@ -169,5 +177,103 @@ public sealed class SettingsViewModelTests : IDisposable
 
         Assert.False(vm.CloseToTray);
         Assert.True(vm.HasError);
+    }
+
+    private static Color AccentColor(ThemeVariant variant)
+    {
+        Assert.True(Application.Current!.TryGetResource("Samaat.Accent", variant, out var brush));
+        return ((ISolidColorBrush)brush!).Color;
+    }
+
+    [AvaloniaFact]
+    public void Accent_DefaultsToLime_AndOlderFilesLoadAsLime()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(Path.Combine(_dir, "settings.json"), """{ "theme": "dark" }""");
+
+        var vm = Create(Store());
+
+        Assert.Equal(AccentChoice.Lime, vm.Accent);
+        Assert.True(vm.IsLimeAccent);
+        Assert.Equal(Color.Parse("#C8F169"), AccentColor(ThemeVariant.Dark));
+    }
+
+    [AvaloniaFact]
+    public void ChoosingAnAccent_PersistsAndReplacesTheAccentBrushes()
+    {
+        var vm = Create(Store());
+        try
+        {
+            vm.SetAccentCommand.Execute(AccentChoice.Emerald);
+
+            Assert.Equal(AccentChoice.Emerald, Store().Load().Accent);
+            Assert.True(vm.IsEmeraldAccent);
+            Assert.NotEqual(Color.Parse("#C8F169"), AccentColor(ThemeVariant.Dark));
+            Assert.NotEqual(Color.Parse("#4A7A00"), AccentColor(ThemeVariant.Light));
+            Assert.True(Application.Current!.TryGetResource("SystemAccentColor", ThemeVariant.Dark, out var system));
+            Assert.Equal(AccentColor(ThemeVariant.Dark), (Color)system!);
+        }
+        finally
+        {
+            vm.SetAccentCommand.Execute(AccentChoice.Lime);
+        }
+
+        Assert.Equal(Color.Parse("#C8F169"), AccentColor(ThemeVariant.Dark));
+    }
+
+    [AvaloniaFact]
+    public void AccentChange_ReachesControlsUsingTheDynamicResource()
+    {
+        var vm = Create(Store());
+        var box = new Border();
+        box.Bind(Border.BackgroundProperty, box.GetResourceObservable("Samaat.Accent"));
+        var window = new Window { Content = box };
+        window.Show();
+        try
+        {
+            var before = ((ISolidColorBrush)box.Background!).Color;
+
+            vm.SetAccentCommand.Execute(AccentChoice.Ice);
+
+            Assert.NotEqual(before, ((ISolidColorBrush)box.Background!).Color);
+        }
+        finally
+        {
+            vm.SetAccentCommand.Execute(AccentChoice.Lime);
+            window.Close();
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ReduceMotion_NullFollowsTheSystem(bool system)
+    {
+        var vm = Create(Store(), motion: new FakeMotion(system));
+
+        Assert.Equal(system, vm.ReduceMotion);
+        Assert.Null(vm.Current.ReduceMotion);
+    }
+
+    [AvaloniaFact]
+    public void ChangingAnUnrelatedSetting_KeepsReduceMotionNullOnDisk()
+    {
+        var vm = Create(Store(), motion: new FakeMotion(true));
+
+        vm.CloseToTray = false;
+
+        Assert.True(vm.ReduceMotion);
+        Assert.Null(Store().Load().ReduceMotion);
+    }
+
+    [AvaloniaFact]
+    public void TogglingReduceMotion_WritesAnExplicitBool()
+    {
+        var vm = Create(Store(), motion: new FakeMotion(true));
+
+        vm.ReduceMotion = false;
+
+        Assert.False(Store().Load().ReduceMotion);
+        Assert.False(Create(Store(), motion: new FakeMotion(true)).ReduceMotion);
     }
 }

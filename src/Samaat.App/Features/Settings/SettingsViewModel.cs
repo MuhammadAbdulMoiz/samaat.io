@@ -14,13 +14,16 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly SettingsStore _store;
     private readonly LowBatteryDetector _detector;
     private readonly IStartupRegistration _startup;
+    private readonly IMotionPreference _motion;
+    private bool? _reduceMotionOverride;
     private bool _syncing;
 
-    public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup)
+    public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
         _store = store;
         _detector = detector;
         _startup = startup;
+        _motion = motion ?? new NoMotionPreference();
 
         StartupSupported = startup.IsSupported;
         StartupNote = startup.IsSupported ? "" : "Not available on this system.";
@@ -39,6 +42,22 @@ public sealed partial class SettingsViewModel : ObservableObject
     public bool IsLightTheme => Theme == ThemeChoice.Light;
 
     public bool IsDarkTheme => Theme == ThemeChoice.Dark;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLimeAccent), nameof(IsEmeraldAccent), nameof(IsIceAccent), nameof(IsMonoAccent))]
+    public partial AccentChoice Accent { get; set; }
+
+    public bool IsLimeAccent => Accent == AccentChoice.Lime;
+
+    public bool IsEmeraldAccent => Accent == AccentChoice.Emerald;
+
+    public bool IsIceAccent => Accent == AccentChoice.Ice;
+
+    public bool IsMonoAccent => Accent == AccentChoice.Mono;
+
+    /// <summary>What the switch shows: the user's choice, or the system setting until they make one.</summary>
+    [ObservableProperty]
+    public partial bool ReduceMotion { get; set; }
 
     // Doubles because Avalonia's Slider binds to double; values are always whole numbers.
     [ObservableProperty]
@@ -76,6 +95,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     public AppSettings Current => new AppSettings
     {
         Theme = Theme,
+        Accent = Accent,
+        ReduceMotion = _reduceMotionOverride,
         LowThreshold = (int)LowThreshold,
         CriticalThreshold = (int)CriticalThreshold,
         IncludeCase = IncludeCase,
@@ -87,7 +108,23 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void SetTheme(ThemeChoice theme) => Theme = theme;
 
+    [RelayCommand]
+    private void SetAccent(AccentChoice accent) => Accent = accent;
+
     partial void OnThemeChanged(ThemeChoice value) => Changed();
+
+    partial void OnAccentChanged(AccentChoice value) => Changed();
+
+    partial void OnReduceMotionChanged(bool value)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        _reduceMotionOverride = value;
+        Changed();
+    }
 
     partial void OnLowThresholdChanged(double value) => Changed();
 
@@ -140,6 +177,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             Theme = settings.Theme;
+            Accent = settings.Accent;
+            _reduceMotionOverride = settings.ReduceMotion;
+            ReduceMotion = _reduceMotionOverride ?? _motion.ReduceMotion;
             LowThreshold = settings.LowThreshold;
             CriticalThreshold = settings.CriticalThreshold;
             CriticalMax = settings.LowThreshold - 1;
@@ -166,6 +206,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         if (Application.Current is { } app)
         {
+            AccentPalette.Apply(app, settings.Accent);
             app.RequestedThemeVariant = settings.Theme switch
             {
                 ThemeChoice.Light => ThemeVariant.Light,

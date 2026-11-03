@@ -6,15 +6,15 @@ Last updated: 2026-11-02
 
 - **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. Everything else runs against **simulated devices**.
 - **Not done:** controlling any **real** earbuds beyond that. ANC, multipoint and L/R/case battery need a vendor adapter; the Quantum Zbuds turned out to have no usable vendor protocol, so a different target model is needed.
-- **Tests:** 233 automated tests (Protocols 16, Core 136, App 81). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Tests:** 263 automated tests (Protocols 16, Core 139, App 108). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
-| Overview | Sound | Connections |
+| Overview | Sound | Links |
 |---|---|---|
 | ![](images/buds-pro.png) | ![](images/buds-pro-sound.png) | ![](images/buds-pro-connections.png) |
 
-| Info (diagnostics) |
-|---|
-| ![](images/buds-pro-info.png) |
+| Diagnostics | Settings |
+|---|---|
+| ![](images/buds-pro-info.png) | ![](images/settings.png) |
 
 ---
 
@@ -26,7 +26,7 @@ Last updated: 2026-11-02
 - **Device registry**: merges devices from every source (Windows Bluetooth, simulator). (`Samaat.Core/Devices`)
 - **Command layer**: every write returns a `CommandResult` (confirmed / rejected / unsupported / timed out / failed). `CommandRunner` adds a 3 s timeout, and `LatestValueSender` coalesces slider drags. (`Samaat.Core/Commands`)
 - **Simulator**: three devices with different shapes (Buds Pro has everything, Buds Lite is basic, the Headset is minimal), realistic command latency, and injectable failures. (`Samaat.Simulator`)
-- **UI**: Avalonia desktop app with a nav rail, a device switcher, dark and light themes, and a design system (`docs/design/ui-audit.md`).
+- **UI**: Avalonia desktop app with a labelled sidebar (device list, collapses to an icon rail below 900 px), a device rail plus a tab well (Overview, Sound, Links, Details, Diagnostics), accent presets (Lime, Emerald, Ice, Mono), reduced motion, dark and light themes, and a design system (`docs/design/ui-audit.md`). The Controls (touch gestures) section is roadmap only and not in the navigation.
 
 ### Module 1: Battery ([details](modules/battery.md))
 Left / right / case or a single level, charging state, where each bud is, data age and staleness, low and critical alerts with hysteresis. Sources: simulator, the BLE Battery Service, and the level Windows itself reports.
@@ -42,14 +42,14 @@ Host list with states, switch / connect / disconnect, a multipoint switch, and a
 - **RFCOMM transport**: `IRfcommChannel` plus a WinRT implementation, ready for the first driver (unverified on hardware).
 - **Windows detection signals**: class of device and SDP service UUIDs, shown on the Info page and in the CLI.
 - **Feature-organised app**: `Shell/`, `Features/{Overview,Sound,Connections,Info,Details,Settings}`, `Shared/`, `Styles/` split by area.
-- **Info page**: identity, detection, a capability table with source and verification, a live event log, and **Copy report** for hardware bug reports.
+- **Diagnostics tab** (the Info page): identity, detection, a capability table with source and verification, a live event log, and **Copy report** for hardware bug reports.
 - `CONTRIBUTING.md` sets the hardware-evidence rules for marking a model verified.
 
 ### UI polish ([details](design/ui-audit.md#round-3-polish-2026-11-02))
 Redrawn earbud artwork and charging badges, a compact stat strip, toasts that hide themselves plus an alert counter, animated rings and page cross-fades, layouts that work down to 640 px, and automated WCAG contrast tests.
 
 ### Settings ([details](modules/settings.md))
-Theme, battery alert thresholds, case alerts, system notifications, keep running in the tray, start with Windows. Saved to `%APPDATA%/Samaat/settings.json`; bad files fall back to defaults.
+Theme, accent preset, reduce motion, battery alert thresholds, case alerts, system notifications, keep running in the tray, start with Windows. Saved to `%APPDATA%/Samaat/settings.json`; bad files fall back to defaults.
 
 ### Bluetooth details and device profiles ([details](modules/info.md))
 The **Details** page shows vendor and product ID, address, advertised services, support tier and battery source, and the `devices/<vendor>/<model>.json` profile DB names known models. First profile: Zero Lifestyle Quantum Zbuds. Two device databases exist for now: master's `DeviceCatalog` (driver resolution) and our `DeviceProfileDb` (display name and details). They read the same `devices/` folder and should be unified later.

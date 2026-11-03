@@ -4,207 +4,111 @@
              xmlns:shared="using:Samaat.App.Shared"
              xmlns:sound="using:Samaat.App.Features.Sound"
              xmlns:c="using:Samaat.App.Shared.Controls"
+             xmlns:conn="using:Samaat.App.Features.Connections"
              x:Class="Samaat.App.Features.Overview.OverviewPage"
              x:DataType="overview:DeviceViewModel">
-    <StackPanel Spacing="20">
+  <StackPanel Spacing="16">
 
-      <!-- Hero -->
-      <Border CornerRadius="24" Background="{DynamicResource Samaat.HeroBg}" BorderBrush="{DynamicResource Samaat.Border}"
-              BorderThickness="1" ClipToBounds="True">
-        <Panel>
-          <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" />
-          <c:SplitPanel Margin="32,28" MinPrimaryWidth="260" Spacing="24">
-            <StackPanel Spacing="14" VerticalAlignment="Center" MinWidth="240" Margin="0,0,24,0">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding TierEyebrow}" Classes="eyebrow" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Classes="ghost" Command="{Binding RefreshCommand}" ToolTip.Tip="Ask the device for fresh battery levels">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <PathIcon Data="{StaticResource Icon.Refresh}" Width="13" Height="13" Foreground="{DynamicResource Samaat.Muted}" />
-                    <TextBlock Text="Refresh" FontSize="12" Classes="muted" />
-                  </StackPanel>
-                </Button>
-              </Grid>
-              <StackPanel Spacing="4">
-                <TextBlock Text="{Binding Name}" Classes="display" FontSize="36" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding Subtitle}" Classes="muted" />
-              </StackPanel>
-              <WrapPanel>
-                <Border Classes="chip" Margin="0,0,8,8">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding ConnectionText}" />
-                  </StackPanel>
-                </Border>
-                <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" Margin="0,0,8,8">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-                    <TextBlock Text="{Binding AlertText}" FontSize="12" FontWeight="SemiBold" />
-                  </StackPanel>
-                </Border>
-              </WrapPanel>
-              <StackPanel Spacing="8" IsVisible="{Binding !NoiseControl.IsUnavailable}">
-        <TextBlock Text="NOISE CONTROL" Classes="eyebrow" />
-        <ItemsControl ItemsSource="{Binding NoiseControl.Modes}" IsEnabled="{Binding NoiseControl.CanControl}">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+    <!-- Battery: overall, left, right, case; "–" where the device reports nothing -->
+    <Border Classes="panel">
+      <StackPanel Spacing="16">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="Battery" Classes="panelTitle" />
+            <TextBlock Text="{Binding BatteryReasonText}" Classes="meta" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="subtle" Command="{Binding RefreshCommand}" Margin="12,0,0,0"
+                  ToolTip.Tip="Ask the device for fresh battery levels" AutomationProperties.Name="Refresh battery">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Data="{StaticResource Icon.Refresh}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
+              <TextBlock Text="Refresh" />
+            </StackPanel>
+          </Button>
+        </Grid>
+
+        <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Left">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+            <TextBlock Text="{Binding AlertText}" FontSize="12" FontWeight="SemiBold" />
+          </StackPanel>
+        </Border>
+
+        <ItemsControl ItemsSource="{Binding Figures}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="116" MaxColumns="4" Spacing="16" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="sound:NoiseModeOptionViewModel">
-              <Button Classes="segment" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}" Margin="0,0,6,6"
-                      ToolTip.Tip="{Binding Description}">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="14" Height="14" />
-                  <TextBlock Text="{Binding Label}" FontSize="12" />
+            <DataTemplate x:DataType="overview:BatteryFigureViewModel">
+              <StackPanel Classes="cell" Classes.unreported="{Binding !IsReported}" Spacing="4">
+                <TextBlock Text="{Binding Label}" Classes="meta" />
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Classes="figure" Text="{Binding Value}" />
+                  <TextBlock Classes="unit" Text="{Binding Unit}" />
                 </StackPanel>
-              </Button>
+                <ProgressBar Classes="level" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}"
+                             Minimum="0" Maximum="100" Value="{Binding Percent}" IsVisible="{Binding HasLevel}" />
+                <TextBlock Text="{Binding Meta}" Classes="meta" TextWrapping="Wrap" />
+              </StackPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <TextBlock Classes="meta" Text="{Binding LastUpdatedText, StringFormat='Updated {0}'}" />
       </StackPanel>
-      <StackPanel Spacing="8" IsVisible="{Binding HasNotReported}">
-                <TextBlock Text="NOT REPORTED BY THIS DEVICE" Classes="eyebrow" />
-                <ItemsControl ItemsSource="{Binding NotReported}">
-                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="overview:BatteryTileViewModel">
-                      <Border Classes="chip" Margin="0,0,6,6" ToolTip.Tip="{Binding DetailText}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <PathIcon Data="{StaticResource Icon.Dash}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Faint}" />
-                          <TextBlock Text="{Binding Label}" Classes="muted" />
-                        </StackPanel>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </StackPanel>
+    </Border>
 
-            <!-- Gauges -->
-            <ItemsControl ItemsSource="{Binding HeroTiles}" VerticalAlignment="Center">
-              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="overview:BatteryTileViewModel">
-                  <StackPanel Classes="gauge" Classes.unavailable="{Binding !IsAvailable}" Width="156" Margin="6,0" Spacing="4">
-                    <Panel Width="138" Height="138" Margin="0,0,0,10"
-                           AutomationProperties.Name="{Binding AccessibleText}">
-                      <c:BatteryRing Value="{Binding Percent}" HasValue="{Binding HasLevel}" Thickness="7"
-                                     Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}" />
-                      <Viewbox Width="50" IsVisible="{Binding IsLeftBud}">
-                        <Canvas Width="40" Height="56">
-                          <Path Data="{StaticResource Glyph.Bud}" Fill="{DynamicResource Samaat.GlyphFill}" />
-                          <Path Data="{StaticResource Glyph.BudTip}" Fill="{DynamicResource Samaat.GlyphTip}" />
-                          <Path Data="{StaticResource Glyph.BudGrille}" Fill="{DynamicResource Samaat.GlyphTip}" />
-                          <Path Data="{StaticResource Glyph.BudShine}" Stroke="{DynamicResource Samaat.GlyphShine}" StrokeThickness="1.6" StrokeLineCap="Round" />
-                          <Path Data="{StaticResource Glyph.StemShine}" Stroke="{DynamicResource Samaat.GlyphShine}" StrokeThickness="1.2" StrokeLineCap="Round" Opacity="0.6" />
-                        </Canvas>
-                      </Viewbox>
-                      <Viewbox Width="50" IsVisible="{Binding IsRightBud}" RenderTransform="scaleX(-1)">
-                        <Canvas Width="40" Height="56">
-                          <Path Data="{StaticResource Glyph.Bud}" Fill="{DynamicResource Samaat.GlyphFill}" />
-                          <Path Data="{StaticResource Glyph.BudTip}" Fill="{DynamicResource Samaat.GlyphTip}" />
-                          <Path Data="{StaticResource Glyph.BudGrille}" Fill="{DynamicResource Samaat.GlyphTip}" />
-                          <Path Data="{StaticResource Glyph.BudShine}" Stroke="{DynamicResource Samaat.GlyphShine}" StrokeThickness="1.6" StrokeLineCap="Round" />
-                          <Path Data="{StaticResource Glyph.StemShine}" Stroke="{DynamicResource Samaat.GlyphShine}" StrokeThickness="1.2" StrokeLineCap="Round" Opacity="0.6" />
-                        </Canvas>
-                      </Viewbox>
-                      <Viewbox Width="70" IsVisible="{Binding IsCase}">
-                        <Canvas Width="64" Height="48">
-                          <Path Data="{StaticResource Glyph.Case}" Fill="{DynamicResource Samaat.GlyphFill}" />
-                          <Path Data="{StaticResource Glyph.CaseSeam}" Stroke="{DynamicResource Samaat.GlyphDetail}" StrokeThickness="2" />
-                          <Ellipse Canvas.Left="29" Canvas.Top="30" Width="6" Height="6"
-                                   Fill="{DynamicResource Samaat.GlyphDetail}" />
-                          <Ellipse Canvas.Left="29" Canvas.Top="30" Width="6" Height="6" IsVisible="{Binding IsAvailable}"
-                                   Fill="{DynamicResource Samaat.Accent}" />
-                        </Canvas>
-                      </Viewbox>
-                      <PathIcon Data="{StaticResource Icon.Headphones}" Width="52" Height="52" IsVisible="{Binding IsCombined}"
-                                Foreground="{DynamicResource Samaat.GlyphDetail}" />
-                      <Border Classes="chargeBadge" IsVisible="{Binding IsCharging}" ToolTip.Tip="Charging">
-                        <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" />
-                      </Border>
-                      <TextBlock Text="{Binding ShortLabel}" Classes="eyebrow" IsVisible="{Binding IsBud}"
-                                 HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,22" />
-                    </Panel>
-                    <TextBlock Text="{Binding PercentText}" Classes="number" FontSize="34" HorizontalAlignment="Center" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                      <TextBlock Text="{Binding Label}" FontSize="13" />
-                      <TextBlock Text="{Binding StateText}" Classes="state" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}"
-                                 VerticalAlignment="Center" IsVisible="{Binding StateText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                    </StackPanel>
-                    <TextBlock Text="{Binding DetailText}" Classes="muted" FontSize="12" HorizontalAlignment="Center"
-                               TextAlignment="Center" TextWrapping="Wrap" />
+    <!-- Noise control -->
+    <Border Classes="panel" DataContext="{Binding NoiseControl}" x:DataType="sound:NoiseControlViewModel">
+      <StackPanel Spacing="12">
+        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
+        <TextBlock Text="Noise control" Classes="panelTitle" />
+        <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding IsUnavailable}" />
+
+        <Border Classes="tabWell" IsVisible="{Binding IsSelector}" IsEnabled="{Binding CanControl}">
+          <ItemsControl ItemsSource="{Binding Modes}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="sound:NoiseModeOptionViewModel">
+                <Button Classes="tab" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                        AutomationProperties.Name="{Binding Label}" ToolTip.Tip="{Binding Description}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" />
+                    <TextBlock Text="{Binding Label}" />
                   </StackPanel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </c:SplitPanel>
-        </Panel>
-      </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
 
-      <!-- Details: one compact strip; wraps to 2×2 in narrow windows -->
-      <Border Classes="surface" Padding="20,16">
-        <c:AdaptiveColumns MinColumnWidth="170" MaxColumns="4" Spacing="20">
-          <StackPanel Classes="stat">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Data="{StaticResource Icon.Bluetooth}" />
-              <TextBlock Text="CONNECTION" Classes="eyebrow" />
-            </StackPanel>
-            <TextBlock Text="{Binding ConnectionText}" Classes="number value" />
-          </StackPanel>
-          <StackPanel Classes="stat">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Data="{StaticResource Icon.BatteryCharge}" />
-              <TextBlock Text="BATTERY SOURCE" Classes="eyebrow" />
-            </StackPanel>
-            <TextBlock Text="{Binding SourceText}" Classes="number value" TextWrapping="Wrap" />
-          </StackPanel>
-          <StackPanel Classes="stat" ToolTip.Tip="{Binding TierDescription}">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Data="{StaticResource Icon.Headphones}" />
-              <TextBlock Text="SUPPORT" Classes="eyebrow" />
-            </StackPanel>
-            <TextBlock Text="{Binding TierText}" Classes="number value" />
-          </StackPanel>
-          <StackPanel Classes="stat">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <PathIcon Data="{StaticResource Icon.Refresh}" />
-              <TextBlock Text="LAST UPDATE" Classes="eyebrow" />
-            </StackPanel>
-            <TextBlock Text="{Binding LastUpdatedText}" Classes="number value" />
-          </StackPanel>
-        </c:AdaptiveColumns>
-      </Border>
+        <Grid ColumnDefinitions="*,Auto" MinHeight="40" IsVisible="{Binding IsToggle}">
+          <TextBlock Text="Noise cancelling" VerticalAlignment="Center" />
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsAncOn}" IsEnabled="{Binding CanControl}" AutomationProperties.Name="Noise cancelling" />
+        </Grid>
 
-      <!-- Capabilities, grouped by module -->
-    <StackPanel Spacing="10">
-      <TextBlock Text="CAPABILITIES" Classes="eyebrow" />
-      <ItemsControl ItemsSource="{Binding CapabilityGroups}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="overview:CapabilityGroupViewModel">
-            <Border Classes="surface" Margin="0,0,0,10" Padding="16,12">
-              <StackPanel Spacing="10">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-                  <TextBlock Grid.Column="1" Text="{Binding SummaryText}" Classes="muted" FontSize="12" />
-                </Grid>
-                <ItemsControl ItemsSource="{Binding Items}">
-                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="overview:CapabilityItemViewModel">
-                      <Border Classes="chip" Margin="0,0,8,8" Padding="12,6">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <PathIcon Data="{StaticResource Icon.Check}" Width="13" Height="13" IsVisible="{Binding IsEnabled}" Foreground="{DynamicResource Samaat.Accent}" />
-                          <PathIcon Data="{StaticResource Icon.Dash}" Width="13" Height="13" IsVisible="{Binding !IsEnabled}" Foreground="{DynamicResource Samaat.Faint}" />
-                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                          <TextBlock Text="{Binding StatusText}" Classes="muted" />
-                        </StackPanel>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </StackPanel>
+        <WrapPanel IsVisible="{Binding !IsUnavailable}">
+          <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <Border Classes="alert critical" IsVisible="{Binding HasError}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+              <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Links -->
+    <Border Classes="panel" DataContext="{Binding Connections}" x:DataType="conn:ConnectionsViewModel">
+      <StackPanel Spacing="8">
+        <TextBlock Text="Links" Classes="panelTitle" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding ThisComputerText}" />
+        </StackPanel>
+        <TextBlock Classes="meta" TextWrapping="Wrap" Text="{Binding LimitText}" IsVisible="{Binding HasMultipoint}" />
+        <TextBlock Classes="meta" TextWrapping="Wrap" Text="{Binding UnavailableText}" IsVisible="{Binding !HasMultipoint}" />
+      </StackPanel>
+    </Border>
   </StackPanel>
 </UserControl>

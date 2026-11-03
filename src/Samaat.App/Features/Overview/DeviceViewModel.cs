@@ -35,6 +35,11 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         _alerts = alerts;
         _time = time;
         _onAlert = onAlert;
+        Initials = string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+        if (Initials.Length == 0)
+        {
+            Initials = "?";
+        }
 
         Tiles = new ObservableCollection<BatteryTileViewModel>(
             new[] { BatteryComponent.Combined, BatteryComponent.Left, BatteryComponent.Right, BatteryComponent.Case }
@@ -73,8 +78,6 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         _ => "Basic support",
     };
 
-    public string TierEyebrow => TierText.ToUpperInvariant();
-
     public string TierDescription => _device.Identity.Tier switch
     {
         SupportTier.Full => "Samaat speaks this model's own protocol",
@@ -103,6 +106,54 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>Every capability Samaat knows about for this device, grouped by module.</summary>
     public ObservableCollection<CapabilityGroupViewModel> CapabilityGroups { get; } = [];
 
+    /// <summary>Two letters for the collapsed sidebar rail.</summary>
+    public string Initials { get; }
+
+    public string ArtworkLabel => $"{Name} earbuds";
+
+    /// <summary>The four numbers of the battery panel: overall, left, right, case.</summary>
+    public ObservableCollection<BatteryFigureViewModel> Figures { get; } =
+        [new("Overall"), new("Left bud"), new("Right bud"), new("Case")];
+
+    /// <summary>True when this device is the one shown in the workspace (false in Settings).</summary>
+    [ObservableProperty]
+    public partial bool IsCurrent { get; set; }
+
+    /// <summary>The device reports a left or right bud, so the artwork shows a pair of buds.</summary>
+    [ObservableProperty]
+    public partial bool HasBuds { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasSummary { get; set; }
+
+    [ObservableProperty]
+    public partial string SummaryFigure { get; set; } = "–";
+
+    [ObservableProperty]
+    public partial string SummaryUnit { get; set; } = "";
+
+    /// <summary>"78%", or "–" when the device reports no level.</summary>
+    [ObservableProperty]
+    public partial string SummaryShort { get; set; } = "–";
+
+    /// <summary>Where the overall level comes from, e.g. "from Windows".</summary>
+    [ObservableProperty]
+    public partial string BatterySourceMeta { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string BatteryAccessibleText { get; set; } = "Battery not reported";
+
+    [ObservableProperty]
+    public partial string RowAccessibleText { get; set; } = "";
+
+    /// <summary>Connection and support tier as one line.</summary>
+    [ObservableProperty]
+    public partial string StatusLineText { get; set; } = "";
+
+    /// <summary>One short sentence under the battery panel title: why some figures are "–".</summary>
+    [ObservableProperty]
+    public partial string BatteryReasonText { get; set; } = "";
+
     [ObservableProperty]
     public partial bool IsConnected { get; set; }
 
@@ -123,7 +174,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public partial string SourceText { get; set; } = "";
 
     [ObservableProperty]
-    public partial string LastUpdatedText { get; set; } = "—";
+    public partial string LastUpdatedText { get; set; } = "–";
 
     /// <summary>The most urgent battery problem on this device right now, if any.</summary>
     [ObservableProperty]
@@ -155,7 +206,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             tile.UpdateAge(now);
         }
 
-        LastUpdatedText = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "") ?? "—";
+        LastUpdatedText = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "") ?? "–";
     }
 
     private BatteryTileViewModel Tile(BatteryComponent component) => Tiles.Single(t => t.Component == component);
@@ -163,6 +214,44 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     private void OnDeviceChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(Update);
 
     private void OnBatteryChanged(object? sender, BatteryState state) => Dispatcher.UIThread.Post(Update);
+
+    private void UpdateFigures(int? summary, bool buds)
+    {
+        var overall = Figures[0];
+        overall.IsReported = HasSummary;
+        overall.HasLevel = HasSummary;
+        overall.Value = SummaryFigure;
+        overall.Unit = SummaryUnit;
+        overall.Percent = summary ?? 0;
+        overall.IsLow = summary <= _alerts.Policy.LowThreshold && summary > _alerts.Policy.CriticalThreshold;
+        overall.IsCritical = summary <= _alerts.Policy.CriticalThreshold;
+        overall.Meta = HasSummary ? BatterySourceMeta : IsConnected ? "Not reported" : "Waiting for a reading";
+
+        foreach (var (figure, component) in Figures.Skip(1).Zip([BatteryComponent.Left, BatteryComponent.Right, BatteryComponent.Case]))
+        {
+            var tile = Tile(component);
+            figure.IsReported = tile.IsReported;
+            figure.HasLevel = tile.HasLevel;
+            figure.Value = tile.HasLevel ? ((int)tile.Percent).ToString() : "–";
+            figure.Unit = tile.HasLevel ? "%" : "";
+            figure.Percent = tile.Percent;
+            figure.IsLow = tile.IsLow;
+            figure.IsCritical = tile.IsCritical;
+            figure.IsCharging = tile.IsCharging;
+            figure.Meta = !tile.IsReported
+                ? "Not reported"
+                : string.Join(" · ", new[] { tile.IsLow || tile.IsCritical ? tile.StateText : "", tile.DetailText }.Where(t => t.Length > 0));
+        }
+
+        var missing = Figures.Skip(1).Where(f => !f.IsReported).Select(f => f.Label.ToLowerInvariant()).ToList();
+        BatteryReasonText = !HasSummary && !Figures.Skip(1).Any(f => f.IsReported)
+            ? IsConnected ? "This device reports no battery level." : "Connect the device to read its battery."
+            : buds
+                ? missing.Count > 0 ? $"The {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device." : "Each level is reported by the earbuds."
+                : _battery?.Source == CapabilitySource.OperatingSystem
+                    ? "Windows reports one level for this device. Left, right and case aren't reported."
+                    : "This device reports one level. Left, right and case aren't reported.";
+    }
 
     private void Update()
     {
@@ -195,7 +284,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         HasNotReported = NotReported.Count > 0;
 
         var summary = state.SummaryPercent;
-        SummaryText = summary is { } s ? $"{s}%" : IsConnected ? "?" : "—";
+        SummaryText = summary is { } s ? $"{s}%" : IsConnected ? "?" : "–";
         SummaryPercent = summary ?? 0;
         SummaryIsLow = summary <= _alerts.Policy.LowThreshold;
 
@@ -211,6 +300,24 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             CapabilitySource.Profile or CapabilitySource.RuntimeQuery => "Device protocol",
             _ => "Not reported",
         };
+
+        HasBuds = buds;
+        HasSummary = summary is not null;
+        SummaryFigure = summary is { } figure ? figure.ToString() : "–";
+        SummaryUnit = HasSummary ? "%" : "";
+        SummaryShort = HasSummary ? $"{summary}%" : "–";
+        BatterySourceMeta = _battery?.Source switch
+        {
+            CapabilitySource.OperatingSystem => "from Windows",
+            CapabilitySource.StandardService => "from Bluetooth Battery Service",
+            CapabilitySource.Simulator => "from simulator",
+            CapabilitySource.Profile or CapabilitySource.RuntimeQuery => "from device protocol",
+            _ => "not reported",
+        };
+        BatteryAccessibleText = HasSummary ? $"Battery {summary} percent" : "Battery not reported";
+        RowAccessibleText = $"{Name}, {(HasSummary ? $"{summary}%" : "battery not reported")}, {ConnectionText}";
+        StatusLineText = $"{ConnectionText} · {TierText}";
+        UpdateFigures(summary, buds);
 
         var all = DeviceCapabilities.For(_device).ToList();
         IEnumerable<Capability> Module(string prefix) => all.Where(c => c.Feature.Value.StartsWith(prefix, StringComparison.Ordinal));

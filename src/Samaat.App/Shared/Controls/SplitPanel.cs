@@ -15,6 +15,9 @@ public sealed class SplitPanel : Panel
     public static readonly StyledProperty<double> SpacingProperty =
         AvaloniaProperty.Register<SplitPanel, double>(nameof(Spacing), 24);
 
+    public static readonly StyledProperty<bool> SecondaryFirstProperty =
+        AvaloniaProperty.Register<SplitPanel, bool>(nameof(SecondaryFirst));
+
     public static readonly DirectProperty<SplitPanel, bool> IsStackedProperty =
         AvaloniaProperty.RegisterDirect<SplitPanel, bool>(nameof(IsStacked), p => p.IsStacked);
 
@@ -23,6 +26,7 @@ public sealed class SplitPanel : Panel
     static SplitPanel()
     {
         AffectsMeasure<SplitPanel>(MinPrimaryWidthProperty, SpacingProperty);
+        AffectsArrange<SplitPanel>(SecondaryFirstProperty);
     }
 
     public double MinPrimaryWidth
@@ -35,6 +39,13 @@ public sealed class SplitPanel : Panel
     {
         get => GetValue(SpacingProperty);
         set => SetValue(SpacingProperty, value);
+    }
+
+    /// <summary>Puts the natural-width part on the left, or on top when stacked.</summary>
+    public bool SecondaryFirst
+    {
+        get => GetValue(SecondaryFirstProperty);
+        set => SetValue(SecondaryFirstProperty, value);
     }
 
     public bool IsStacked
@@ -98,16 +109,18 @@ public sealed class SplitPanel : Panel
 
         var sw = Math.Min(secondary.DesiredSize.Width, finalSize.Width);
         IsStacked = ShouldStack(finalSize.Width, sw);
+        var secondaryFirst = SecondaryFirst;
         if (IsStacked)
         {
-            var ph = primary.DesiredSize.Height;
-            primary.Arrange(new Rect(0, 0, finalSize.Width, ph));
-            secondary.Arrange(new Rect(0, ph + Spacing, sw, secondary.DesiredSize.Height));
+            var (ph, sh) = (primary.DesiredSize.Height, secondary.DesiredSize.Height);
+            primary.Arrange(new Rect(0, secondaryFirst ? sh + Spacing : 0, finalSize.Width, ph));
+            secondary.Arrange(new Rect(0, secondaryFirst ? 0 : ph + Spacing, sw, sh));
         }
         else
         {
-            primary.Arrange(new Rect(0, 0, finalSize.Width - sw - Spacing, finalSize.Height));
-            secondary.Arrange(new Rect(finalSize.Width - sw, 0, sw, finalSize.Height));
+            var pw = finalSize.Width - sw - Spacing;
+            primary.Arrange(new Rect(secondaryFirst ? sw + Spacing : 0, 0, pw, finalSize.Height));
+            secondary.Arrange(new Rect(secondaryFirst ? 0 : finalSize.Width - sw, 0, sw, finalSize.Height));
         }
 
         return finalSize;

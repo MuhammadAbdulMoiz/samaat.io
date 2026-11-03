@@ -5,8 +5,12 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Microsoft.Extensions.Time.Testing;
+using Samaat.App.Features.Settings;
 using Samaat.App.Shared.Controls;
 using Samaat.App.Shell;
+using Samaat.Core.Battery;
+using Samaat.Core.Platform;
+using Samaat.Core.Settings;
 
 namespace Samaat.App.Tests;
 
@@ -112,6 +116,28 @@ public class ResponsivePanelTests
         Assert.Equal(270, panel.DesiredSize.Height);
     }
 
+    [AvaloniaFact]
+    public void SplitPanel_SecondaryFirst_PutsTheFixedPartOnTheLeft_AndOnTopWhenStacked()
+    {
+        var primary = Child(double.NaN, 100);
+        var secondary = Child(260, 150);
+        var panel = new SplitPanel { MinPrimaryWidth = 480, Spacing = 16, SecondaryFirst = true, Children = { primary, secondary } };
+
+        Layout(panel, 900);
+
+        Assert.False(panel.IsStacked);
+        Assert.Equal(0, secondary.Bounds.X);
+        Assert.Equal(276, primary.Bounds.X);
+        Assert.Equal(624, primary.Bounds.Width);
+
+        Layout(panel, 700);
+
+        Assert.True(panel.IsStacked);
+        Assert.Equal(0, secondary.Bounds.Y);
+        Assert.Equal(166, primary.Bounds.Y);
+        Assert.Equal(700, primary.Bounds.Width);
+    }
+
     [AvaloniaTheory]
     [InlineData(1000, 4)]
     [InlineData(600, 3)]
@@ -174,6 +200,10 @@ public class ContrastTests
         { "Samaat.Muted", "Samaat.Surface", 4.5 },
         { "Samaat.Muted", "Samaat.Surface2", 4.5 },
         { "Samaat.Muted", "Samaat.Bg", 4.5 },
+        { "Samaat.Muted", "Samaat.Rail", 4.5 },
+        { "Samaat.Text", "Samaat.Rail", 4.5 },
+        { "Samaat.Muted", "Samaat.Well", 4.5 },
+        { "Samaat.Text", "Samaat.Key", 4.5 },
         { "Samaat.OnAccent", "Samaat.Accent", 4.5 },
         { "Samaat.Accent", "Samaat.Surface", 4.5 },
         { "Samaat.Warn", "Samaat.Surface", 4.5 },
@@ -193,6 +223,41 @@ public class ContrastTests
         }
     }
 
+
+    public static TheoryData<AccentChoice> Presets => new(Enum.GetValues<AccentChoice>());
+
+    [AvaloniaTheory]
+    [MemberData(nameof(Presets))]
+    public void EveryAccentPresetMeetsWcagAA_InBothThemes(AccentChoice preset)
+    {
+        var settings = new SettingsViewModel(
+            new SettingsStore(Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"), "settings.json")),
+            new LowBatteryDetector(), new NoStartupRegistration());
+        try
+        {
+            settings.SetAccentCommand.Execute(preset);
+            foreach (var theme in new[] { ThemeVariant.Dark, ThemeVariant.Light })
+            {
+                var accent = Brush("Samaat.Accent", theme);
+                void Check(string what, Color foreground, Color background, double minimum)
+                {
+                    var ratio = Ratio(foreground, background);
+                    Assert.True(ratio >= minimum, $"{preset}/{theme}: {what} is {ratio:0.00}:1, needs {minimum}:1");
+                }
+
+                Check("OnAccent on Accent", Brush("Samaat.OnAccent", theme), accent, 4.5);
+                Check("Accent text on Surface", accent, Brush("Samaat.Surface", theme), 4.5);
+                Check("Accent text on Surface2", accent, Brush("Samaat.Surface2", theme), 4.5);
+                Check("Accent fill on Track", accent, Brush("Samaat.Track", theme), 3.0);
+                Check("Accent icon on the active sidebar row", accent, Over(Brush("Samaat.AccentSoft", theme), Brush("Samaat.Rail", theme)), 3.0);
+                Check("Wave on Surface", Brush("Samaat.Wave", theme), Brush("Samaat.Surface", theme), 3.0);
+            }
+        }
+        finally
+        {
+            settings.SetAccentCommand.Execute(AccentChoice.Lime);
+        }
+    }
     [AvaloniaFact]
     public void AlertPillsAreReadable_InBothThemes()
     {

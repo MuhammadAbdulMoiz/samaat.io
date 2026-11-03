@@ -1,5 +1,13 @@
 namespace Samaat.Core.Settings;
 
+public enum AccentChoice
+{
+    Lime,
+    Emerald,
+    Ice,
+    Mono,
+}
+
 public enum ThemeChoice
 {
     System,
@@ -11,6 +19,11 @@ public sealed record AppSettings
 {
     // Dark matches the app's design; System is a choice, not the default.
     public ThemeChoice Theme { get; init; } = ThemeChoice.Dark;
+
+    public AccentChoice Accent { get; init; } = AccentChoice.Lime;
+
+    /// <summary>Null follows the operating system; only the user toggling the switch stores a bool.</summary>
+    public bool? ReduceMotion { get; init; }
 
     public int LowThreshold { get; init; } = 20;
 

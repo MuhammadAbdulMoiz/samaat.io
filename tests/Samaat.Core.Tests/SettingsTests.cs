@@ -24,7 +24,38 @@ public sealed class SettingsTests : IDisposable
         Assert.True(s.SystemNotifications);
         Assert.True(s.CloseToTray);
         Assert.False(s.StartWithWindows);
+        Assert.Equal(AccentChoice.Lime, s.Accent);
+        Assert.Null(s.ReduceMotion);
     }
+
+    [Fact]
+    public void Load_OlderFileWithoutAccentOrMotion_UsesLimeAndFollowsTheSystem()
+    {
+        File.WriteAllText(InDir(), """{ "theme": "light", "lowThreshold": 25 }""");
+
+        var loaded = new SettingsStore(InDir()).Load();
+
+        Assert.Equal(AccentChoice.Lime, loaded.Accent);
+        Assert.Null(loaded.ReduceMotion);
+        Assert.Equal(25, loaded.LowThreshold);
+    }
+
+    [Fact]
+    public void AccentAndReduceMotion_RoundTrip()
+    {
+        var store = new SettingsStore(InDir());
+
+        Assert.True(store.Save(new AppSettings { Accent = AccentChoice.Emerald, ReduceMotion = true }));
+
+        var loaded = new SettingsStore(InDir()).Load();
+        Assert.Equal(AccentChoice.Emerald, loaded.Accent);
+        Assert.True(loaded.ReduceMotion);
+        Assert.Contains("\"accent\": \"emerald\"", File.ReadAllText(InDir()));
+    }
+
+    [Fact]
+    public void NoMotionPreference_NeverReducesMotion() =>
+        Assert.False(new Samaat.Core.Platform.NoMotionPreference().ReduceMotion);
 
     [Theory]
     [InlineData(2, 1, 5, 1)]

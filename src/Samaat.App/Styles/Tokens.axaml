@@ -1,10 +1,17 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <!-- Samaat design tokens. Dark-first "listening room": ink surfaces, one signal colour. -->
+  <!-- Samaat design tokens. Dark-first "listening room": ink surfaces, one signal colour.
+       The accent brushes (Accent, AccentSoft, OnAccent, Wave, SystemAccentColor) are replaced at runtime by AccentPalette. -->
   <ResourceDictionary.ThemeDictionaries>
     <ResourceDictionary x:Key="Dark">
       <SolidColorBrush x:Key="Samaat.Bg" Color="#0B0D10" />
       <SolidColorBrush x:Key="Samaat.Rail" Color="#0F1216" />
+      <SolidColorBrush x:Key="Samaat.Well" Color="#0D1014" />
+      <SolidColorBrush x:Key="Samaat.Key" Color="#252C35" />
+      <LinearGradientBrush x:Key="Samaat.PanelEdge" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="#353D47" />
+        <GradientStop Offset="1" Color="#252B33" />
+      </LinearGradientBrush>
       <SolidColorBrush x:Key="Samaat.Surface" Color="#14181D" />
       <SolidColorBrush x:Key="Samaat.Surface2" Color="#1B2027" />
       <SolidColorBrush x:Key="Samaat.Border" Color="#252B33" />
@@ -38,6 +45,12 @@
     <ResourceDictionary x:Key="Light">
       <SolidColorBrush x:Key="Samaat.Bg" Color="#F2F3EF" />
       <SolidColorBrush x:Key="Samaat.Rail" Color="#E9EBE5" />
+      <SolidColorBrush x:Key="Samaat.Well" Color="#E9EBE5" />
+      <SolidColorBrush x:Key="Samaat.Key" Color="#FFFFFF" />
+      <LinearGradientBrush x:Key="Samaat.PanelEdge" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="#E9ECE3" />
+        <GradientStop Offset="1" Color="#DFE2DA" />
+      </LinearGradientBrush>
       <SolidColorBrush x:Key="Samaat.Surface" Color="#FFFFFF" />
       <SolidColorBrush x:Key="Samaat.Surface2" Color="#F5F6F2" />
       <SolidColorBrush x:Key="Samaat.Border" Color="#DFE2DA" />

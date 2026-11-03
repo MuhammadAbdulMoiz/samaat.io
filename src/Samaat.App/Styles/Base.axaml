@@ -5,51 +5,82 @@
   <Style Selector="Window">
     <Setter Property="Background" Value="{DynamicResource Samaat.Bg}" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+    <Setter Property="FontSize" Value="13" />
   </Style>
 
-  <!-- Type -->
+  <!-- Type: page title 22, panel title 15, body 13, meta 12, figures 30 at weight 600 -->
   <Style Selector="TextBlock.display">
     <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+    <Setter Property="FontSize" Value="22" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="TextBlock.panelTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
   <Style Selector="TextBlock.number">
     <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
     <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+  </Style>
+  <Style Selector="TextBlock.figure">
+    <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+    <Setter Property="FontSize" Value="30" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+  </Style>
+  <Style Selector="TextBlock.unit">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Margin" Value="2,0,0,5" />
   </Style>
   <Style Selector="TextBlock.muted">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
-  <Style Selector="TextBlock.eyebrow">
-    <Setter Property="FontSize" Value="11" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="LetterSpacing" Value="1.2" />
+  <Style Selector="TextBlock.meta">
+    <Setter Property="FontSize" Value="12" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
 
-  <!-- Surfaces -->
-  <Style Selector="Border.surface">
+  <!-- Panels: a surface with a subtle lit edge, never nested -->
+  <Style Selector="Border.panel">
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.PanelEdge}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="16" />
-    <Setter Property="Padding" Value="18" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+  <Style Selector="Border.divider">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Border}" />
+  </Style>
+  <Style Selector="Border.row">
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="0,8" />
   </Style>
 
-  <!-- Chips and pills -->
+  <!-- Chips: status words, never decoration -->
   <Style Selector="Border.chip">
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="999" />
-    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="8,4" />
   </Style>
   <Style Selector="Border.chip TextBlock">
     <Setter Property="FontSize" Value="12" />
   </Style>
   <Style Selector="Border.alert">
     <Setter Property="Background" Value="{DynamicResource Samaat.WarnSoft}" />
-    <Setter Property="CornerRadius" Value="999" />
-    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="10,6" />
   </Style>
   <Style Selector="Border.alert TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
@@ -66,41 +97,99 @@
   <Style Selector="Border.alert.critical PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
   </Style>
+
+  <!-- A dot only ever shows a real state: connected (accent) or not (faint) -->
   <Style Selector="Ellipse.dot">
-    <Setter Property="Width" Value="8" />
-    <Setter Property="Height" Value="8" />
+    <Setter Property="Width" Value="6" />
+    <Setter Property="Height" Value="6" />
     <Setter Property="Fill" Value="{DynamicResource Samaat.Faint}" />
   </Style>
   <Style Selector="Ellipse.dot.on">
     <Setter Property="Fill" Value="{DynamicResource Samaat.Accent}" />
   </Style>
 
-  <!-- Buttons -->
-  <Style Selector="Button.icon">
-    <Setter Property="Width" Value="36" />
-    <Setter Property="Height" Value="36" />
-    <Setter Property="Padding" Value="0" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  <!-- Buttons: 32 px high, radius 6 -->
+  <Style Selector="Button.icon, Button.subtle, Button.primary, Button.ghost">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="CornerRadius" Value="6" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.icon">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="Padding" Value="0" />
   </Style>
   <Style Selector="Button.icon PathIcon">
     <Setter Property="Width" Value="16" />
     <Setter Property="Height" Value="16" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
   </Style>
+  <Style Selector="Button.subtle, Button.primary">
+    <Setter Property="Padding" Value="12,0" />
+  </Style>
+  <Style Selector="Button.icon /template/ ContentPresenter#PART_ContentPresenter, Button.subtle /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.subtle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Key}" />
+  </Style>
+  <Style Selector="Button.primary /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+    <Setter Property="Opacity" Value="0.9" />
+  </Style>
   <Style Selector="Button.ghost">
+    <Setter Property="Padding" Value="8,0" />
+  </Style>
+  <Style Selector="Button.ghost /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="6" />
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
   </Style>
 
-  <Style Selector="Border.ledgerRow">
-    <Setter Property="Padding" Value="18,9" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
-    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  <!-- Unselected text on a coloured fill never goes below AA: icons follow the text colour -->
+  <Style Selector="Button.subtle TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+
+  <!-- Switches: 36x20 -->
+  <Style Selector="ToggleSwitch">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="Margin" Value="12,0,0,0" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="Track" Width="36" Height="20" CornerRadius="10" BorderThickness="1" Background="Transparent"
+                BorderBrush="{DynamicResource Samaat.Faint}">
+          <Panel Name="PART_MovingKnobs">
+            <Ellipse Name="Knob" Width="12" Height="12" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Samaat.Muted}" />
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Border#Track">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="ToggleSwitch:checked /template/ Ellipse#Knob">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="Fill" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+  <Style Selector="ToggleSwitch:focus-visible /template/ Border#Track">
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+  <Style Selector="ToggleSwitch:disabled /template/ Border#Track">
+    <Setter Property="Opacity" Value="0.45" />
   </Style>
 </Styles>

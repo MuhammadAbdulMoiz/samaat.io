@@ -48,6 +48,13 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
         new NoNotifier();
 #endif
 
+    public IMotionPreference CreateMotionPreference() =>
+#if SAMAAT_WINDOWS
+        new Samaat.Platform.Windows.WindowsMotionPreference();
+#else
+        new NoMotionPreference();
+#endif
+
     public IStartupRegistration CreateStartupRegistration() =>
 #if SAMAAT_WINDOWS
         new Samaat.Platform.Windows.WindowsStartupRegistration();

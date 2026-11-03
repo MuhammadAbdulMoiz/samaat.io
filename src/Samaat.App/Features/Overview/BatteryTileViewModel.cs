@@ -65,7 +65,7 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AccessibleText))]
-    public partial string PercentText { get; set; } = "—";
+    public partial string PercentText { get; set; } = "–";
 
     [ObservableProperty]
     public partial double Percent { get; set; }
@@ -97,7 +97,7 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
         if (capability.UiState is CapabilityUiState.Unsupported or CapabilityUiState.Undetected
             || (capability.UiState == CapabilityUiState.Disabled && reading?.Percent is null))
         {
-            PercentText = "—";
+            PercentText = "–";
             Percent = 0;
             DetailText = capability.DisabledReason ?? "";
             IsLow = IsCritical = IsCharging = HasLevel = false;
@@ -107,7 +107,7 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
         }
 
         var percent = reading?.Percent;
-        PercentText = percent is { } p ? $"{p}%" : "—";
+        PercentText = percent is { } p ? $"{p}%" : "–";
         Percent = percent ?? 0;
         HasLevel = percent is not null;
         IsCharging = reading?.Charging == ChargingState.Charging;

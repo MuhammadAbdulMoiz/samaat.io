@@ -4,32 +4,32 @@
              xmlns:ov="using:Samaat.App.Features.Overview"
              x:Class="Samaat.App.Features.Details.BluetoothDetailsPage"
              x:DataType="ov:DeviceViewModel">
-  <StackPanel Spacing="20" DataContext="{Binding Details}" x:DataType="vm:BluetoothDetailsViewModel">
+  <StackPanel Spacing="16" DataContext="{Binding Details}" x:DataType="vm:BluetoothDetailsViewModel">
 
-    <StackPanel Spacing="4">
-      <TextBlock Text="DETAILS" Classes="eyebrow" />
-      <TextBlock Text="Bluetooth details" Classes="display" FontSize="32" />
-      <TextBlock Text="{Binding IdentifiedText}" Classes="muted" />
-    </StackPanel>
-
-    <Border Classes="surface">
-      <ItemsControl ItemsSource="{Binding Rows}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:DetailsRow">
-            <Grid ColumnDefinitions="180,*" Margin="0,6">
-              <TextBlock Text="{Binding Label}" Classes="muted" />
-              <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
-            </Grid>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
+    <Border Classes="panel">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Bluetooth details" Classes="panelTitle" />
+        <TextBlock Text="{Binding IdentifiedText}" Classes="meta" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Rows}" Margin="0,8,0,0">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DetailsRow">
+              <Border Classes="row">
+                <Grid ColumnDefinitions="160,*">
+                  <TextBlock Text="{Binding Label}" Classes="muted" />
+                  <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
     </Border>
 
-    <Border Classes="surface">
-      <StackPanel Spacing="8">
-        <TextBlock Text="SUPPORT" Classes="eyebrow" />
-        <TextBlock Text="{Binding AdapterText}" />
-        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+    <Border Classes="panel">
+      <StackPanel Spacing="6">
+        <TextBlock Text="Support" Classes="panelTitle" />
+        <TextBlock Text="{Binding AdapterText}" TextWrapping="Wrap" />
+        <TextBlock Classes="meta" TextWrapping="Wrap"
                    Text="Without a vendor adapter, Samaat shows what Windows and standard Bluetooth services report." />
       </StackPanel>
     </Border>

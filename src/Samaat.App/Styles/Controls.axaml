@@ -2,89 +2,100 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="using:Samaat.App.Shared.Controls">
 
-  <!-- Mode cards and segments -->
-  <Style Selector="Button.modeCard">
-    <Setter Property="Width" Value="196" />
-    <Setter Property="Height" Value="136" />
-    <Setter Property="VerticalContentAlignment" Value="Top" />
-    <Setter Property="Padding" Value="16" />
-    <Setter Property="CornerRadius" Value="16" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface}" />
+  <!-- Segmented tabs: an inset well with a raised selected key. Used for the device tabs and for choices in Settings. -->
+  <Style Selector="Border.tabWell">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Well}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="3" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
   </Style>
-  <Style Selector="Button.modeCard:pointerover /template/ ContentPresenter">
+  <Style Selector="Button.tab">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.tab /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.tab:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
   </Style>
-  <Style Selector="Button.modeCard.selected /template/ ContentPresenter">
+  <Style Selector="Button.tab TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="Button.tab PathIcon">
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.tab.selected /template/ ContentPresenter#PART_ContentPresenter, Button.tab.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Key}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.PanelEdge}" />
+    <Setter Property="BoxShadow" Value="0 1 2 0 #40000000" />
+  </Style>
+  <Style Selector="Button.tab.selected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.tab.selected PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+
+  <!-- Selectable option rows (noise control modes) -->
+  <Style Selector="Button.option">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="48" />
+    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+  <Style Selector="Button.option /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.option:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+  </Style>
+  <Style Selector="Button.option.selected /template/ ContentPresenter#PART_ContentPresenter, Button.option.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="Button.modeCard.selected Border.modeIcon">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
-  <Style Selector="Button.modeCard.selected Border.modeIcon PathIcon">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
-  </Style>
-  <Style Selector="Border.modeIcon">
-    <Setter Property="Width" Value="44" />
-    <Setter Property="Height" Value="44" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="HorizontalAlignment" Value="Left" />
+  <Style Selector="Border.optionIcon">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="6" />
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
   </Style>
-  <Style Selector="Border.modeIcon PathIcon">
+  <Style Selector="Border.optionIcon PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
-  <Style Selector="Border.modeIcon.on">
+  <Style Selector="Border.optionIcon.on">
     <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="Border.modeIcon.on PathIcon">
+  <Style Selector="Border.optionIcon.on PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
   </Style>
-  <Style Selector="Button.segment">
-    <Setter Property="Padding" Value="10,5" />
-    <Setter Property="CornerRadius" Value="999" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
-    <Setter Property="BorderThickness" Value="1" />
+  <Style Selector="Button.option.selected Border.optionIcon">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="Button.segment PathIcon">
+  <Style Selector="Button.option.selected Border.optionIcon PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+
+  <Style Selector="StackPanel.cell.unreported TextBlock.figure">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
-  <Style Selector="Button.segment.selected /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
-  <Style Selector="Button.segment.selected TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
-  </Style>
-  <Style Selector="Button.segment.selected PathIcon">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
-  </Style>
-  <Style Selector="Button.primary">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Padding" Value="14,7" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-  </Style>
-  <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
-    <Setter Property="Opacity" Value="0.9" />
-  </Style>
-  <Style Selector="Button.subtle">
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Padding" Value="14,7" />
-  </Style>
+
   <Style Selector="Border.host.active">
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
   </Style>
 
   <!-- Thin indeterminate bar while a command is waiting for the device -->
@@ -94,5 +105,28 @@
     <Setter Property="MinWidth" Value="0" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+
+  <!-- Level bars under battery figures -->
+  <Style Selector="ProgressBar.level">
+    <Setter Property="Height" Value="4" />
+    <Setter Property="MinHeight" Value="4" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Track}" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="ProgressBar.level.low">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Warn}" />
+  </Style>
+  <Style Selector="ProgressBar.level.critical">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
+  </Style>
+  <Style Selector="ProgressBar.level">
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
+      </Transitions>
+    </Setter>
   </Style>
 </Styles>
