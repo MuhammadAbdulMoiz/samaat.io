@@ -14,4 +14,18 @@ Rules:
 - Only add **observed** values (device name, SDP service UUIDs from the Info page's "Copy report"). Never guess.
 - Set `verified: true` only with hardware evidence, as described in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The catalog is empty for now: entries come with the first hardware reports.
+## Matching
+
+Every field given in `match` must agree. The highest score wins: vendor + product ID 100, an advertised service (`serviceUuid`) 50, vendor ID alone 30, name 10, summed.
+
+## Generic entries (`generic/`)
+
+`generic/fast-pair.json` (any device advertising the Fast Pair Message Stream `df21fe2c-…`) and `generic/jieli.json` (any device with Jieli's vendor ID `0x05D6`) give unknown earbuds a driver by protocol. They carry `"generic": true`, which means:
+
+- **Any matching model entry wins**, whatever its score. A model keeps its own name, photos and profile.
+- `DeviceProfileDb` **skips them on purpose** (no error): they describe a protocol, not a model, so they have no display name, artwork or notes to show. Loading them as profiles could also tie a name-only model on specificity and take its place.
+- The driver decides what is real. The Jieli driver gives nothing without the BLE `AE00` service, and offers noise control or EQ only when the buds list them when read back. The Fast Pair driver gives nothing when the battery is unknown. Either way the device falls back to the Windows battery.
+
+A device with both the Jieli vendor ID and the Fast Pair stream gets the Fast Pair driver: an advertised service outranks a chip vendor's ID.
+
+Models: `audionic/paradox-e.json`, `realme/buds-t200-lite.json`, `zero-lifestyle/quantum-zbuds.json`, `microsoft/modern-wireless-headset.json`.

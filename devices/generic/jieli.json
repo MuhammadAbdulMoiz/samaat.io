@@ -1,0 +1,14 @@
+{
+  // Protocol-level fallback: any earbuds with the Jieli vendor ID get the jieli-rcsp driver. Models in vendor folders always win.
+  // The driver only gives features when the buds have BLE AE00, and only exposes noise control/EQ when the buds' GetSysInfo read-back lists them.
+  // DeviceProfileDb skips generic files (no artwork/profile).
+  "id": "generic.jieli",
+  "displayName": "Jieli earbuds",
+  "manufacturer": "",
+  "driver": "jieli-rcsp",
+  "generic": true,
+  "match": { "vendorId": "0x05D6" },
+  "verified": false,
+  "features": [],
+  "verifiedFirmware": []
+}

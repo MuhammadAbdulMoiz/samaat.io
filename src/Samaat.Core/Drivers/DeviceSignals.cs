@@ -28,6 +28,7 @@ public sealed record DeviceMatch(
     Guid? ServiceUuid = null)
 {
     private const int VendorProductWeight = 100;
+    private const int VendorOnlyWeight = 30; // a chip vendor's ID alone is weak evidence, so an advertised protocol service outranks it
     private const int ServiceWeight = 50;
     private const int NameWeight = 10;
 
@@ -42,7 +43,7 @@ public sealed record DeviceMatch(
                 return null;
             }
 
-            score += VendorProductWeight;
+            score += ProductId is null ? VendorOnlyWeight : VendorProductWeight;
         }
 
         if (ServiceUuid is { } service)

@@ -166,6 +166,17 @@ public sealed class ProfileTests : IDisposable
         Assert.Equal("zero-lifestyle.quantum-zbuds", Assert.Single(db.Profiles).Id);
     }
 
+    [Fact]
+    public void Load_SkipsGenericCatalogEntries_WithoutAnError()
+    {
+        Write("generic/proto.json", """{ "id": "generic.proto", "driver": "proto", "generic": true, "match": { "serviceUuid": "df21fe2c-2515-4fdb-8886-f12c4d67927c" } }""");
+
+        var db = DeviceProfileDb.Load(_dir);
+
+        Assert.Empty(db.Profiles);
+        Assert.Empty(db.Errors);
+    }
+
     // DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details) read the same devices/ folder.
     [Fact]
     public void ShippedDevicesFolder_LoadsInBothLoaders_WithoutErrors()
@@ -184,6 +195,11 @@ public sealed class ProfileTests : IDisposable
         Assert.Empty(profiles.Errors);
         Assert.Contains(catalog.Entries, e => e.Id == "zero-lifestyle.quantum-zbuds");
         Assert.Contains(profiles.Profiles, p => p.Id == "zero-lifestyle.quantum-zbuds");
+        Assert.All(new[] { "generic.fast-pair", "generic.jieli" }, id =>
+        {
+            Assert.True(catalog.Entries.Single(e => e.Id == id).Generic);
+            Assert.DoesNotContain(profiles.Profiles, p => p.Id == id);
+        });
         Assert.DoesNotContain(profiles.Profiles, p => p.Id == "acme.buds-2");
     }
 }

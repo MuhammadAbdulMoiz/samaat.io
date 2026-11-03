@@ -51,6 +51,13 @@ public sealed class DeviceProfileDb
             {
                 using var doc = JsonDocument.Parse(File.ReadAllText(file), Lenient);
                 var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("generic", out var generic) && generic.ValueKind == JsonValueKind.True)
+                {
+                    // Generic catalog entries carry no model identity or artwork, and a 1-field generic would tie a
+                    // name-only model's profile on Specificity (ties go to load order, where "generic/" sorts first).
+                    continue;
+                }
+
                 profiles.Add(Parse(root) with
                 {
                     Image = ResolveImage(OptionalString(root, "image"), file),
