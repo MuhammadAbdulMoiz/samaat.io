@@ -1,7 +1,15 @@
 namespace Samaat.Protocols.Jieli;
 
-/// <summary>One RCSP packet. <see cref="Params"/> excludes the sequence number.</summary>
-public sealed record RcspPacket(byte Flags, byte Op, byte Sn, byte[] Params);
+/// <summary>
+/// One RCSP packet. <see cref="Sn"/> is the first body byte and <see cref="Params"/> the rest. For a command
+/// that byte is the sequence number; for a response (<see cref="IsResponse"/>) it is the status, and the
+/// sequence number is <c>Params[0]</c>.
+/// </summary>
+public sealed record RcspPacket(byte Flags, byte Op, byte Sn, byte[] Params)
+{
+    /// <summary>Bit 7 clear: an answer to one of our commands rather than a device-initiated command.</summary>
+    public bool IsResponse => (Flags & 0x80) == 0;
+}
 
 /// <summary>RCSP wire format: <c>FE DC BA | flags | op | len(2, BE) | sn | params | EF</c>, where len counts sn and params.</summary>
 public static class RcspFrame
@@ -10,7 +18,7 @@ public static class RcspFrame
 
     public const int MaxPayload = 2048;
 
-    /// <summary>Builds a command frame. The adapter itself never sends one; see <see cref="RcspAuth"/>.</summary>
+    /// <summary>Builds a frame. Commands are only built from <see cref="RcspCommands"/>; the auth steps are unframed (<see cref="RcspAuth"/>).</summary>
     public static byte[] Build(byte flags, byte op, byte sn, ReadOnlySpan<byte> parameters)
     {
         var length = parameters.Length + 1;

@@ -2,6 +2,7 @@ using Samaat.Core.Battery;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
+using Samaat.Core.Equalizer;
 using Samaat.Core.NoiseControl;
 
 namespace Samaat.Core.Capabilities;
@@ -13,6 +14,7 @@ public static class DeviceCapabilities
     {
         var implemented = BatteryCapabilities.For(device)
             .Concat(NoiseControlCapabilities.For(device))
+            .Concat(EqualizerCapabilities.For(device))
             .Concat(ConnectionCapabilities.For(device))
             .ToList();
 

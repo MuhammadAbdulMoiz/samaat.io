@@ -5,6 +5,7 @@
              xmlns:sound="using:Samaat.App.Features.Sound"
              x:Class="Samaat.App.Features.Sound.SoundPage"
              x:DataType="overview:DeviceViewModel">
+  <StackPanel Spacing="16">
   <StackPanel Spacing="16" DataContext="{Binding NoiseControl}" x:DataType="sound:NoiseControlViewModel">
 
     <!-- Mode -->
@@ -108,15 +109,48 @@
       </StackPanel>
     </Border>
 
-    <!-- Roadmap -->
-    <Border Classes="panel">
-      <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-        <StackPanel VerticalAlignment="Center">
-          <TextBlock Text="Equalizer" Classes="panelTitle" />
-          <TextBlock Text="Device EQ and Samaat EQ are planned for a later module." Classes="meta" TextWrapping="Wrap" />
-        </StackPanel>
-        <Border Grid.Column="1" Classes="chip" VerticalAlignment="Center"><TextBlock Text="Soon" /></Border>
-      </Grid>
-    </Border>
+  </StackPanel>
+
+  <!-- Equalizer -->
+  <Border Classes="panel" DataContext="{Binding Equalizer}" x:DataType="sound:EqualizerViewModel">
+    <StackPanel Spacing="12">
+      <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
+      <StackPanel>
+        <TextBlock Text="Equalizer" Classes="panelTitle" />
+        <TextBlock Text="Presets stored on the earbuds" Classes="meta" IsVisible="{Binding !IsUnavailable}" />
+      </StackPanel>
+
+      <ItemsControl ItemsSource="{Binding Presets}" IsVisible="{Binding !IsUnavailable}" IsEnabled="{Binding CanControl}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="sound:EqPresetOptionViewModel">
+            <Button Classes="option" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                    AutomationProperties.Name="{Binding Label}">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <PathIcon Grid.Column="1" Data="{StaticResource Icon.Check}" Width="14" Height="14" VerticalAlignment="Center"
+                          Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding IsSelected}" />
+              </Grid>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <StackPanel IsVisible="{Binding IsUnavailable}" Spacing="2">
+        <TextBlock Text="Equalizer unavailable" />
+        <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <WrapPanel IsVisible="{Binding !IsUnavailable}">
+        <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Border Classes="alert critical" IsVisible="{Binding HasError}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+            <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </WrapPanel>
+    </StackPanel>
+  </Border>
   </StackPanel>
 </UserControl>

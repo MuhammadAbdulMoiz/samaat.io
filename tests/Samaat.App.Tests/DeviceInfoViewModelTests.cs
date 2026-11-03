@@ -41,14 +41,14 @@ public class DeviceInfoViewModelTests
     {
         var vm = Basic();
 
-        Assert.Equal("1 of 15 features available · Basic support", vm.SummaryText);
+        Assert.Equal("1 of 16 features available · Basic support", vm.SummaryText);
         Assert.Equal("Overall battery", Assert.Single(vm.AvailableRows).Name);
-        Assert.Equal(["Battery", "Noise control", "Connections"], vm.UnavailableGroups.Select(g => g.Module));
-        Assert.Equal([3, 7, 4], vm.UnavailableGroups.Select(g => g.Count));
+        Assert.Equal(["Battery", "Noise control", "Equalizer", "Connections"], vm.UnavailableGroups.Select(g => g.Module));
+        Assert.Equal([3, 7, 1, 4], vm.UnavailableGroups.Select(g => g.Count));
         Assert.Equal("Noise control · 7 features", vm.UnavailableGroups[1].Title);
         Assert.Equal("Left, right and case battery", Assert.Single(vm.UnavailableGroups[0].Items).Name);
         Assert.Equal(7, vm.UnavailableGroups[1].Items.Count);
-        Assert.Equal(4, vm.UnavailableGroups[2].Items.Count);
+        Assert.Equal(4, vm.UnavailableGroups[3].Items.Count);
         Assert.All(vm.UnavailableGroups, g => Assert.False(string.IsNullOrWhiteSpace(g.Reason)));
     }
 

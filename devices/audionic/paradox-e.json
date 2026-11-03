@@ -14,10 +14,10 @@
   },
   "adapter": "jieli-rcsp",
   "verified": false,
-  "features": ["battery.left", "battery.right", "battery.case"],
+  "features": ["battery.left", "battery.right", "battery.case", "noise.anc", "noise.transparency", "eq.presets"],
   "verifiedFirmware": [],
   "image": "paradox-e.png",
   // Shown instead of "image", each with its own level, once the buds report left and right.
   "images": { "left": "paradox-e-left.png", "right": "paradox-e-right.png", "case": "paradox-e-case.png" },
-  "notes": "Battery per bud (and case, when reported) over Jieli RCSP on BLE service AE00; see docs/hardware-tests/2026-11-03-audionic-paradox-e.md. Read-only: only the auth handshake is ever written."
+  "notes": "Battery per bud (and case, when reported) over Jieli RCSP on BLE service AE00; see docs/hardware-tests/2026-11-03-audionic-paradox-e.md. Noise control (off, noise cancelling, transparency) and EQ presets over RCSP SetSysInfo, confirmed by reading back; see docs/protocols/jieli-rcsp.md."
 }

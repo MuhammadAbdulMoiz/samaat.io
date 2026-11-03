@@ -48,6 +48,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
                 .Select(c => new BatteryTileViewModel(c)));
 
         NoiseControl = new NoiseControlViewModel(device, time: time);
+        Equalizer = new EqualizerViewModel(device, time: time);
         Connections = new ConnectionsViewModel(device, time: time);
         Info = new DeviceInfoViewModel(device, time: time, profile: profile);
         Details = new BluetoothDetailsViewModel(this, profile);
@@ -99,6 +100,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public ObservableCollection<BatteryTileViewModel> NotReported { get; } = [];
 
     public NoiseControlViewModel NoiseControl { get; }
+
+    public EqualizerViewModel Equalizer { get; }
 
     public ConnectionsViewModel Connections { get; }
 
@@ -406,6 +409,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
         _alerts.Forget(_device.Identity.Id);
         NoiseControl.Dispose();
+        Equalizer.Dispose();
         Connections.Dispose();
         Info.Dispose();
     }

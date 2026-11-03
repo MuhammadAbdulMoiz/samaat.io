@@ -24,5 +24,7 @@ public readonly record struct FeatureId(string Value)
     public static readonly FeatureId DisconnectHost = new("connections.disconnect");
     public static readonly FeatureId MultipointToggle = new("connections.multipoint");
 
+    public static readonly FeatureId EqPresets = new("eq.presets");
+
     public override string ToString() => Value;
 }

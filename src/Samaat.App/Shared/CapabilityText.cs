@@ -19,6 +19,7 @@ public static class CapabilityText
         "noise.ambientLevel" => "Ambient level",
         "noise.wind" => "Wind reduction",
         "noise.conversation" => "Conversation awareness",
+        "eq.presets" => "EQ presets",
         "connections.hosts" => "Connected devices",
         "connections.switch" => "Switch audio source",
         "connections.disconnect" => "Disconnect a device",

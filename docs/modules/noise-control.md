@@ -1,6 +1,6 @@
 # Module 2: Noise control
 
-Status: **implemented (v0.2)**. Tested end to end with the simulator. No real device can be controlled yet: that needs the first vendor adapter.
+Status: **implemented (v0.2)**. Tested end to end with the simulator, and on the Audionic ParadoX-E through the Jieli RCSP adapter (off, noise cancelling, transparency; [protocol](../protocols/jieli-rcsp.md)).
 
 ![Noise control page](../images/buds-pro-sound.png)
 
