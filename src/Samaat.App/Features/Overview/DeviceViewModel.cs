@@ -48,7 +48,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
         NoiseControl = new NoiseControlViewModel(device, time: time);
         Connections = new ConnectionsViewModel(device, time: time);
-        Info = new DeviceInfoViewModel(device, time: time);
+        Info = new DeviceInfoViewModel(device, time: time, profile: profile);
         Details = new BluetoothDetailsViewModel(this, profile);
 
         _device.ConnectionChanged += OnDeviceChanged;
@@ -72,12 +72,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         _device.Identity.FirmwareVersion is { } fw ? $"Firmware {fw}" : null,
     }.Where(s => !string.IsNullOrWhiteSpace(s) && !Name.Contains(s!, StringComparison.OrdinalIgnoreCase))); // don't repeat the title
 
-    public string TierText => _device.Identity.Tier switch
-    {
-        SupportTier.Full => "Full support",
-        SupportTier.Standard => "Standard support",
-        _ => "Basic support",
-    };
+    public string TierText => CapabilityText.Tier(_device.Identity.Tier);
 
     public string TierDescription => _device.Identity.Tier switch
     {
@@ -103,9 +98,6 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
     /// <summary>Bluetooth IDs, address and services; separate from <see cref="Info"/>, the diagnostics page.</summary>
     public BluetoothDetailsViewModel Details { get; }
-
-    /// <summary>Every capability Samaat knows about for this device, grouped by module.</summary>
-    public ObservableCollection<CapabilityGroupViewModel> CapabilityGroups { get; } = [];
 
     /// <summary>Two letters for the collapsed sidebar rail.</summary>
     public string Initials { get; }
@@ -136,6 +128,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>The four numbers of the battery panel: overall, left, right, case.</summary>
     public ObservableCollection<BatteryFigureViewModel> Figures { get; } =
         [new("Overall"), new("Left bud"), new("Right bud"), new("Case")];
+
+    /// <summary>The figures the battery panel shows: all four for earbuds, only the overall level otherwise.</summary>
+    public ObservableCollection<BatteryFigureViewModel> ShownFigures { get; } = [];
 
     /// <summary>True when this device is the one shown in the workspace (false in Settings).</summary>
     [ObservableProperty]
@@ -265,14 +260,24 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
                 : string.Join(" · ", new[] { tile.IsLow || tile.IsCritical ? tile.StateText : "", tile.DetailText }.Where(t => t.Length > 0));
         }
 
+        // Collapse to Overall only when no component (left, right or case) is reported.
+        var components = Figures.Skip(1).Any(f => f.IsReported);
+        var shown = components ? Figures.ToList() : [overall];
+        if (!ShownFigures.SequenceEqual(shown))
+        {
+            ShownFigures.Clear();
+            foreach (var figure in shown)
+            {
+                ShownFigures.Add(figure);
+            }
+        }
+
         var missing = Figures.Skip(1).Where(f => !f.IsReported).Select(f => f.Label.ToLowerInvariant()).ToList();
-        BatteryReasonText = !HasSummary && !Figures.Skip(1).Any(f => f.IsReported)
+        BatteryReasonText = !HasSummary && !components
             ? IsConnected ? "This device reports no battery level." : "Connect the device to read its battery."
-            : buds
+            : components
                 ? missing.Count > 0 ? $"The {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device." : "Each level is reported by the earbuds."
-                : _battery?.Source == CapabilitySource.OperatingSystem
-                    ? "Windows reports one level for this device. Left, right and case aren't reported."
-                    : "This device reports one level. Left, right and case aren't reported.";
+                : "Left, right and case aren't reported for this device.";
     }
 
     private void Update()
@@ -341,27 +346,6 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         StatusLineText = $"{ConnectionText} · {TierText}";
         UpdateFigures(summary, buds);
 
-        var all = DeviceCapabilities.For(_device).ToList();
-        IEnumerable<Capability> Module(string prefix) => all.Where(c => c.Feature.Value.StartsWith(prefix, StringComparison.Ordinal));
-
-        var groups = new[]
-        {
-            new CapabilityGroupViewModel("Battery", capabilities.All
-                .Where(c => !(buds && c.Feature == FeatureId.BatteryCombined))
-                .OrderBy(c => c.UiState)
-                .Select(c => new CapabilityItemViewModel(c))),
-            new CapabilityGroupViewModel("Noise control", Module("noise.").OrderBy(c => c.UiState).Select(c => new CapabilityItemViewModel(c))),
-            new CapabilityGroupViewModel("Connections", Module("connections.").OrderBy(c => c.UiState).Select(c => new CapabilityItemViewModel(c))),
-        };
-        if (!groups.Select(g => g.Key).SequenceEqual(CapabilityGroups.Select(g => g.Key)))
-        {
-            CapabilityGroups.Clear();
-            foreach (var group in groups)
-            {
-                CapabilityGroups.Add(group);
-            }
-        }
-
         UpdateAges();
 
         foreach (var alert in _alerts.Evaluate(_device.Identity.Id, state))
@@ -398,29 +382,4 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         Connections.Dispose();
         Info.Dispose();
     }
-}
-
-public sealed class CapabilityGroupViewModel(string title, IEnumerable<CapabilityItemViewModel> items)
-{
-    public string Title { get; } = title;
-
-    public IReadOnlyList<CapabilityItemViewModel> Items { get; } = items.ToList();
-
-    public string Key => Title + "|" + string.Join(",", Items.Select(i => i.Key));
-
-    public string SummaryText => $"{Items.Count(i => i.IsEnabled)} of {Items.Count} available";
-}
-
-public sealed class CapabilityItemViewModel(Capability capability)
-{
-    /// <summary>Identity for change detection: same feature in the same state renders the same.</summary>
-    public string Key { get; } = $"{capability.Feature}:{capability.UiState}:{capability.DisabledReason}:{capability.Verified}";
-
-    public string Name { get; } = CapabilityText.Name(capability.Feature);
-
-    public bool IsEnabled { get; } = capability.UiState == CapabilityUiState.Enabled;
-
-    public string StatusText { get; } = capability.UiState == CapabilityUiState.Enabled && capability.Verified != Verification.Verified
-        ? "Available · unverified"
-        : CapabilityText.State(capability);
 }

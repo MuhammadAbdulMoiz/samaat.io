@@ -33,7 +33,7 @@
           </StackPanel>
         </Border>
 
-        <ItemsControl ItemsSource="{Binding Figures}">
+        <ItemsControl ItemsSource="{Binding ShownFigures}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="116" MaxColumns="4" Spacing="16" /></ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>

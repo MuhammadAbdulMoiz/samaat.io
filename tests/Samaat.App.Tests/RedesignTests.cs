@@ -3,8 +3,10 @@ using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Samaat.App.Shared.Controls;
@@ -233,7 +235,83 @@ public class RedesignShellTests
 
         vm.SelectDeviceCommand.Execute(headset);
         Pump();
-        Assert.Contains(All<TextBlock>(window).Where(t => t.IsEffectivelyVisible), t => t.Text == "–");
+        Assert.DoesNotContain(All<TextBlock>(window).Where(t => t.IsEffectivelyVisible), t => t.Text == "Left bud");
+        await CloseAsync(window, vm);
+    }
+
+    [AvaloniaFact]
+    public async Task BatteryPanel_ShowsOneFigureAndAReasonForSingleLevelDevices_AndFourForBuds()
+    {
+        var (window, vm) = await ShowAsync();
+        var pro = vm.Devices.Single(d => d.Name == "Simulated Buds Pro");
+        var headset = vm.Devices.Single(d => d.Name == "Simulated Headset");
+
+        Assert.Equal(["Overall"], headset.ShownFigures.Select(f => f.Label));
+        Assert.Equal("Left, right and case aren't reported for this device.", headset.BatteryReasonText);
+        Assert.Equal(["Overall", "Left bud", "Right bud", "Case"], pro.ShownFigures.Select(f => f.Label));
+
+        vm.SelectDeviceCommand.Execute(headset);
+        Pump();
+        var visible = All<TextBlock>(window).Where(t => t.IsEffectivelyVisible).Select(t => t.Text).ToList();
+        Assert.Contains("Overall", visible);
+        Assert.DoesNotContain("Right bud", visible);
+        Assert.DoesNotContain("Case", visible);
+
+        vm.SelectDeviceCommand.Execute(pro);
+        Pump();
+        Assert.Contains("Right bud", All<TextBlock>(window).Where(t => t.IsEffectivelyVisible).Select(t => t.Text));
+        await CloseAsync(window, vm);
+    }
+
+    [AvaloniaFact]
+    public async Task Diagnostics_KeepsDetailsBehindDisclosures_ThatToggleFromTheKeyboard()
+    {
+        var (window, vm) = await ShowAsync();
+        vm.SelectDeviceCommand.Execute(vm.Devices.Single(d => d.Name == "Simulated Headset"));
+        vm.NavigateCommand.Execute(AppSection.Info);
+        Pump();
+
+        var toggles = All<ToggleButton>(window).Where(t => t.Classes.Contains("disclosure")).ToList();
+        var names = toggles.Select(AutomationProperties.GetName).ToList();
+        Assert.Equal(["Battery · 3 features", "Noise control · 7 features", "Connections · 4 features", "Technical details", "Event log"], names);
+        Assert.All(toggles, t => Assert.False(t.IsChecked));
+
+        IEnumerable<string?> Visible() => All<TextBlock>(window).Where(t => t.IsEffectivelyVisible).Select(t => t.Text);
+        Assert.DoesNotContain("Wind reduction", Visible());
+        Assert.DoesNotContain("Device ID", Visible());
+        Assert.DoesNotContain("Identity", Visible());
+        Assert.Contains("Overall battery", Visible());
+
+        var noise = toggles[1];
+        noise.Focus();
+        window.KeyPressQwerty(PhysicalKey.Space, RawInputModifiers.None);
+        window.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None);
+        Pump();
+        Assert.True(noise.IsChecked);
+        Assert.Contains("Wind reduction", Visible());
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        window.KeyReleaseQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Pump();
+        Assert.False(noise.IsChecked);
+        Assert.DoesNotContain("Wind reduction", Visible());
+
+        void PressSpace(ToggleButton toggle)
+        {
+            toggle.Focus();
+            window.KeyPressQwerty(PhysicalKey.Space, RawInputModifiers.None);
+            window.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None);
+            Pump();
+        }
+
+        PressSpace(toggles[3]);
+        Assert.True(toggles[3].IsChecked);
+        Assert.Contains("Device ID", Visible());
+
+        var eventsBefore = Visible().Count();
+        PressSpace(toggles[4]);
+        Assert.True(toggles[4].IsChecked);
+        Assert.True(Visible().Count() > eventsBefore, "opening the event log shows its entries");
         await CloseAsync(window, vm);
     }
 

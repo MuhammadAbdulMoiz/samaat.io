@@ -40,9 +40,9 @@ Host list with states, switch / connect / disconnect, a multipoint switch, and a
 ### Architecture pass (OpenMouse patterns, [details](ARCHITECTURE.md))
 - **Driver registry and device catalog**: devices resolve to *generic*, *recognised (adapter not built yet)* or *driver*. `devices/**/*.json` entries carry a `verified` flag. Adding a model is a data change, and adding a vendor needs no UI changes.
 - **RFCOMM transport**: `IRfcommChannel` plus a WinRT implementation, ready for the first driver (unverified on hardware).
-- **Windows detection signals**: class of device and SDP service UUIDs, shown on the Info page and in the CLI.
+- **Windows detection signals**: class of device and SDP service UUIDs, shown in the Diagnostics technical details and in the CLI.
 - **Feature-organised app**: `Shell/`, `Features/{Overview,Sound,Connections,Info,Details,Settings}`, `Shared/`, `Styles/` split by area.
-- **Diagnostics tab** (the Info page): identity, detection, a capability table with source and verification, a live event log, and **Copy report** for hardware bug reports.
+- **Diagnostics tab** (the Info page): a summary line ("n of 15 features available"), how the device was recognised (driver catalog or device profile), one capability list (available features with source and verification; unavailable ones grouped by module and collapsed), collapsed Technical details and Event log, and **Copy report** for hardware bug reports.
 - `CONTRIBUTING.md` sets the hardware-evidence rules for marking a model verified.
 
 ### UI polish ([details](design/ui-audit.md#round-3-polish-2026-11-02))

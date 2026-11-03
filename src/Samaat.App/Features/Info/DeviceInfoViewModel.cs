@@ -6,11 +6,13 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Samaat.App.Shared;
 using Samaat.Core.Battery;
+using Samaat.Core.Bluetooth;
 using Samaat.Core.Capabilities;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
+using Samaat.Core.Profiles;
 
 namespace Samaat.App.Features.Info;
 
@@ -19,6 +21,17 @@ public sealed record InfoRow(string Label, string Value);
 public sealed record LedgerRow(string Feature, string Name, string State, string Source, bool Verified, string Access, bool IsEnabled);
 
 public sealed record EventRow(string Time, string Text);
+
+public sealed record CapabilityRow(string Name, string Meta)
+{
+    public string AccessibleName => $"{Name}, {Meta}";
+}
+
+/// <summary>Features of one module that can't be used, with the reason they share.</summary>
+public sealed record UnavailableGroup(string Module, int Count, string Reason, IReadOnlyList<CapabilityRow> Items)
+{
+    public string Title => $"{Module} · {Count} {(Count == 1 ? "feature" : "features")}";
+}
 
 /// <summary>
 /// The per-device diagnostics page: what Samaat observed, how it matched the device, every
@@ -33,11 +46,12 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
     private readonly IBatteryFeature? _battery;
     private readonly INoiseControlFeature? _noise;
     private readonly IMultipointFeature? _multipoint;
+    private readonly DeviceProfile? _profile;
     private readonly Action<Action> _post;
     private readonly TimeProvider _time;
     private string? _lastBattery;
 
-    public DeviceInfoViewModel(IEarbudDevice device, Action<Action>? post = null, TimeProvider? time = null)
+    public DeviceInfoViewModel(IEarbudDevice device, Action<Action>? post = null, TimeProvider? time = null, DeviceProfile? profile = null)
     {
         _device = device;
         _diagnostics = device.GetFeature<IDeviceDiagnostics>();
@@ -79,6 +93,28 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
             _ => "Recognised, not yet verified on hardware",
         };
 
+        _profile = profile;
+        var catalogued = _diagnostics?.Resolution is { Kind: DriverResolutionKind.Driver or DriverResolutionKind.KnownModelNoDriver, Entry: not null };
+        IsRecognised = catalogued || profile is not null;
+        RecognitionTitle = !IsRecognised
+            ? "Not recognised"
+            : $"Recognised as {(catalogued ? _diagnostics!.Resolution.Entry!.DisplayName : profile!.DisplayName)}";
+        RecognitionMeta = catalogued
+            ? ResolutionText
+            : profile is null ? "Samaat adapter: none yet" : $"{Explain(profile.Match)} · Samaat adapter: {profile.Adapter ?? "none yet"}";
+
+        var details = id.Details;
+        var vendorId = signals?.VendorId ?? details?.VendorId;
+        TechnicalRows =
+        [
+            new("Device ID", id.Id),
+            new("Class of device", signals?.ClassOfDevice is { } classOfDevice ? $"0x{classOfDevice:X6}" : "–"),
+            new("Vendor / product ID", vendorId is { } v ? $"0x{v:X4} / 0x{signals?.ProductId ?? details?.ProductId ?? 0:X4}" : "–"),
+            new("Services", signals is { Services.Count: > 0 }
+                ? string.Join(", ", BluetoothServices.Labels(signals.Services))
+                : details is { Services.Count: > 0 } ? string.Join(", ", details.Services) : "–"),
+        ];
+
         _device.ConnectionChanged += OnConnectionChanged;
         if (_battery is not null)
         {
@@ -101,6 +137,26 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
             _lastBattery = Describe(_battery.Current);
         }
     }
+
+    /// <summary>"Recognised as X" when the driver catalog or the device profile database matched.</summary>
+    public string RecognitionTitle { get; }
+
+    /// <summary>How it matched, and whether Samaat has an adapter for it.</summary>
+    public string RecognitionMeta { get; }
+
+    public bool IsRecognised { get; }
+
+    /// <summary>Device ID, class and vendor/product ID, and services as friendly labels; raw UUIDs stay in <see cref="Signals"/> and the report.</summary>
+    public IReadOnlyList<InfoRow> TechnicalRows { get; }
+
+    [ObservableProperty]
+    public partial string SummaryText { get; set; } = "";
+
+    [ObservableProperty]
+    public partial IReadOnlyList<CapabilityRow> AvailableRows { get; set; } = [];
+
+    [ObservableProperty]
+    public partial IReadOnlyList<UnavailableGroup> UnavailableGroups { get; set; } = [];
 
     public IReadOnlyList<InfoRow> Identity { get; }
 
@@ -132,6 +188,11 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
 
         sb.AppendLine(CultureInfo.InvariantCulture, $"Connection: {_device.Connection}");
         sb.AppendLine(CultureInfo.InvariantCulture, $"Resolution: {ResolutionText} ({VerifiedText})");
+        if (_profile is not null)
+        {
+            sb.AppendLine(CultureInfo.InvariantCulture, $"Profile: {_profile.DisplayName} ({Explain(_profile.Match)})");
+        }
+
         sb.AppendLine();
         foreach (var row in Signals)
         {
@@ -153,10 +214,71 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
         return sb.ToString();
     }
 
+    private static readonly (string Module, string Prefix)[] Modules =
+        [("Battery", "battery."), ("Noise control", "noise."), ("Connections", "connections.")];
+
+    private static readonly FeatureId[] BudBatteries = [FeatureId.BatteryLeft, FeatureId.BatteryRight, FeatureId.BatteryCase];
+
+    private static string Explain(ProfileMatch match)
+    {
+        var parts = new List<string>();
+        if (match.SdpUuids.Count > 0)
+        {
+            parts.Add("services");
+        }
+
+        if (match.NamePattern is not null)
+        {
+            parts.Add("name");
+        }
+
+        if (match.Vid is not null || match.Pid is not null)
+        {
+            parts.Add("vendor/product ID");
+        }
+
+        return parts.Count == 0 ? "Matched by profile" : $"Matched by {(parts.Count > 1 ? $"{string.Join(", ", parts[..^1])} and {parts[^1]}" : parts[0])}";
+    }
+
+    private static string Reason(IEnumerable<Capability> capabilities) =>
+        capabilities.Select(c => c.DisabledReason).Distinct().ToList() is [{ Length: > 0 } only] ? only : "Not available";
+
     private void RefreshLedger()
     {
+        var all = DeviceCapabilities.For(_device).ToList();
+        var available = all.Where(c => c.UiState == CapabilityUiState.Enabled).ToList();
+        SummaryText = $"{available.Count} of {all.Count} features available · {CapabilityText.Tier(_device.Identity.Tier)}";
+        AvailableRows = available
+            .Select(c => new CapabilityRow(CapabilityText.Name(c.Feature),
+                $"{CapabilityText.Source(c.Source)} · {CapabilityText.Access(c.Access)}{(c.Verified == Verification.Verified ? " · verified" : "")}"))
+            .ToList();
+
+        var groups = new List<UnavailableGroup>();
+        foreach (var (module, prefix) in Modules)
+        {
+            var missing = all.Where(c => c.UiState != CapabilityUiState.Enabled && c.Feature.Value.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+            if (missing.Count == 0)
+            {
+                continue;
+            }
+
+            // Left, right and case batteries are one idea when none is reported.
+            var buds = missing.Where(c => BudBatteries.Contains(c.Feature)).ToList();
+            var collapse = buds.Count == BudBatteries.Length;
+            var items = missing.Where(c => !collapse || !buds.Contains(c))
+                .Select(c => new CapabilityRow(CapabilityText.Name(c.Feature), c.DisabledReason ?? "Not available")).ToList();
+            if (collapse)
+            {
+                items.Add(new CapabilityRow("Left, right and case battery", Reason(buds)));
+            }
+
+            groups.Add(new UnavailableGroup(module, missing.Count, Reason(missing), items));
+        }
+
+        UnavailableGroups = groups;
+
         Ledger.Clear();
-        foreach (var c in DeviceCapabilities.For(_device))
+        foreach (var c in all)
         {
             Ledger.Add(new LedgerRow(
                 c.Feature.Value,

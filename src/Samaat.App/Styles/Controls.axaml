@@ -47,6 +47,27 @@
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
   </Style>
 
+  <!-- Disclosure rows for collapsed sections: a plain toggle with no expand animation, so reduce-motion needs no special case -->
+  <Style Selector="ToggleButton.disclosure">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ToggleButton.disclosure /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.disclosure:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.disclosure:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.disclosure:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="ToggleButton.disclosure PathIcon.chevron">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Height" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="ToggleButton.disclosure:checked PathIcon.chevron">
+    <Setter Property="RenderTransform" Value="rotate(180deg)" />
+  </Style>
+
   <!-- Selectable option rows (noise control modes) -->
   <Style Selector="Button.option">
     <Setter Property="HorizontalAlignment" Value="Stretch" />

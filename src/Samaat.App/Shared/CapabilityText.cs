@@ -1,4 +1,5 @@
 using Samaat.Core.Capabilities;
+using Samaat.Core.Devices;
 
 namespace Samaat.App.Shared;
 
@@ -35,6 +36,13 @@ public static class CapabilityText
         CapabilitySource.RuntimeQuery => "Device query",
         CapabilitySource.Profile => "Catalog",
         _ => source.ToString(),
+    };
+
+    public static string Tier(SupportTier tier) => tier switch
+    {
+        SupportTier.Full => "Full support",
+        SupportTier.Standard => "Standard support",
+        _ => "Basic support",
     };
 
     public static string Access(CapabilityAccess access) => access == CapabilityAccess.ReadWrite ? "Read / write" : "Read only";

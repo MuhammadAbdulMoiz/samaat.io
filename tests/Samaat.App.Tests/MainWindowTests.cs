@@ -91,7 +91,8 @@ public class MainWindowTests
         Assert.True(pro.Connections.HasMultipoint);
         Assert.True(headset.NoiseControl.IsUnavailable);
         Assert.False(headset.Connections.HasMultipoint);
-        Assert.Equal(["Battery", "Noise control", "Connections"], pro.CapabilityGroups.Select(g => g.Title));
+        Assert.Equal(["Battery"], pro.Info.UnavailableGroups.Select(g => g.Module));
+        Assert.Equal(["Battery", "Noise control", "Connections"], headset.Info.UnavailableGroups.Select(g => g.Module));
 
         window.Close();
         await viewModel.DisposeAsync();
