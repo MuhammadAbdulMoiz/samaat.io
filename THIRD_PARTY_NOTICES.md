@@ -35,3 +35,7 @@ SOFTWARE.
 ## Jieli RCSP noise control and EQ commands
 
 The command and attribute layouts used by `src/Samaat.Protocols.Jieli` for noise control and EQ (GetSysInfo/SetSysInfo, the noise-mode and EQ attributes) were learned from Jieli Technology's official SDKs, [Android-JL_Bluetooth](https://github.com/Jieli-Tech/Android-JL_Bluetooth) and [iOS-JL_Bluetooth](https://github.com/Jieli-Tech/iOS-JL_Bluetooth), both licensed under the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). No SDK code is included; Samaat's implementation is its own. Details: [docs/protocols/jieli-rcsp.md](docs/protocols/jieli-rcsp.md).
+
+## NAudio
+
+`src/Samaat.Platform.Windows/WasapiBackend.cs` uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi`, `NAudio.Core`) for WASAPI loopback capture and playback. NAudio is licensed under the MIT License, Copyright (c) Mark Heath & contributors.

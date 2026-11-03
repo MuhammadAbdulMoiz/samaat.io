@@ -8,4 +8,8 @@
     <ProjectReference Include="..\Samaat.Transport\Samaat.Transport.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.Standard\Samaat.Protocols.Standard.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NAudio.Core" />
+    <PackageReference Include="NAudio.Wasapi" />
+  </ItemGroup>
 </Project>
