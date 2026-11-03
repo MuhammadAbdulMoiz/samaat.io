@@ -109,7 +109,11 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>Two letters for the collapsed sidebar rail.</summary>
     public string Initials { get; }
 
-    public string ArtworkLabel => $"{Name} earbuds";
+    public string ArtworkLabel => $"{Name} {(HasBuds ? "earbuds" : "headset")}";
+
+    // shortcut: name keywords decide the form factor; add a formFactor field to device profiles when a model is misdrawn.
+    private bool LooksLikeEarbuds =>
+        new[] { "bud", "pods", "earphone", "tws" }.Any(k => $"{Name} {Subtitle}".Contains(k, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The four numbers of the battery panel: overall, left, right, case.</summary>
     public ObservableCollection<BatteryFigureViewModel> Figures { get; } =
@@ -301,7 +305,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             _ => "Not reported",
         };
 
-        HasBuds = buds;
+        HasBuds = buds || LooksLikeEarbuds;
         HasSummary = summary is not null;
         SummaryFigure = summary is { } figure ? figure.ToString() : "–";
         SummaryUnit = HasSummary ? "%" : "";

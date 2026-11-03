@@ -171,8 +171,8 @@
                         </Canvas>
                       </Viewbox>
                     </StackPanel>
-                    <PathIcon IsVisible="{Binding !HasBuds}" Data="{StaticResource Icon.Headphones}" Width="64" Height="64"
-                              Foreground="{DynamicResource Samaat.GlyphDetail}" />
+                    <PathIcon IsVisible="{Binding !HasBuds}" Data="{StaticResource Icon.Headphones}" Width="92" Height="92"
+                              Foreground="{DynamicResource Samaat.GlyphFill}" />
                   </Panel>
                 </Panel>
               </Border>
