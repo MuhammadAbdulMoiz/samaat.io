@@ -16,5 +16,7 @@
   "verified": false,
   "features": [],
   "verifiedFirmware": [],
+  // Product photo (user-supplied), background removed; shown in the device rail.
+  "image": "quantum-zbuds.png",
   "notes": "Basic tier only: one combined battery level from Windows. No vendor protocol identified; see docs/hardware-tests/2026-11-02-quantum.md."
 }

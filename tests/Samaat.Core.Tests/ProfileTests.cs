@@ -111,6 +111,21 @@ public sealed class ProfileTests : IDisposable
         Assert.Equal("generic", db.Match(Identity("Quantum"))?.Id);
     }
 
+    [Theory]
+    [InlineData("buds.png", true)]
+    [InlineData("missing.png", false)]
+    [InlineData("../outside.png", false)] // a profile can't point outside its own folder
+    public void Load_ResolvesImageNextToTheProfile(string image, bool expected)
+    {
+        Write("zero/buds.png", "png");
+        Write("outside.png", "png");
+        Write("zero/quantum.json", Quantum.Replace("\"notes\"", $"\"image\": \"{image}\", \"notes\""));
+
+        var profile = DeviceProfileDb.Load(_dir).Profiles.Single();
+
+        Assert.Equal(expected ? Path.Combine(_dir, "zero", "buds.png") : null, profile.Image);
+    }
+
     [Fact]
     public void Load_SkipsUnderscoreFiles()
     {

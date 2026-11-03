@@ -150,8 +150,16 @@
                   <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <c:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
                                    Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
-                    <StackPanel IsVisible="{Binding HasBuds}" Orientation="Horizontal" Spacing="2"
+                    <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
+                           Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                    <StackPanel Orientation="Horizontal" Spacing="2"
                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <StackPanel.IsVisible>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                          <Binding Path="HasBuds" />
+                          <Binding Path="!HasArtworkImage" />
+                        </MultiBinding>
+                      </StackPanel.IsVisible>
                       <Viewbox Width="46">
                         <Canvas Width="40" Height="56">
                           <Path Data="{StaticResource Glyph.Bud}" Fill="{DynamicResource Samaat.GlyphFill}" />
@@ -171,8 +179,15 @@
                         </Canvas>
                       </Viewbox>
                     </StackPanel>
-                    <PathIcon IsVisible="{Binding !HasBuds}" Data="{StaticResource Icon.Headphones}" Width="92" Height="92"
-                              Foreground="{DynamicResource Samaat.GlyphFill}" />
+                    <PathIcon Data="{StaticResource Icon.Headphones}" Width="92" Height="92"
+                              Foreground="{DynamicResource Samaat.GlyphFill}">
+                      <PathIcon.IsVisible>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                          <Binding Path="!HasBuds" />
+                          <Binding Path="!HasArtworkImage" />
+                        </MultiBinding>
+                      </PathIcon.IsVisible>
+                    </PathIcon>
                   </Panel>
                 </Panel>
               </Border>

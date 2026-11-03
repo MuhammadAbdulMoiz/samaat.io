@@ -17,4 +17,5 @@ public sealed record DeviceProfile(
     string? Adapter,
     JsonElement? Features,
     IReadOnlyList<string> VerifiedFirmware,
-    string? Notes);
+    string? Notes,
+    string? Image = null);

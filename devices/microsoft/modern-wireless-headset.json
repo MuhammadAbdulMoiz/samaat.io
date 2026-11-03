@@ -1,0 +1,19 @@
+{
+  // Read by both DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details); keep it valid for each.
+  "id": "microsoft.modern-wireless-headset",
+  "displayName": "Microsoft Modern Wireless Headset",
+  "manufacturer": "Microsoft",
+  // Paired on the test PC but never connected during testing; no vendor protocol investigated.
+  "driver": "none",
+  "match": {
+    "sdpUuids": [],
+    "namePattern": "^Microsoft Modern Wireless Headset$"
+  },
+  "adapter": null,
+  "verified": false,
+  "features": [],
+  "verifiedFirmware": [],
+  // Product photo (user-supplied), background removed; shown in the device rail.
+  "image": "modern-wireless-headset.png",
+  "notes": "Basic tier: one combined battery level from Windows."
+}

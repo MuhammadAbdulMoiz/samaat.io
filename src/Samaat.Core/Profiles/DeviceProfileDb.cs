@@ -50,7 +50,7 @@ public sealed class DeviceProfileDb
             try
             {
                 using var doc = JsonDocument.Parse(File.ReadAllText(file), Lenient);
-                profiles.Add(Parse(doc.RootElement));
+                profiles.Add(Parse(doc.RootElement) with { Image = ResolveImage(doc.RootElement, file) });
             }
             catch (Exception e)
             {
@@ -158,6 +158,19 @@ public sealed class DeviceProfileDb
             root.TryGetProperty("features", out var features) ? features.Clone() : null,
             firmware,
             OptionalString(root, "notes"));
+    }
+
+    /// <summary>The profile's "image", as a full path, only if it exists inside the profile's own folder.</summary>
+    private static string? ResolveImage(JsonElement root, string profileFile)
+    {
+        if (OptionalString(root, "image") is not { Length: > 0 } image)
+        {
+            return null;
+        }
+
+        var folder = Path.GetDirectoryName(Path.GetFullPath(profileFile))! + Path.DirectorySeparatorChar;
+        var path = Path.GetFullPath(Path.Combine(folder, image));
+        return path.StartsWith(folder, StringComparison.OrdinalIgnoreCase) && File.Exists(path) ? path : null;
     }
 
     private static string RequiredString(JsonElement element, string name) =>

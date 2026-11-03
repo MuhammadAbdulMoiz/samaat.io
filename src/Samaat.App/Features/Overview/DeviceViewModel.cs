@@ -31,6 +31,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     {
         _device = device;
         _profile = profile;
+        ArtworkImage = LoadArtwork(profile?.Image);
         _battery = device.GetFeature<IBatteryFeature>();
         _alerts = alerts;
         _time = time;
@@ -69,7 +70,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         // The profile names the model when Windows didn't report maker or model.
         _device.Identity.Manufacturer is null && _device.Identity.Model is null ? _profile?.DisplayName : _device.Identity.Model,
         _device.Identity.FirmwareVersion is { } fw ? $"Firmware {fw}" : null,
-    }.Where(s => !string.IsNullOrWhiteSpace(s)));
+    }.Where(s => !string.IsNullOrWhiteSpace(s) && !Name.Contains(s!, StringComparison.OrdinalIgnoreCase))); // don't repeat the title
 
     public string TierText => _device.Identity.Tier switch
     {
@@ -109,7 +110,24 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>Two letters for the collapsed sidebar rail.</summary>
     public string Initials { get; }
 
-    public string ArtworkLabel => $"{Name} {(HasBuds ? "earbuds" : "headset")}";
+    /// <summary>The model's photo from its device profile; null draws the built-in earbud or headset artwork.</summary>
+    public Avalonia.Media.Imaging.Bitmap? ArtworkImage { get; }
+
+    public bool HasArtworkImage => ArtworkImage is not null;
+
+    private static Avalonia.Media.Imaging.Bitmap? LoadArtwork(string? path)
+    {
+        try
+        {
+            return path is null ? null : new Avalonia.Media.Imaging.Bitmap(path);
+        }
+        catch (Exception)
+        {
+            return null; // a broken image file falls back to the drawn artwork
+        }
+    }
+
+    public string ArtworkLabel =>$"{Name} {(HasBuds ? "earbuds" : "headset")}";
 
     // shortcut: name keywords decide the form factor; add a formFactor field to device profiles when a model is misdrawn.
     private bool LooksLikeEarbuds =>

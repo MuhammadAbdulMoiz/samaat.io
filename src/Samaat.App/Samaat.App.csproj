@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\devices\**\*.json" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\devices\**\*.png" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />
