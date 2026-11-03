@@ -58,6 +58,26 @@ public sealed class SettingsTests : IDisposable
         Assert.False(new Samaat.Core.Platform.NoMotionPreference().ReduceMotion);
 
     [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(501, 500)]
+    [InlineData(250, 250)]
+    public void Settings_ShareDelay_ClampedOnNormalize(int delay, int expected) =>
+        Assert.Equal(expected, new AppSettings { ShareDelayMs = delay }.Normalize().ShareDelayMs);
+
+    [Fact]
+    public void Settings_ShareFields_RoundTrip()
+    {
+        var store = new SettingsStore(InDir());
+        var saved = new AppSettings { ShareTargetId = "speaker-1", ShareDelayMs = 120 };
+
+        Assert.True(store.Save(saved));
+
+        var loaded = new SettingsStore(InDir()).Load();
+        Assert.Equal("speaker-1", loaded.ShareTargetId);
+        Assert.Equal(120, loaded.ShareDelayMs);
+    }
+
+    [Theory]
     [InlineData(2, 1, 5, 1)]
     [InlineData(99, 99, 50, 49)]
     [InlineData(20, 20, 20, 19)]
