@@ -71,6 +71,17 @@ public class CapabilityTests
     }
 
     [Fact]
+    public void BatteryCapabilities_BudLevels_MakeTheOverallLevelAvailable()
+    {
+        // The overall figure is derived from the buds (BatteryState.SummaryPercent), so it isn't "couldn't detect".
+        var device = new FakeDevice(new FakeBattery([BatteryComponent.Left, BatteryComponent.Right], exhaustive: false));
+
+        var set = new CapabilitySet(BatteryCapabilities.For(device));
+
+        Assert.Equal(CapabilityUiState.Enabled, set.Get(FeatureId.BatteryCombined).UiState);
+    }
+
+    [Fact]
     public void BatteryCapabilities_NonExhaustiveSource_MissingComponentsStayUnknown()
     {
         var device = new FakeDevice(new FakeBattery([BatteryComponent.Combined], exhaustive: false));

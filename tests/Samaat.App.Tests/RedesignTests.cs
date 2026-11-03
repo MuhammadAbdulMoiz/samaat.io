@@ -273,7 +273,7 @@ public class RedesignShellTests
 
         var toggles = All<ToggleButton>(window).Where(t => t.Classes.Contains("disclosure")).ToList();
         var names = toggles.Select(AutomationProperties.GetName).ToList();
-        Assert.Equal(["Battery · 3 features", "Noise control · 7 features", "Equalizer · 1 feature", "Connections · 4 features", "Technical details", "Event log"], names);
+        Assert.Equal(["Battery · 3 more features","Noise control · 7 features", "Equalizer · 1 feature", "Connections · 4 features", "Technical details", "Event log"], names);
         Assert.All(toggles, t => Assert.False(t.IsChecked));
 
         IEnumerable<string?> Visible() => All<TextBlock>(window).Where(t => t.IsEffectivelyVisible).Select(t => t.Text);

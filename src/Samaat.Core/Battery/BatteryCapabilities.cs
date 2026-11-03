@@ -21,7 +21,9 @@ public static class BatteryCapabilities
         return Enum.GetValues<BatteryComponent>().Select(component => CapabilityFactory.Create(
             FeatureFor(component),
             hasSource: feature is not null,
-            supported: feature?.Components.Contains(component) == true,
+            supported: feature?.Components.Contains(component) == true
+                // The overall level is derived from the buds (BatteryState.SummaryPercent) when they report one.
+                || (component == BatteryComponent.Combined && feature?.Components.Overlaps([BatteryComponent.Left, BatteryComponent.Right]) == true),
             exhaustive: feature?.ComponentsAreExhaustive == true,
             device.Connection,
             feature?.Source ?? CapabilitySource.Profile,

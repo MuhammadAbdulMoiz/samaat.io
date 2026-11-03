@@ -95,7 +95,7 @@ public class MainWindowTests
         Assert.True(pro.Connections.HasMultipoint);
         Assert.True(headset.NoiseControl.IsUnavailable);
         Assert.False(headset.Connections.HasMultipoint);
-        Assert.Equal(["Battery"], pro.Info.UnavailableGroups.Select(g => g.Module));
+        Assert.Empty(pro.Info.UnavailableGroups); // every battery level, including the derived overall one, is available
         Assert.Equal(["Battery", "Noise control", "Equalizer", "Connections"], headset.Info.UnavailableGroups.Select(g => g.Module));
 
         window.Close();

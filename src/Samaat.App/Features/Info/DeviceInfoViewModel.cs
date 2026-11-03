@@ -28,9 +28,10 @@ public sealed record CapabilityRow(string Name, string Meta)
 }
 
 /// <summary>Features of one module that can't be used, with the reason they share.</summary>
-public sealed record UnavailableGroup(string Module, int Count, string Reason, IReadOnlyList<CapabilityRow> Items)
+public sealed record UnavailableGroup(string Module, int Count, string Reason, IReadOnlyList<CapabilityRow> Items, bool Partial = false)
 {
-    public string Title => $"{Module} · {Count} {(Count == 1 ? "feature" : "features")}";
+    // "· 5 more features" when some of the module works, so the row doesn't read as "noise control isn't supported".
+    public string Title => $"{Module} · {Count} {(Partial ? "more " : "")}{(Count == 1 ? "feature" : "features")}";
 }
 
 /// <summary>
@@ -272,7 +273,8 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
                 items.Add(new CapabilityRow("Left, right and case battery", Reason(buds)));
             }
 
-            groups.Add(new UnavailableGroup(module, missing.Count, Reason(missing), items));
+            var partial = available.Any(c => c.Feature.Value.StartsWith(prefix, StringComparison.Ordinal));
+            groups.Add(new UnavailableGroup(module, missing.Count, Reason(missing), items, partial));
         }
 
         UnavailableGroups = groups;

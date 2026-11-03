@@ -53,6 +53,18 @@ public class DeviceInfoViewModelTests
     }
 
     [Fact]
+    public async Task PartlySupportedModule_GroupSaysOther_SoItDoesNotReadAsUnsupported()
+    {
+        await using var source = new SimulatorDeviceSource(TimeSpan.FromHours(1), commandLatency: TimeSpan.Zero);
+        var lite = source.Devices.Single(d => d.Identity.Id == "sim-buds-lite"); // one noise-cancelling switch, nothing else
+
+        var vm = new DeviceInfoViewModel(lite, post: a => a());
+
+        Assert.Contains(vm.AvailableRows, r => r.Name == "Noise cancelling");
+        Assert.Matches(@"^Noise control · \d+ more features?$", vm.UnavailableGroups.Single(g => g.Module == "Noise control").Title);
+    }
+
+    [Fact]
     public async Task BudsPro_ListsMostFeaturesAsAvailable_WithoutANoiseGroup()
     {
         var (vm, _) = await CreateAsync();
@@ -152,7 +164,8 @@ public class DeviceInfoViewModelTests
         Assert.Equal("Simulator", anc.Source);
         Assert.True(anc.Verified);
         Assert.Equal("Read / write", anc.Access);
-        Assert.Contains(vm.Ledger, r => r.Feature == "battery.combined" && r.State == "Not supported by this model");
+        // Buds Pro reports left, right and case; the overall level is derived from them.
+        Assert.Contains(vm.Ledger, r => r.Feature == "battery.combined" && r.State == "Available");
     }
 
     [Fact]
