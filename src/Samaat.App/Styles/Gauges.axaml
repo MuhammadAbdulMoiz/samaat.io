@@ -18,6 +18,27 @@
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
 
+  <!-- Split device photo: two buds side by side, the case below them; no transitions, so reduce-motion needs nothing -->
+  <Style Selector="ItemsControl.artworkParts Image">
+    <Setter Property="Height" Value="64" />
+  </Style>
+  <Style Selector="ItemsControl.artworkParts > ContentPresenter:nth-child(2)">
+    <Setter Property="Grid.Column" Value="1" />
+  </Style>
+  <Style Selector="ItemsControl.artworkParts > ContentPresenter:nth-child(3)">
+    <Setter Property="Grid.Row" Value="1" />
+    <Setter Property="Grid.ColumnSpan" Value="2" />
+  </Style>
+  <Style Selector="ItemsControl.artworkParts > ContentPresenter:nth-child(3) Image">
+    <Setter Property="Height" Value="80" />
+  </Style>
+  <Style Selector="StackPanel.artworkPart.missing">
+    <Setter Property="Opacity" Value="0.4" />
+  </Style>
+  <Style Selector="StackPanel.artworkPart TextBlock.charging">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+
   <!-- Motion: levels glide to new values instead of jumping -->
   <Style Selector="c|BatteryRing">
     <Setter Property="Transitions">

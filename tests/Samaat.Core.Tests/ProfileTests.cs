@@ -126,6 +126,35 @@ public sealed class ProfileTests : IDisposable
         Assert.Equal(expected ? Path.Combine(_dir, "zero", "buds.png") : null, profile.Image);
     }
 
+    [Theory]
+    [InlineData("case.png", true)]
+    [InlineData("missing.png", false)] // the parts are used only as a full set
+    [InlineData("../outside.png", false)]
+    public void Load_ResolvesPartImagesNextToTheProfile(string caseImage, bool expected)
+    {
+        Write("zero/left.png", "png");
+        Write("zero/right.png", "png");
+        Write("zero/case.png", "png");
+        Write("outside.png", "png");
+        Write("zero/quantum.json", Quantum.Replace("\"notes\"",
+            $$"""  "images": { "left": "left.png", "right": "right.png", "case": "{{caseImage}}" }, "notes" """));
+
+        var profile = DeviceProfileDb.Load(_dir).Profiles.Single();
+
+        var folder = Path.Combine(_dir, "zero");
+        Assert.Equal(
+            expected ? new ProfilePartImages(Path.Combine(folder, "left.png"), Path.Combine(folder, "right.png"), Path.Combine(folder, "case.png")) : null,
+            profile.PartImages);
+    }
+
+    [Fact]
+    public void Load_WithoutImages_HasNoPartImages()
+    {
+        Write("quantum.json", Quantum);
+
+        Assert.Null(DeviceProfileDb.Load(_dir).Profiles.Single().PartImages);
+    }
+
     [Fact]
     public void Load_SkipsUnderscoreFiles()
     {

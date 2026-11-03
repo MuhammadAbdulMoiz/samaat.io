@@ -147,7 +147,28 @@
               <Border Classes="stage" Height="216">
                 <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
                   <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
-                  <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <!-- Split photo: each bud and the case with its own level, buds above the case as in the product photo -->
+                  <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate><Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6" /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="overview:ArtworkPartViewModel">
+                        <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figure.HasLevel}" Spacing="2"
+                                    AutomationProperties.Name="{Binding Figure.AccessibleText}" ToolTip.Tip="{Binding Figure.AccessibleText}">
+                          <Image Source="{Binding Image}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                            <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" IsVisible="{Binding Figure.IsCharging}"
+                                      Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Center" />
+                            <TextBlock Classes="number" Classes.charging="{Binding Figure.IsCharging}" Text="{Binding Figure.Value}" />
+                            <TextBlock Classes="meta" Text="{Binding Figure.Unit}" VerticalAlignment="Bottom" />
+                          </StackPanel>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !ShowArtworkParts}">
                     <c:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
                                    Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
                     <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"

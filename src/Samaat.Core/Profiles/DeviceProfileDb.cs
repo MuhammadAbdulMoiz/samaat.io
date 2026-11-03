@@ -50,7 +50,12 @@ public sealed class DeviceProfileDb
             try
             {
                 using var doc = JsonDocument.Parse(File.ReadAllText(file), Lenient);
-                profiles.Add(Parse(doc.RootElement) with { Image = ResolveImage(doc.RootElement, file) });
+                var root = doc.RootElement;
+                profiles.Add(Parse(root) with
+                {
+                    Image = ResolveImage(OptionalString(root, "image"), file),
+                    PartImages = ResolvePartImages(root, file),
+                });
             }
             catch (Exception e)
             {
@@ -160,10 +165,24 @@ public sealed class DeviceProfileDb
             OptionalString(root, "notes"));
     }
 
-    /// <summary>The profile's "image", as a full path, only if it exists inside the profile's own folder.</summary>
-    private static string? ResolveImage(JsonElement root, string profileFile)
+    /// <summary>The profile's "images" (left, right, case), only when all three resolve like "image".</summary>
+    private static ProfilePartImages? ResolvePartImages(JsonElement root, string profileFile)
     {
-        if (OptionalString(root, "image") is not { Length: > 0 } image)
+        if (!root.TryGetProperty("images", out var images) || images.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return (ResolveImage(OptionalString(images, "left"), profileFile), ResolveImage(OptionalString(images, "right"), profileFile),
+                ResolveImage(OptionalString(images, "case"), profileFile)) is ({ } left, { } right, { } @case)
+            ? new ProfilePartImages(left, right, @case)
+            : null;
+    }
+
+    /// <summary>An image path from the profile, as a full path, only if it exists inside the profile's own folder.</summary>
+    private static string? ResolveImage(string? image, string profileFile)
+    {
+        if (image is not { Length: > 0 })
         {
             return null;
         }

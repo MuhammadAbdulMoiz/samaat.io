@@ -33,4 +33,8 @@ public sealed partial class BatteryFigureViewModel(string label) : ObservableObj
 
     [ObservableProperty]
     public partial bool IsCharging { get; set; }
+
+    /// <summary>What a screen reader says, e.g. "Left bud, 80 percent, charging".</summary>
+    [ObservableProperty]
+    public partial string AccessibleText { get; set; } = "";
 }
