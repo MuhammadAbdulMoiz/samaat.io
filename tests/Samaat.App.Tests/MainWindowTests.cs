@@ -1,5 +1,8 @@
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.VisualTree;
 using Avalonia.Styling;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -8,17 +11,18 @@ using Samaat.App.Features.Overview;
 using Samaat.App.Features.Sound;
 using Samaat.App.Shell;
 using Samaat.Core.Battery;
+using Samaat.Core.Profiles;
 using Samaat.Core.Settings;
 
 namespace Samaat.App.Tests;
 
 public class MainWindowTests
 {
-    private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync()
+    private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync(DeviceProfileDb? profiles = null)
     {
         // A temp-directory store, so tests never read or write the real %APPDATA% settings.
         var settings = new SettingsStore(Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"), "settings.json"));
-        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), settings: settings);
+        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), settings: settings, profiles: profiles);
         var window = new MainWindow { DataContext = viewModel };
         window.Show();
         await viewModel.RefreshDevicesAsync();
@@ -96,6 +100,40 @@ public class MainWindowTests
 
         window.Close();
         await viewModel.DisposeAsync();
+    }
+
+    [AvaloniaFact]
+    public async Task RailShowsEachPartWithItsLevel_WhenTheProfileHasPartImages()
+    {
+        // A profile for the simulated buds whose three part images are copies of a shipped photo.
+        var dir = Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var photo = Path.Combine(AppContext.BaseDirectory, "devices", "audionic", "paradox-e.png");
+        foreach (var part in new[] { "left", "right", "case" })
+        {
+            File.Copy(photo, Path.Combine(dir, $"{part}.png"));
+        }
+
+        File.WriteAllText(Path.Combine(dir, "pro.json"), """
+            { "id": "sim.pro", "displayName": "Pro", "match": { "namePattern": "^Simulated Buds Pro$" },
+              "images": { "left": "left.png", "right": "right.png", "case": "case.png" } }
+            """);
+        var (window, viewModel) = await ShowAsync(DeviceProfileDb.Load(dir));
+
+        List<string> VisibleNames() => window.GetVisualDescendants().OfType<Control>()
+            .Where(c => c.IsEffectivelyVisible && AutomationProperties.GetName(c) is { } n && (n.StartsWith("Left bud,") || n.StartsWith("Right bud,") || n.StartsWith("Case,")))
+            .Select(c => AutomationProperties.GetName(c)!).ToList();
+
+        // The simulator starts its buds at 93% and 81% and its case at 64%, none charging.
+        Assert.Equal(["Left bud, 93 percent", "Right bud, 81 percent", "Case, 64 percent"], VisibleNames());
+
+        viewModel.SelectDeviceCommand.Execute(viewModel.Devices.Single(d => d.Name == "Simulated Buds Lite")); // no profile
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(VisibleNames());
+
+        window.Close();
+        await viewModel.DisposeAsync();
+        Directory.Delete(dir, recursive: true);
     }
 
     /// <summary>Lets page cross-fades and value transitions finish (headless time only moves when ticked).</summary>

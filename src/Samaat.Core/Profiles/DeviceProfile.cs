@@ -18,4 +18,8 @@ public sealed record DeviceProfile(
     JsonElement? Features,
     IReadOnlyList<string> VerifiedFirmware,
     string? Notes,
-    string? Image = null);
+    string? Image = null,
+    ProfilePartImages? PartImages = null);
+
+/// <summary>Separate photos of the left bud, right bud and case, shown with their own battery levels.</summary>
+public sealed record ProfilePartImages(string Left, string Right, string Case);

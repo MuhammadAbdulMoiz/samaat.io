@@ -32,6 +32,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         _device = device;
         _profile = profile;
         ArtworkImage = LoadArtwork(profile?.Image);
+        ArtworkParts = LoadArtworkParts(profile?.PartImages);
         _battery = device.GetFeature<IBatteryFeature>();
         _alerts = alerts;
         _time = time;
@@ -124,6 +125,21 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         {
             return null; // a broken image file falls back to the drawn artwork
         }
+    }
+
+    /// <summary>Left bud, right bud and case photos with their figures; empty unless the profile has all three.</summary>
+    public IReadOnlyList<ArtworkPartViewModel> ArtworkParts { get; }
+
+    /// <summary>The rail shows the split photo: all three parts exist and the device reports each bud.</summary>
+    [ObservableProperty]
+    public partial bool ShowArtworkParts { get; set; }
+
+    private IReadOnlyList<ArtworkPartViewModel> LoadArtworkParts(ProfilePartImages? images)
+    {
+        var bitmaps = images is null ? [] : new[] { images.Left, images.Right, images.Case }.Select(LoadArtwork).ToList();
+        return bitmaps.Count == 3 && bitmaps.All(b => b is not null)
+            ? bitmaps.Zip(Figures.Skip(1), (bitmap, figure) => new ArtworkPartViewModel(figure, bitmap!)).ToList()
+            : [];
     }
 
     public string ArtworkLabel =>$"{Name} {(HasBuds ? "earbuds" : "headset")}";
@@ -262,6 +278,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             figure.IsLow = tile.IsLow;
             figure.IsCritical = tile.IsCritical;
             figure.IsCharging = tile.IsCharging;
+            figure.AccessibleText = !tile.IsReported ? $"{figure.Label}, not reported"
+                : !tile.HasLevel ? $"{figure.Label}, no reading"
+                : $"{figure.Label}, {(int)tile.Percent} percent{(tile.IsCharging ? ", charging" : tile.StateText == "Full" ? ", fully charged" : "")}";
             figure.Meta = !tile.IsReported
                 ? "Not reported"
                 : string.Join(" · ", new[] { tile.IsLow || tile.IsCritical ? tile.StateText : "", tile.DetailText }.Where(t => t.Length > 0));
@@ -336,6 +355,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         };
 
         HasBuds = buds || LooksLikeEarbuds;
+        ShowArtworkParts = buds && ArtworkParts.Count == 3;
         HasSummary = summary is not null;
         SummaryFigure = summary is { } figure ? figure.ToString() : "–";
         SummaryUnit = HasSummary ? "%" : "";
