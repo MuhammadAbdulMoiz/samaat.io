@@ -24,6 +24,11 @@ public interface IGattCharacteristic
 
     bool CanNotify { get; }
 
+    bool CanWrite { get; }
+
+    /// <summary>Returns false if the write failed or the characteristic can't be written.</summary>
+    Task<bool> WriteAsync(ReadOnlyMemory<byte> data, bool withoutResponse, CancellationToken cancellationToken = default);
+
     /// <summary>Returns null if the read failed.</summary>
     Task<byte[]?> ReadAsync(CancellationToken cancellationToken = default);
 

@@ -66,11 +66,18 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
     public string Subtitle => string.Join(" · ", new[]
     {
-        _device.Identity.Manufacturer,
+        // "Audionic · Audionic ParadoX-E" reads twice, so the maker is dropped when the model already names it.
+        ContainsWords(_device.Identity.Model, _device.Identity.Manufacturer) ? null : _device.Identity.Manufacturer,
         // The profile names the model when Windows didn't report maker or model.
         _device.Identity.Manufacturer is null && _device.Identity.Model is null ? _profile?.DisplayName : _device.Identity.Model,
         _device.Identity.FirmwareVersion is { } fw ? $"Firmware {fw}" : null,
-    }.Where(s => !string.IsNullOrWhiteSpace(s) && !Name.Contains(s!, StringComparison.OrdinalIgnoreCase))); // don't repeat the title
+    }.Where(s => !string.IsNullOrWhiteSpace(s) && !ContainsWords(Name, s))); // don't repeat the title
+
+    // Whole words only: "HP" must not match inside "SHP-9500".
+    private static bool ContainsWords(string? text, string? phrase) =>
+        text is not null && !string.IsNullOrWhiteSpace(phrase)
+        && System.Text.RegularExpressions.Regex.IsMatch(text, $@"(?<![\w]){System.Text.RegularExpressions.Regex.Escape(phrase)}(?![\w])",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     public string TierText => CapabilityText.Tier(_device.Identity.Tier);
 

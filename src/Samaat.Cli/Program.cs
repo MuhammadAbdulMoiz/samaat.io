@@ -20,6 +20,7 @@ var sources = new List<IDeviceSource>();
 #if SAMAAT_WINDOWS
 var driverRegistry = new Samaat.Core.Drivers.DriverRegistry(
     Samaat.Core.Drivers.DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
+driverRegistry.Register(new Samaat.Protocols.Jieli.JieliDriver());
 sources.Add(new Samaat.Platform.Windows.WindowsDeviceSource(includeNonAudio: includeNonAudio, registry: driverRegistry));
 #else
 if (!simulate)

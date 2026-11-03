@@ -23,8 +23,12 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
     public bool UsesSimulator => Simulate || !HasRealBluetooth;
 
     /// <summary>Known models from the <c>devices/</c> folder next to the app. Drivers register here as they're built.</summary>
-    public static DriverRegistry CreateRegistry() =>
-        new(DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
+    public static DriverRegistry CreateRegistry()
+    {
+        var registry = new DriverRegistry(DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
+        registry.Register(new Samaat.Protocols.Jieli.JieliDriver());
+        return registry;
+    }
 
     public IReadOnlyList<IDeviceSource> CreateSources(TimeProvider time)
     {

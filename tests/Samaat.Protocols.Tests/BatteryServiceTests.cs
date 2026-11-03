@@ -148,6 +148,11 @@ internal sealed class FakeCharacteristic(byte[] value, byte[]? presentationForma
 
     public bool IsSubscribed => _subscriber is not null;
 
+    public bool CanWrite => false;
+
+    public Task<bool> WriteAsync(ReadOnlyMemory<byte> data, bool withoutResponse, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
+
     public Task<byte[]?> ReadAsync(CancellationToken cancellationToken = default) => Task.FromResult<byte[]?>(value);
 
     public Task<byte[]?> ReadDescriptorAsync(Guid descriptorUuid, CancellationToken cancellationToken = default) =>

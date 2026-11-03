@@ -1,0 +1,21 @@
+{
+  // Read by both DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details); keep it valid for each.
+  "id": "audionic.paradox-e",
+  "displayName": "Audionic ParadoX-E",
+  "manufacturer": "Audionic",
+  "driver": "jieli-rcsp",
+  "match": {
+    // Same Jieli VID/PID as the Quantum Zbuds, so the name is what tells them apart.
+    "deviceId": { "vid": "0x05D6", "pid": "0x000A" },
+    "vendorId": "0x05D6",
+    "productId": "0x000A",
+    "sdpUuids": [],
+    "namePattern": "^ParadoX-E$"
+  },
+  "adapter": "jieli-rcsp",
+  "verified": false,
+  "features": ["battery.left", "battery.right", "battery.case"],
+  "verifiedFirmware": [],
+  "image": "paradox-e.png",
+  "notes": "Battery per bud (and case, when reported) over Jieli RCSP on BLE service AE00; see docs/hardware-tests/2026-11-03-audionic-paradox-e.md. Read-only: only the auth handshake is ever written."
+}

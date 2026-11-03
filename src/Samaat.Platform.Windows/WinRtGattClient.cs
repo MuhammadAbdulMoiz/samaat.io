@@ -62,6 +62,25 @@ internal sealed class WinRtGattClient(BluetoothLEDevice device) : IGattClient, I
 
         public bool CanNotify => characteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Notify);
 
+        public bool CanWrite => characteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Write)
+            || characteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.WriteWithoutResponse);
+
+        public async Task<bool> WriteAsync(ReadOnlyMemory<byte> data, bool withoutResponse, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                using var writer = new DataWriter();
+                writer.WriteBytes(data.ToArray());
+                var option = withoutResponse ? GattWriteOption.WriteWithoutResponse : GattWriteOption.WriteWithResponse;
+                var result = await characteristic.WriteValueWithResultAsync(writer.DetachBuffer(), option).AsTask(cancellationToken);
+                return result.Status == GattCommunicationStatus.Success;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
         public async Task<byte[]?> ReadAsync(CancellationToken cancellationToken = default)
         {
             var result = await characteristic.ReadValueAsync(BluetoothCacheMode.Uncached).AsTask(cancellationToken);

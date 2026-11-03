@@ -20,6 +20,9 @@ public sealed class WindowsDeviceSource : IDeviceSource
     private const string ModelNameProperty = "System.Devices.Aep.ModelName";
     private const string HardwareIdsProperty = "System.Devices.HardwareIds";
 
+    // One budget for the by-address BLE connection plus the driver session (auth and first push).
+    private static readonly TimeSpan DriverBudget = TimeSpan.FromSeconds(8);
+
     private static readonly string[] AepProperties = [ContainerIdProperty, ManufacturerProperty, ModelNameProperty];
 
     private readonly TimeProvider _time;
@@ -118,34 +121,66 @@ public sealed class WindowsDeviceSource : IDeviceSource
 
         var containerId = info.Properties.TryGetValue(ContainerIdProperty, out var value) && value is Guid id ? id : (Guid?)null;
 
-        IBatteryFeature? battery = null;
-        WinRtGattClient? gatt = null;
-        if (containerId is { } container && bleByContainer.TryGetValue(container, out var bleId))
-        {
-            var le = await BluetoothLEDevice.FromIdAsync(bleId).AsTask(cancellationToken);
-            if (le is not null)
-            {
-                gatt = new WinRtGattClient(le);
-                battery = await GattBatteryFeature.CreateAsync(gatt, _time, cancellationToken);
-            }
-        }
-
+        var ids = await ReadVidPidAsync(containerId, cancellationToken);
         var name = string.IsNullOrWhiteSpace(info.Name) ? bluetooth.Name : info.Name;
         var signals = new DeviceSignals(
             name,
             bluetooth.ClassOfDevice.RawValue,
-            Manufacturer: info.Properties.TryGetValue(ManufacturerProperty, out var manufacturer) ? manufacturer as string : null,
-            ServiceUuids: await ReadServiceUuidsAsync(bluetooth, cancellationToken));
+            (ushort?)ids?.Vid,
+            (ushort?)ids?.Pid,
+            await ReadServiceUuidsAsync(bluetooth, cancellationToken),
+            info.Properties.TryGetValue(ManufacturerProperty, out var manufacturer) ? manufacturer as string : null);
         var resolution = _registry.Resolve(signals);
+
+        // For a driver-resolved device one deadline covers all BLE work: the standard battery probe,
+        // the by-address connection and the whole driver session.
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var isDriver = resolution.Kind == DriverResolutionKind.Driver;
+        if (isDriver)
+        {
+            budget.CancelAfter(DriverBudget);
+        }
+
+        var bleToken = isDriver ? budget.Token : cancellationToken;
+        IBatteryFeature? battery = null;
+        WinRtGattClient? gatt = null;
+        if (containerId is { } container && bleByContainer.TryGetValue(container, out var bleId))
+        {
+            try
+            {
+                var le = await BluetoothLEDevice.FromIdAsync(bleId).AsTask(bleToken);
+                if (le is not null)
+                {
+                    gatt = new WinRtGattClient(le);
+                    battery = await GattBatteryFeature.CreateAsync(gatt, _time, bleToken);
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // The driver budget ran out; the driver below gets an already-cancelled token and returns nothing.
+            }
+        }
 
         var features = new List<IFeature> { new DeviceDiagnostics(signals, resolution) };
         var tier = battery is null ? SupportTier.Basic : SupportTier.Standard;
         if (resolution is { Kind: DriverResolutionKind.Driver, Driver: { } driver, Entry: { } entry })
         {
+            var fallback = gatt is null ? await ConnectLowEnergyByAddressAsync(bluetooth.BluetoothAddress, budget.Token) : null;
+            gatt ??= fallback;
+
             // A driver supersedes the generic battery sources.
-            var opened = await driver.OpenAsync(new DriverContext(signals, entry, new WinRtDeviceTransports(bluetooth, gatt), _time), cancellationToken);
+            var opened = await driver.OpenAsync(new DriverContext(signals, entry, new WinRtDeviceTransports(bluetooth, gatt), _time), budget.Token);
             features.AddRange(opened);
-            tier = SupportTier.Full;
+            if (opened.Count > 0)
+            {
+                tier = SupportTier.Full;
+            }
+            else if (fallback is not null)
+            {
+                fallback.Dispose();
+                gatt = null;
+            }
+
             if (opened.Any(f => f is IBatteryFeature) && battery is IAsyncDisposable superseded)
             {
                 await superseded.DisposeAsync();
@@ -170,7 +205,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
             resolution.Entry?.DisplayName ?? (info.Properties.TryGetValue(ModelNameProperty, out var model) ? model as string : null),
             FirmwareVersion: null,
             tier,
-            await ReadDetailsAsync(bluetooth, containerId, cancellationToken));
+            await ReadDetailsAsync(bluetooth, ids, cancellationToken));
 
         return new WindowsEarbudDevice(identity, bluetooth, features, gatt);
     }
@@ -192,7 +227,42 @@ public sealed class WindowsDeviceSource : IDeviceSource
     }
 
     /// <summary>Best effort: any part that can't be read stays unknown rather than failing the device.</summary>
-    private static async Task<DeviceDetails> ReadDetailsAsync(BluetoothDevice bluetooth, Guid? containerId, CancellationToken cancellationToken)
+    private static async Task<(int Vid, int Pid)?> ReadVidPidAsync(Guid? containerId, CancellationToken cancellationToken)
+    {
+        if (containerId is not { } container)
+        {
+            return null;
+        }
+
+        try
+        {
+            var nodes = await DeviceInformation.FindAllAsync(
+                $"System.Devices.ContainerId:=\"{{{container}}}\"", [HardwareIdsProperty], DeviceInformationKind.Device)
+                .AsTask(cancellationToken);
+            return HardwareIds.TryParseVidPid(nodes
+                .SelectMany(n => n.Properties.TryGetValue(HardwareIdsProperty, out var v) && v is string[] s ? s : []));
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>For devices that aren't listed as paired BLE but answer at the same public address. Null on any failure.</summary>
+    private static async Task<WinRtGattClient?> ConnectLowEnergyByAddressAsync(ulong address, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var le = await BluetoothLEDevice.FromBluetoothAddressAsync(address, BluetoothAddressType.Public).AsTask(cancellationToken);
+            return le is null ? null : new WinRtGattClient(le);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static async Task<DeviceDetails> ReadDetailsAsync(BluetoothDevice bluetooth, (int Vid, int Pid)? ids, CancellationToken cancellationToken)
     {
         IReadOnlyList<Guid> uuids = [];
         try
@@ -207,23 +277,6 @@ public sealed class WindowsDeviceSource : IDeviceSource
         catch (Exception)
         {
             // Unreadable records just mean the services show as not reported.
-        }
-
-        (int Vid, int Pid)? ids = null;
-        if (containerId is { } container)
-        {
-            try
-            {
-                var nodes = await DeviceInformation.FindAllAsync(
-                    $"System.Devices.ContainerId:=\"{{{container}}}\"", [HardwareIdsProperty], DeviceInformationKind.Device)
-                    .AsTask(cancellationToken);
-                ids = HardwareIds.TryParseVidPid(nodes
-                    .SelectMany(n => n.Properties.TryGetValue(HardwareIdsProperty, out var v) && v is string[] s ? s : []));
-            }
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
-            {
-                // VID/PID stay unknown.
-            }
         }
 
         return new DeviceDetails

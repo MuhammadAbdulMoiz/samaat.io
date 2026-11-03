@@ -27,6 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
+    <ProjectReference Include="..\Samaat.Protocols.Jieli\Samaat.Protocols.Jieli.csproj" />
     <ProjectReference Include="..\Samaat.Simulator\Samaat.Simulator.csproj" />
     <ProjectReference Include="..\Samaat.Platform.Windows\Samaat.Platform.Windows.csproj" Condition="'$(TargetFramework)' != 'net10.0'" />
   </ItemGroup>

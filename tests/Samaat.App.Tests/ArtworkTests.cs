@@ -22,6 +22,20 @@ public class ArtworkTests
         Assert.Equal($"{name} earbuds", device.ArtworkLabel);
     }
 
+    [AvaloniaTheory]
+    [InlineData("ParadoX-E", "Audionic", "Audionic ParadoX-E", "Audionic ParadoX-E")] // maker already in the model
+    [InlineData("Quantum", "Zero Lifestyle", "Quantum Zbuds", "Zero Lifestyle · Quantum Zbuds")]
+    [InlineData("Microsoft Modern Wireless Headset", "Microsoft", "Microsoft Modern Wireless Headset", "")] // all repeat the title
+    [InlineData("SHP-9500", "HP", "SHP-9500", "HP")] // "HP" inside "SHP" is not the maker's name
+    public void SubtitleDoesNotRepeatItself(string name, string manufacturer, string model, string expected)
+    {
+        var device = new DeviceViewModel(
+            new SimulatedEarbudDevice(new DeviceIdentity("id", name, manufacturer, model), SimulatedBatteryLayout.CombinedOnly),
+            new(), TimeProvider.System, (_, _) => { });
+
+        Assert.Equal(expected, device.Subtitle);
+    }
+
     [AvaloniaFact]
     public void HeadsetShowsHeadsetArtwork()
     {

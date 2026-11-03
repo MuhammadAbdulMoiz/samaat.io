@@ -21,7 +21,7 @@ Status: **implemented (v0.1)**. The simulator path is tested in CI. The Windows 
 | Windows (HFP battery reported by the headset) | Combined | Basic | `Samaat.Platform.Windows/OsBatteryFeature.cs` |
 | BLE Battery Service 0x180F / 0x2A19, with Presentation Format 0x2904 naming left/right | Combined, or Left + Right | Standard | `Samaat.Protocols.Standard/GattBatteryFeature.cs` |
 | Simulator (3 devices, one per layout) | all three layouts | – | `Samaat.Simulator/` |
-| Vendor adapter (L/R/case over RFCOMM) | Left, Right, Case | Full | **Not yet: needs the first target earbuds (PLAN §13 Q1)** |
+| Jieli RCSP over BLE (AdvInfo push), shown as "Device protocol" | Left, Right, Case (case only when the buds report it) | Full | `Samaat.Protocols.Jieli/JieliBatteryFeature.cs`. Audionic ParadoX-E; unverified, read-only (only the auth handshake is written) |
 
 Every source implements `IBatteryFeature` (`Samaat.Core/Battery/IBatteryFeature.cs`). The UI and the alerts only see that interface, so a vendor adapter plugs in without UI changes.
 

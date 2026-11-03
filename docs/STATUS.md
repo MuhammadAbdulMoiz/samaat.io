@@ -1,12 +1,12 @@
 # Samaat: status, remaining work and getting started
 
-Last updated: 2026-11-02
+Last updated: 2026-11-03
 
 ## TL;DR
 
-- **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. Everything else runs against **simulated devices**.
-- **Not done:** controlling any **real** earbuds beyond that. ANC, multipoint and L/R/case battery need a vendor adapter; the Quantum Zbuds turned out to have no usable vendor protocol, so a different target model is needed.
-- **Tests:** 263 automated tests (Protocols 16, Core 139, App 108). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. The **first vendor adapter** (Jieli RCSP over BLE) reads per-bud battery on the Audionic ParadoX-E ([test notes](hardware-tests/2026-11-03-audionic-paradox-e.md)). Everything else runs against **simulated devices**.
+- **Not done:** controlling any **real** earbuds beyond reading battery. ANC and multipoint need command opcodes that are not confirmed yet (the ParadoX-E adapter writes only the auth handshake). The Quantum Zbuds have no usable vendor protocol.
+- **Tests:** 325 automated tests (Protocols 59, Core 142, App 124). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Links |
 |---|---|---|
@@ -74,7 +74,7 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 |---|---|---|
 | 1 | **Run on real Windows hardware** | Done once with the Quantum Zbuds. Re-check Samaat's battery refresh after a reconnect (`--watch` during a case-lid test), the Start with Windows toggle, and a notification on a clean Windows profile. |
 | 2 | **RFCOMM transport** | `IRfcommChannel` plus a WinRT implementation (open a vendor service UUID on a paired device). |
-| 3 | **First vendor adapter** | Framing and messages for the chosen earbuds, implementing `IBatteryFeature`, `INoiseControlFeature` and (if supported) `IMultipointFeature`. Recorded traces become tests. Wire the profile DB's `adapter` field to it. |
+| 3 | **First vendor adapter** | **Battery done** for the Audionic ParadoX-E (`Samaat.Protocols.Jieli`, `devices/audionic/paradox-e.json`): L/R (case when reported) from the AdvInfo push, unverified on firmware beyond one unit. Next: noise control (needs the RCSP write opcodes, not yet confirmed) and the case byte. |
 | 4 | **First catalog entries** | Matching and loading are done; add real entries from hardware reports (Info → Copy report). |
 | 5 | **Reconnect handling** | Re-handshake after the earbuds drop and return. |
 | 6 | **Unify the device databases** | Fold `DeviceProfileDb` into `DeviceCatalog` so one `devices/**/*.json` schema and loader serves driver resolution and the Details page. |
