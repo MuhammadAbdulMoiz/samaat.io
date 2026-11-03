@@ -32,6 +32,18 @@ public class DeviceMatchTests
     }
 
     [Fact]
+    public void VendorIdAlone_ScoresBelowAServiceAndAboveAName()
+    {
+        var signals = new DeviceSignals("Acme Buds", VendorId: 0x1234, ProductId: 0x0001, ServiceUuids: new HashSet<Guid> { VendorService });
+
+        var vendorOnly = new DeviceMatch(VendorId: 0x1234).Score(signals);
+
+        Assert.True(vendorOnly < new DeviceMatch(ServiceUuid: VendorService).Score(signals));
+        Assert.True(vendorOnly > new DeviceMatch(NamePattern: "Acme").Score(signals));
+        Assert.True(new DeviceMatch(VendorId: 0x1234, ProductId: 0x0001).Score(signals) > new DeviceMatch(ServiceUuid: VendorService).Score(signals));
+    }
+
+    [Fact]
     public void EmptyMatch_NeverMatches() => Assert.Null(new DeviceMatch().Score(new DeviceSignals("Anything")));
 
     [Fact]
@@ -74,6 +86,31 @@ public class DeviceCatalogTests
         var entry = catalog.Match(new DeviceSignals("Acme Buds 2", VendorId: 0x1234, ProductId: 0x0002));
 
         Assert.Equal("acme.buds-2", entry?.Id);
+    }
+
+    private const string GenericJson = """{ "id": "generic.proto", "driver": "proto", "generic": true, "match": { "serviceUuid": "df21fe2c-2515-4fdb-8886-f12c4d67927c" }, "features": [] }""";
+    private const string ModelByNameJson = """{ "id": "acme.model", "driver": "none", "match": { "namePattern": "^Acme" }, "features": [] }""";
+    private static readonly Guid ProtoService = Guid.Parse("df21fe2c-2515-4fdb-8886-f12c4d67927c");
+
+    [Fact]
+    public void GenericFlag_IsParsed()
+    {
+        var catalog = DeviceCatalog.Parse([GenericJson, ModelByNameJson]);
+
+        Assert.True(catalog.Entries[0].Generic);
+        Assert.False(catalog.Entries[1].Generic);
+    }
+
+    [Fact]
+    public void ModelEntry_BeatsAGenericOneEvenWithALowerScore()
+    {
+        var catalog = DeviceCatalog.Parse([GenericJson, ModelByNameJson]);
+
+        var both = new DeviceSignals("Acme Pods", ServiceUuids: new HashSet<Guid> { ProtoService });
+        var genericOnly = new DeviceSignals("Other Pods", ServiceUuids: new HashSet<Guid> { ProtoService });
+
+        Assert.Equal("acme.model", catalog.Match(both)?.Id);
+        Assert.Equal("generic.proto", catalog.Match(genericOnly)?.Id);
     }
 
     [Fact]

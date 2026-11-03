@@ -40,8 +40,8 @@ We deliberately did **not** adopt OpenMouse's staged "pending changes" bar. Earb
 
 ## How a device becomes a dashboard
 
-1. The **platform** enumerates paired devices and collects `DeviceSignals`: name, class of device, SDP service UUIDs and manufacturer.
-2. `DriverRegistry.Resolve(signals)` matches the **catalog** (most specific match wins) and returns one of:
+1. The **platform** enumerates paired devices and collects `DeviceSignals`: name, class of device, vendor and product ID, SDP service UUIDs and manufacturer.
+2. `DriverRegistry.Resolve(signals)` matches the **catalog** and returns one of the cases below. A model entry always beats a protocol-level `generic` entry (`devices/generic/`: any Fast Pair Message Stream device gets `fast-pair`, any Jieli vendor ID gets `jieli-rcsp`); otherwise the most specific match wins ([scoring](../devices/README.md#matching)). The driver then returns only the features the buds actually answer for, so a generic match without them falls back to the Windows battery within the 8 s driver budget.
    - **Generic** (not in the catalog): OS battery and the BLE Battery Service only.
    - **Recognised** (catalog entry, driver not built yet): the catalog's features show as "supported by your device, not yet by Samaat".
    - **Driver**: `IEarbudDriver.OpenAsync(context)` gets the transports and returns feature modules (`IBatteryFeature`, `INoiseControlFeature`, `IMultipointFeature`, …).

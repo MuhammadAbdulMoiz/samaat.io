@@ -6,7 +6,10 @@ using Samaat.Core.Devices;
 
 namespace Samaat.Core.Drivers;
 
-/// <summary>One known model. <see cref="Verified"/> separates "tested on hardware" from "recognised".</summary>
+/// <summary>
+/// One known model. <see cref="Verified"/> separates "tested on hardware" from "recognised".
+/// <see cref="Generic"/> marks a protocol-level fallback (any earbuds speaking that protocol); any matching model beats it.
+/// </summary>
 public sealed record CatalogEntry(
     string Id,
     string DisplayName,
@@ -15,7 +18,8 @@ public sealed record CatalogEntry(
     DeviceMatch Match,
     bool Verified,
     IReadOnlyList<string> VerifiedFirmware,
-    IReadOnlySet<FeatureId> Features);
+    IReadOnlySet<FeatureId> Features,
+    bool Generic = false);
 
 /// <summary>Known models, loaded from <c>devices/**/*.json</c>. Adding a model is a data change.</summary>
 public sealed class DeviceCatalog
@@ -74,11 +78,13 @@ public sealed class DeviceCatalog
         return Parse(files.Select(File.ReadAllText));
     }
 
+    /// <summary>The best matching entry: models before generic fallbacks, then the highest score.</summary>
     public CatalogEntry? Match(DeviceSignals signals) =>
         Entries
             .Select(e => (Entry: e, Score: e.Match.Score(signals)))
             .Where(x => x.Score is not null)
-            .OrderByDescending(x => x.Score)
+            .OrderBy(x => x.Entry.Generic)
+            .ThenByDescending(x => x.Score)
             .Select(x => x.Entry)
             .FirstOrDefault();
 
@@ -95,6 +101,8 @@ public sealed class DeviceCatalog
         public MatchDto? Match { get; set; }
 
         public bool Verified { get; set; }
+
+        public bool Generic { get; set; }
 
         public List<string>? VerifiedFirmware { get; set; }
 
@@ -115,7 +123,8 @@ public sealed class DeviceCatalog
                 Match.ToMatch(),
                 Verified,
                 VerifiedFirmware ?? [],
-                (Features ?? []).Select(f => new FeatureId(f)).ToHashSet());
+                (Features ?? []).Select(f => new FeatureId(f)).ToHashSet(),
+                Generic);
         }
     }
 

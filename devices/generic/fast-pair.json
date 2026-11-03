@@ -1,0 +1,13 @@
+{
+  // Protocol-level fallback: any earbuds advertising the Fast Pair Message Stream get the fast-pair driver.
+  // Models in vendor folders always win over a generic entry. DeviceProfileDb skips generic files (no artwork/profile).
+  "id": "generic.fast-pair",
+  "displayName": "Fast Pair earbuds",
+  "manufacturer": "",
+  "driver": "fast-pair",
+  "generic": true,
+  "match": { "serviceUuid": "df21fe2c-2515-4fdb-8886-f12c4d67927c" },
+  "verified": false,
+  "features": [],
+  "verifiedFirmware": []
+}
