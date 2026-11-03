@@ -80,6 +80,109 @@ public class BluetoothDetailsViewModelTests
         Assert.Equal("Vendor adapter: jieli-rcsp", info.AdapterText);
     }
 
+    private sealed class FakeInfo(string? firmware) : IDeviceInfoFeature
+    {
+        public string? FirmwareVersion { get; private set; } = firmware;
+
+        public event EventHandler? Changed;
+
+        public void Set(string? firmware)
+        {
+            FirmwareVersion = firmware;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private static (DeviceViewModel Vm, BluetoothDetailsViewModel Details, Queue<Action> Posted) WithInfo(
+        FakeInfo? info, string? identityFirmware = null)
+    {
+        var identity = new DeviceIdentity("id", "Buds", FirmwareVersion: identityFirmware);
+        var device = new SimulatedEarbudDevice(identity, SimulatedBatteryLayout.CombinedOnly,
+            extraFeatures: info is null ? null : [info]);
+        var vm = new DeviceViewModel(device, new(), TimeProvider.System, (_, _) => { });
+        var posted = new Queue<Action>();
+        return (vm, new BluetoothDetailsViewModel(vm, null, posted.Enqueue), posted);
+    }
+
+    private static void Drain(Queue<Action> posted)
+    {
+        while (posted.TryDequeue(out var action))
+        {
+            action();
+        }
+    }
+
+    [AvaloniaFact]
+    public void FirmwareRow_ShowsTheFeatureValue()
+    {
+        var (_, details, _) = WithInfo(new FakeInfo("1.0.0"), identityFirmware: "9.9");
+
+        Assert.Equal("1.0.0", Row(details, "Firmware"));
+    }
+
+    [AvaloniaFact]
+    public void FirmwareRow_FallsBackToIdentityThenNotReported()
+    {
+        Assert.Equal("2.3", Row(WithInfo(null, identityFirmware: "2.3").Details, "Firmware"));
+        Assert.Equal("2.3", Row(WithInfo(new FakeInfo(null), identityFirmware: "2.3").Details, "Firmware"));
+        Assert.Equal("Not reported", Row(WithInfo(new FakeInfo(null)).Details, "Firmware"));
+        Assert.Equal("Not reported", Row(WithInfo(null).Details, "Firmware"));
+    }
+
+    [AvaloniaFact]
+    public async Task FirmwareRow_UpdatesOnTheUiThreadAfterAnOffThreadChange()
+    {
+        var info = new FakeInfo(null);
+        var (_, details, posted) = WithInfo(info);
+
+        await Task.Run(() => info.Set("1.0.0"));
+
+        Assert.Equal("Not reported", Row(details, "Firmware")); // nothing touches the rows until the UI thread runs the post
+        Assert.Single(posted);
+        Drain(posted);
+        Assert.Equal("1.0.0", Row(details, "Firmware"));
+    }
+
+    [AvaloniaFact]
+    public void FirmwareRow_DoesNotUpdateAfterDisposal()
+    {
+        var info = new FakeInfo(null);
+        var (_, details, posted) = WithInfo(info);
+
+        details.Dispose();
+        info.Set("1.0.0");
+        Drain(posted);
+
+        Assert.Empty(posted);
+        Assert.Equal("Not reported", Row(details, "Firmware"));
+    }
+
+    [AvaloniaFact]
+    public void FirmwareRow_PostedChangeIsIgnoredIfDisposedBeforeItRuns()
+    {
+        var info = new FakeInfo(null);
+        var (_, details, posted) = WithInfo(info);
+
+        info.Set("1.0.0");
+        details.Dispose();
+        Drain(posted);
+
+        Assert.Equal("Not reported", Row(details, "Firmware"));
+    }
+
+    [AvaloniaFact]
+    public void DisposingTheDeviceViewModel_StopsTheDetailsFromListening()
+    {
+        var info = new FakeInfo(null);
+        var (vm, _, _) = WithInfo(info);
+
+        vm.Dispose();
+        info.Set("1.0.0");
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal("Not reported", Row(vm.Details, "Firmware"));
+    }
+
     [AvaloniaFact]
     public void OverviewSubtitleFallsBackToProfileName()
     {

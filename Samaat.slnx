@@ -4,6 +4,7 @@
     <Project Path="src/Samaat.Cli/Samaat.Cli.csproj" />
     <Project Path="src/Samaat.Core/Samaat.Core.csproj" />
     <Project Path="src/Samaat.Platform.Windows/Samaat.Platform.Windows.csproj" />
+    <Project Path="src/Samaat.Protocols.FastPair/Samaat.Protocols.FastPair.csproj" />
     <Project Path="src/Samaat.Protocols.Jieli/Samaat.Protocols.Jieli.csproj" />
     <Project Path="src/Samaat.Protocols.Standard/Samaat.Protocols.Standard.csproj" />
     <Project Path="src/Samaat.Simulator/Samaat.Simulator.csproj" />

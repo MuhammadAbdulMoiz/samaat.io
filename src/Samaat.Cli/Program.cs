@@ -21,6 +21,7 @@ var sources = new List<IDeviceSource>();
 var driverRegistry = new Samaat.Core.Drivers.DriverRegistry(
     Samaat.Core.Drivers.DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
 driverRegistry.Register(new Samaat.Protocols.Jieli.JieliDriver());
+driverRegistry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
 sources.Add(new Samaat.Platform.Windows.WindowsDeviceSource(includeNonAudio: includeNonAudio, registry: driverRegistry));
 #else
 if (!simulate)
@@ -115,6 +116,11 @@ static void Print(IEarbudDevice device, DeviceProfileDb profiles)
     Console.WriteLine(battery is null
         ? "  Battery: not reported"
         : $"  Battery ({battery.Source}): {Summarize(battery.Current)}");
+
+    if (device.GetFeature<IDeviceInfoFeature>()?.FirmwareVersion is { } firmware)
+    {
+        Console.WriteLine($"  Firmware: {firmware}");
+    }
 
     if (device.GetFeature<INoiseControlFeature>() is { } noise)
     {

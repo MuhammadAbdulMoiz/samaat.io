@@ -412,5 +412,6 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         Equalizer.Dispose();
         Connections.Dispose();
         Info.Dispose();
+        Details.Dispose();
     }
 }

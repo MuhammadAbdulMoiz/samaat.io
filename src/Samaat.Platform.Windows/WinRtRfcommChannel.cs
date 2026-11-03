@@ -15,10 +15,12 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
     private readonly DataWriter _writer;
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private readonly RfcommReceiveBuffer _received;
     private int _closed;
 
     private WinRtRfcommChannel(Guid serviceUuid, StreamSocket socket)
     {
+        _received = new RfcommReceiveBuffer(this);
         ServiceUuid = serviceUuid;
         _socket = socket;
         _writer = new DataWriter(socket.OutputStream);
@@ -27,7 +29,13 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
 
     public Guid ServiceUuid { get; }
 
-    public event EventHandler<ReadOnlyMemory<byte>>? Received;
+    public bool IsClosed => Volatile.Read(ref _closed) == 1;
+
+    public event EventHandler<ReadOnlyMemory<byte>>? Received
+    {
+        add => _received.Add(value!);
+        remove => _received.Remove(value!);
+    }
 
     public event EventHandler? Closed;
 
@@ -75,7 +83,7 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
 
                 var buffer = new byte[count];
                 reader.ReadBytes(buffer);
-                Received?.Invoke(this, buffer);
+                _received.Publish(buffer);
             }
         }
         catch (Exception)

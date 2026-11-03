@@ -22,6 +22,7 @@ Status: **implemented (v0.1)**. The simulator path is tested in CI. The Windows 
 | BLE Battery Service 0x180F / 0x2A19, with Presentation Format 0x2904 naming left/right | Combined, or Left + Right | Standard | `Samaat.Protocols.Standard/GattBatteryFeature.cs` |
 | Simulator (3 devices, one per layout) | all three layouts | – | `Samaat.Simulator/` |
 | Jieli RCSP over BLE (AdvInfo push), shown as "Device protocol" | Left, Right, Case (case only when the buds report it) | Full | `Samaat.Protocols.Jieli/JieliBatteryFeature.cs`. Audionic ParadoX-E; unverified, read-only (only the auth handshake is written) |
+| Google Fast Pair Message Stream over RFCOMM (pushed on connect), shown as "Device protocol" | Left, Right, Case (case only when the buds report it) | Full | `Samaat.Protocols.FastPair/FastPairBatteryFeature.cs`. realme Buds T200 Lite; unverified, strictly read-only (nothing is written to the channel). Also reports firmware, shown on the Bluetooth details page |
 
 Every source implements `IBatteryFeature` (`Samaat.Core/Battery/IBatteryFeature.cs`). The UI and the alerts only see that interface, so a vendor adapter plugs in without UI changes.
 

@@ -15,5 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Samaat.Protocols.Standard\Samaat.Protocols.Standard.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Protocols.Jieli\Samaat.Protocols.Jieli.csproj" />
+    <ProjectReference Include="..\..\src\Samaat.Protocols.FastPair\Samaat.Protocols.FastPair.csproj" />
   </ItemGroup>
 </Project>

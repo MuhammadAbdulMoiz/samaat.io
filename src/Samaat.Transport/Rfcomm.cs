@@ -8,9 +8,16 @@ public interface IRfcommChannel : IAsyncDisposable
 {
     Guid ServiceUuid { get; }
 
+    /// <summary>True once <see cref="Closed"/> has been raised, so a late subscriber can tell it missed the event.</summary>
+    bool IsClosed { get; }
+
     Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default);
 
-    /// <summary>Raised for each chunk read from the channel. Chunks aren't frames: codecs reassemble. Any thread.</summary>
+    /// <summary>
+    /// Raised for each chunk read from the channel. Chunks aren't frames: codecs reassemble. Any thread.
+    /// Chunks that arrived before the first subscriber are replayed to it, in order, before any later chunk
+    /// (see <see cref="RfcommReceiveBuffer"/>); handlers are never called concurrently.
+    /// </summary>
     event EventHandler<ReadOnlyMemory<byte>>? Received;
 
     /// <summary>Raised once when the remote side closes or the link drops.</summary>

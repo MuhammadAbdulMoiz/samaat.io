@@ -27,6 +27,7 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
     {
         var registry = new DriverRegistry(DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
         registry.Register(new Samaat.Protocols.Jieli.JieliDriver());
+        registry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
         return registry;
     }
 

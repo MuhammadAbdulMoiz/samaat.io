@@ -1,0 +1,25 @@
+{
+  // Read by both DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details); keep it valid for each.
+  "id": "realme.buds-t200-lite",
+  "displayName": "realme Buds T200 Lite",
+  "manufacturer": "realme",
+  "driver": "fast-pair",
+  "match": {
+    // Same Jieli VID/PID as the Quantum and the ParadoX-E; the name and the Fast Pair Message Stream service tell them apart.
+    "deviceId": { "vid": "0x05D6", "pid": "0x000A" },
+    "vendorId": "0x05D6",
+    "productId": "0x000A",
+    // DeviceCatalog reads serviceUuid, DeviceProfileDb reads sdpUuids.
+    "serviceUuid": "df21fe2c-2515-4fdb-8886-f12c4d67927c",
+    "sdpUuids": ["df21fe2c-2515-4fdb-8886-f12c4d67927c"],
+    "namePattern": "^realme Buds T200 Lite$"
+  },
+  "adapter": "fast-pair",
+  "verified": false,
+  "features": ["battery.left", "battery.right", "battery.case"],
+  "verifiedFirmware": [],
+  "image": "buds-t200-lite.png",
+  // Shown instead of "image", each with its own level, once the buds report left and right.
+  "images": { "left": "buds-t200-lite-left.png", "right": "buds-t200-lite-right.png", "case": "buds-t200-lite-case.png" },
+  "notes": "Battery per bud (case when reported) and firmware over Google Fast Pair's Message Stream (RFCOMM df21fe2c-2515-4fdb-8886-f12c4d67927c), read-only; see docs/hardware-tests/2026-11-03-realme-buds-t200-lite.md."
+}

@@ -1,6 +1,7 @@
 using Samaat.App.Features.Overview;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Samaat.Core.Bluetooth;
+using Samaat.Core.Devices;
 using Samaat.Core.Profiles;
 
 namespace Samaat.App.Features.Details;
@@ -8,17 +9,23 @@ namespace Samaat.App.Features.Details;
 public sealed record DetailsRow(string Label, string Value);
 
 /// <summary>The Bluetooth details page for one device: what is known about it, and "Not reported" for what isn't.</summary>
-public sealed partial class BluetoothDetailsViewModel : ObservableObject
+public sealed partial class BluetoothDetailsViewModel : ObservableObject, IDisposable
 {
     private const string NotReported = "Not reported";
 
     private readonly DeviceViewModel _device;
     private readonly DeviceProfile? _profile;
+    private readonly IDeviceInfoFeature? _info;
+    private readonly Action<Action> _post;
+    private bool _disposed;
 
-    public BluetoothDetailsViewModel(DeviceViewModel device, DeviceProfile? profile)
+    /// <param name="post">Runs an action on the UI thread; feature events arrive on any thread.</param>
+    public BluetoothDetailsViewModel(DeviceViewModel device, DeviceProfile? profile, Action<Action>? post = null)
     {
         _device = device;
         _profile = profile;
+        _post = post ?? (action => Avalonia.Threading.Dispatcher.UIThread.Post(action));
+        _info = device.Device.GetFeature<IDeviceInfoFeature>();
         // Connection and battery source change over time; the rest is fixed for the device.
         device.PropertyChanged += (_, e) =>
         {
@@ -28,7 +35,28 @@ public sealed partial class BluetoothDetailsViewModel : ObservableObject
             }
         };
         Rebuild();
+        if (_info is not null)
+        {
+            _info.Changed += OnInfoChanged;
+        }
     }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        if (_info is not null)
+        {
+            _info.Changed -= OnInfoChanged;
+        }
+    }
+
+    private void OnInfoChanged(object? sender, EventArgs e) => _post(() =>
+    {
+        if (!_disposed)
+        {
+            Rebuild();
+        }
+    });
 
     [ObservableProperty]
     public partial IReadOnlyList<DetailsRow> Rows { get; set; } = [];
@@ -54,6 +82,7 @@ public sealed partial class BluetoothDetailsViewModel : ObservableObject
         [
             new("Name", identity.Name),
             new("Model", model),
+            new("Firmware", Or(_info?.FirmwareVersion ?? identity.FirmwareVersion)),
             new("Vendor", vendor),
             new("Vendor / product ID", ids),
             new("Address", Or(details?.Address)),
