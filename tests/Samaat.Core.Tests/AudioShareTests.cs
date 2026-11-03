@@ -278,6 +278,36 @@ public class AudioShareTests
     }
 
     [Fact]
+    public async Task Delay_SetDuringOpen_ReachesNewPipe()
+    {
+        var backend = Backend(Speakers, Buds);
+        backend.OpenGate = new TaskCompletionSource();
+        await using var share = new AudioShare(backend);
+
+        var start = share.StartAsync("buds");
+        await WaitUntil(() => backend.OpenEntered);
+        share.DelayMs = 250;
+        backend.OpenGate.SetResult();
+        await start;
+
+        Assert.Equal(AudioShareState.Sharing, share.State);
+        Assert.Equal(250, backend.Pipes[0].DelayMs);
+    }
+
+    [Fact]
+    public async Task DefaultRemoved_WhileSharing_StopsWithNoDefaultStatus()
+    {
+        var backend = Backend(Speakers, Buds);
+        await using var share = await Sharing(backend);
+
+        backend.Outputs = [Buds];
+        backend.RaiseOutputsChanged();
+
+        await WaitUntil(() => share.State == AudioShareState.Stopped);
+        Assert.Equal("Stopped: no default output", share.StatusText);
+    }
+
+    [Fact]
     public async Task OutputsChanged_RefreshesOutputs_WhileOff()
     {
         var backend = Backend(Speakers);

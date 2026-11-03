@@ -166,6 +166,12 @@ public sealed class AudioShare : IAudioShare
             pipe.Stopped += _pipeHandler;
             _sourceId = source.Id;
             _pipe = pipe;
+            // Assign first, then compare: a DelayMs set during Open either sees the pipe or is seen here.
+            if (_delayMs != delay)
+            {
+                pipe.DelayMs = _delayMs;
+            }
+
             _state = AudioShareState.Sharing;
         }
         catch (Exception ex)
@@ -247,7 +253,12 @@ public sealed class AudioShare : IAudioShare
             RetirePipe();
             Stop(AudioShareState.Stopped, $"Stopped: {name} became the default output");
         }
-        else if (_outputs.FirstOrDefault(o => o.IsDefault)?.Id != _sourceId)
+        else if (!_outputs.Any(o => o.IsDefault))
+        {
+            RetirePipe();
+            Stop(AudioShareState.Stopped, "Stopped: no default output");
+        }
+        else if (_outputs.First(o => o.IsDefault).Id != _sourceId)
         {
             RetirePipe();
             await OpenAsync(target.Id).ConfigureAwait(false);

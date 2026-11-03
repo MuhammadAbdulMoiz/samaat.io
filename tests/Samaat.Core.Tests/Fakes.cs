@@ -86,6 +86,11 @@ internal sealed class FakeAudioBackend : IAudioBackend
 
     public Exception? OpenThrows { get; set; }
 
+    /// <summary>When set, Open blocks until it completes.</summary>
+    public TaskCompletionSource? OpenGate { get; set; }
+
+    public volatile bool OpenEntered;
+
     public bool RaiseStoppedOnDispose { get; set; }
 
     public bool Disposed { get; private set; }
@@ -98,6 +103,12 @@ internal sealed class FakeAudioBackend : IAudioBackend
 
     public IAudioPipe Open(string sourceId, string targetId, int delayMs)
     {
+        if (OpenGate is not null)
+        {
+            OpenEntered = true;
+            OpenGate.Task.Wait();
+        }
+
         if (OpenThrows is not null)
         {
             throw OpenThrows;

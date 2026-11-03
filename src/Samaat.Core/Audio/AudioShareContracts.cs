@@ -73,6 +73,11 @@ public interface IAudioBackend : IDisposable
 }
 
 /// <summary>One running capture-to-output pipe. The backend owns its <c>PlayoutBuffer</c>, since only it knows the capture rate and target channels.</summary>
+/// <remarks>
+/// Setting <see cref="DelayMs"/> during or after <see cref="IDisposable.Dispose"/> must be a harmless no-op.
+/// The backend must not raise <see cref="Stopped"/> before <see cref="IAudioBackend.Open"/> has returned;
+/// a failure that happens earlier is raised only after a handler subscribes, or Open throws instead.
+/// </remarks>
 public interface IAudioPipe : IDisposable
 {
     int DelayMs { set; }
