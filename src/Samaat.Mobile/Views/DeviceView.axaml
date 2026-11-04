@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Samaat.Mobile.ViewModels"
+             x:Class="Samaat.Mobile.Views.DeviceView"
+             x:DataType="vm:DeviceItemViewModel">
+  <StackPanel Spacing="16">
+
+    <!-- On this phone: connection and battery -->
+    <Border Classes="panel">
+      <StackPanel Spacing="14">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding ConnectionText}" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="primary" Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}" />
+          <Button Grid.Column="1" Classes="subtle" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}" />
+          <ProgressBar Grid.Column="1" Classes="busy" IsIndeterminate="True" Width="60" IsVisible="{Binding IsLinkBusy}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Battery}" IsVisible="{Binding HasBattery}" Margin="0,0,-8,0">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Rows="1" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:BatteryCellViewModel">
+              <Border Classes="cell" Margin="0,0,8,0" AutomationProperties.Name="{Binding AccessibleText}">
+                <StackPanel Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="{Binding Label}" Classes="meta" />
+                    <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="12" Height="12" IsVisible="{Binding IsCharging}"
+                              Foreground="{DynamicResource Samaat.Accent}" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding Text}" Classes="figure" />
+                  <ProgressBar Classes="level" Value="{Binding Percent}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Border Classes="alert critical" IsVisible="{Binding HasError}">
+          <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+        </Border>
+      </StackPanel>
+    </Border>
+
+    <!-- Move to and from the computer: works with any earbuds -->
+    <Border Classes="panel">
+      <StackPanel Spacing="12">
+        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding ShowProgress}" Margin="-16,-16,-16,0" />
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Classes="iconTile" Classes.on="{Binding IsComputerOnline}" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.Laptop}" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="4" VerticalAlignment="Center">
+            <TextBlock Text="{Binding ComputerTitle}" Classes="panelTitle" />
+            <TextBlock Text="{Binding ComputerStateText}" Classes="meta" TextWrapping="Wrap" />
+          </StackPanel>
+        </Grid>
+        <Button Classes="primary" HorizontalAlignment="Stretch" Content="{Binding SendText}" Command="{Binding SendToComputerCommand}"
+                IsVisible="{Binding CanSendToComputer}" />
+        <Button Classes="primary" HorizontalAlignment="Stretch" Content="Bring to this phone" Command="{Binding BringHereCommand}"
+                IsVisible="{Binding CanBringHere}" />
+        <Button Classes="subtle" HorizontalAlignment="Stretch" Content="Pair with a computer" Command="{Binding PairComputerCommand}"
+                IsVisible="{Binding ShowPairComputer}" />
+        <TextBlock Text="{Binding ProgressText}" Classes="meta" IsVisible="{Binding ShowProgress}" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding ResultText}" Classes="meta" IsVisible="{Binding ShowSuccess}" TextWrapping="Wrap" />
+        <Border Classes="alert critical" IsVisible="{Binding ShowFailure}">
+          <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+        </Border>
+      </StackPanel>
+    </Border>
+
+    <!-- Noise control -->
+    <Border Classes="panel" IsVisible="{Binding HasNoise}">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Noise control" Classes="panelTitle" />
+        <ItemsControl ItemsSource="{Binding NoiseModes}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OptionViewModel">
+              <Button Classes="option" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                      AutomationProperties.Name="{Binding Label}">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Description}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <!-- EQ presets stored on the earbuds -->
+    <Border Classes="panel" IsVisible="{Binding HasEq}">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Equalizer" Classes="panelTitle" />
+        <ItemsControl ItemsSource="{Binding EqPresets}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OptionViewModel">
+              <Button Classes="chip" Classes.selected="{Binding IsSelected}" Content="{Binding Label}" Command="{Binding SelectCommand}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

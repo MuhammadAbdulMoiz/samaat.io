@@ -92,6 +92,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
     private Task _acceptLoop = Task.CompletedTask;
     private Task _beaconLoop = Task.CompletedTask;
     private ITimer? _pairingTimer;
+    private int? _lastPort;
     private PairingSession? _pendingPairing;
     private bool _pairingOpen;
     private bool _started;
@@ -221,6 +222,8 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         {
             _moving.TryRemove(address, out _);
             RaiseChanged();
+            // Every phone should see where the earbuds ended up, whatever the UI does.
+            await PublishDevicesAsync();
         }
     }
 
@@ -277,7 +280,8 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         TcpListener listener;
         try
         {
-            listener = new TcpListener(_options.BindAddress, _options.Port);
+            // Come back on the same port after a pause, so phones that remember it still find us.
+            listener = new TcpListener(_options.BindAddress, _lastPort ?? _options.Port);
             listener.Start();
         }
         catch (SocketException)
@@ -297,6 +301,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         ListenError = null;
         _listener = listener;
         Port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        _lastPort = Port;
         _listening = CancellationTokenSource.CreateLinkedTokenSource(_disposed.Token);
         var token = _listening.Token;
         _acceptLoop = Task.Run(() => AcceptLoopAsync(listener, token));

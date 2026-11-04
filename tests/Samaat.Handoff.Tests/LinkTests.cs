@@ -452,6 +452,30 @@ public sealed class EndToEndTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AfterAMove_PhoneSeesTheComputersNewState()
+    {
+        await PairAsync();
+        await Eventually.TrueAsync(() => _host.Phones[0].FindDevice(Address) is not null, "the phone's list");
+
+        await _client.RequestMoveAsync(Address, HandoffDirection.ToPhone);
+
+        await Eventually.TrueAsync(() => _client.ComputerDevices.Single(d => d.Address == Address).Connected == false, "the computer's new state on the phone");
+    }
+
+    [Fact]
+    public async Task PausedAndReopened_ListensOnTheSamePort()
+    {
+        _host.Start();
+        _host.OpenPairing();
+        var port = _host.Port;
+        _host.ClosePairing();
+
+        _host.OpenPairing();
+
+        Assert.Equal(port, _host.Port);
+    }
+
+    [Fact]
     public async Task PhoneDevicesChange_ComputerHears()
     {
         await PairAsync();

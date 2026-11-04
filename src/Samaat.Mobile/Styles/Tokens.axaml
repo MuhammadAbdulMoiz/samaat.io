@@ -1,0 +1,85 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Samaat design tokens. Dark-first "listening room": ink surfaces, one signal colour.
+       The accent brushes (Accent, AccentSoft, OnAccent, Wave, SystemAccentColor) are replaced at runtime by AccentPalette. -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="Samaat.Bg" Color="#0B0D10" />
+      <SolidColorBrush x:Key="Samaat.Rail" Color="#0F1216" />
+      <SolidColorBrush x:Key="Samaat.Well" Color="#0D1014" />
+      <SolidColorBrush x:Key="Samaat.Key" Color="#252C35" />
+      <LinearGradientBrush x:Key="Samaat.PanelEdge" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="#353D47" />
+        <GradientStop Offset="1" Color="#252B33" />
+      </LinearGradientBrush>
+      <SolidColorBrush x:Key="Samaat.Surface" Color="#14181D" />
+      <SolidColorBrush x:Key="Samaat.Surface2" Color="#1B2027" />
+      <SolidColorBrush x:Key="Samaat.Border" Color="#252B33" />
+      <SolidColorBrush x:Key="Samaat.Text" Color="#EEF1F4" />
+      <SolidColorBrush x:Key="Samaat.Muted" Color="#939DA9" />
+      <SolidColorBrush x:Key="Samaat.Faint" Color="#5C6571" />
+      <SolidColorBrush x:Key="Samaat.Accent" Color="#C8F169" />
+      <SolidColorBrush x:Key="Samaat.AccentSoft" Color="#26C8F169" />
+      <SolidColorBrush x:Key="Samaat.OnAccent" Color="#0B0D10" />
+      <SolidColorBrush x:Key="Samaat.Warn" Color="#FFB547" />
+      <SolidColorBrush x:Key="Samaat.WarnSoft" Color="#26FFB547" />
+      <SolidColorBrush x:Key="Samaat.Critical" Color="#FF6B5B" />
+      <SolidColorBrush x:Key="Samaat.CriticalSoft" Color="#29FF6B5B" />
+      <SolidColorBrush x:Key="Samaat.Track" Color="#232A32" />
+      <SolidColorBrush x:Key="Samaat.Wave" Color="#C8F169" />
+      <SolidColorBrush x:Key="Samaat.Glyph" Color="#2A313A" />
+      <SolidColorBrush x:Key="Samaat.GlyphDetail" Color="#3A434E" />
+      <LinearGradientBrush x:Key="Samaat.HeroBg" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Offset="0" Color="#171C22" />
+        <GradientStop Offset="1" Color="#101317" />
+      </LinearGradientBrush>
+      <SolidColorBrush x:Key="Samaat.HeroBase" Color="#14181D" />
+      <LinearGradientBrush x:Key="Samaat.GlyphFill" StartPoint="20%,0%" EndPoint="80%,100%">
+        <GradientStop Offset="0" Color="#3B434D" />
+        <GradientStop Offset="1" Color="#22282F" />
+      </LinearGradientBrush>
+      <SolidColorBrush x:Key="Samaat.GlyphTip" Color="#4A535E" />
+      <SolidColorBrush x:Key="Samaat.GlyphShine" Color="#66FFFFFF" />
+      <Color x:Key="SystemAccentColor">#C8F169</Color>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="Samaat.Bg" Color="#F2F3EF" />
+      <SolidColorBrush x:Key="Samaat.Rail" Color="#E9EBE5" />
+      <SolidColorBrush x:Key="Samaat.Well" Color="#E9EBE5" />
+      <SolidColorBrush x:Key="Samaat.Key" Color="#FFFFFF" />
+      <LinearGradientBrush x:Key="Samaat.PanelEdge" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Offset="0" Color="#E9ECE3" />
+        <GradientStop Offset="1" Color="#DFE2DA" />
+      </LinearGradientBrush>
+      <SolidColorBrush x:Key="Samaat.Surface" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="Samaat.Surface2" Color="#F5F6F2" />
+      <SolidColorBrush x:Key="Samaat.Border" Color="#DFE2DA" />
+      <SolidColorBrush x:Key="Samaat.Text" Color="#12161B" />
+      <SolidColorBrush x:Key="Samaat.Muted" Color="#58616B" />
+      <SolidColorBrush x:Key="Samaat.Faint" Color="#8A929B" />
+      <SolidColorBrush x:Key="Samaat.Accent" Color="#4A7A00" />
+      <SolidColorBrush x:Key="Samaat.AccentSoft" Color="#1F4A7A00" />
+      <SolidColorBrush x:Key="Samaat.OnAccent" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="Samaat.Warn" Color="#8A5000" />
+      <SolidColorBrush x:Key="Samaat.WarnSoft" Color="#1FA35F00" />
+      <SolidColorBrush x:Key="Samaat.Critical" Color="#B02A18" />
+      <SolidColorBrush x:Key="Samaat.CriticalSoft" Color="#1FC2321F" />
+      <SolidColorBrush x:Key="Samaat.Track" Color="#E3E6DF" />
+      <SolidColorBrush x:Key="Samaat.Wave" Color="#4A7A00" />
+      <SolidColorBrush x:Key="Samaat.Glyph" Color="#E4E7E0" />
+      <SolidColorBrush x:Key="Samaat.GlyphDetail" Color="#CDD2C8" />
+      <LinearGradientBrush x:Key="Samaat.HeroBg" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Offset="0" Color="#FFFFFF" />
+        <GradientStop Offset="1" Color="#F4F6F0" />
+      </LinearGradientBrush>
+      <SolidColorBrush x:Key="Samaat.HeroBase" Color="#FBFCF9" />
+      <LinearGradientBrush x:Key="Samaat.GlyphFill" StartPoint="20%,0%" EndPoint="80%,100%">
+        <GradientStop Offset="0" Color="#FFFFFF" />
+        <GradientStop Offset="1" Color="#DADFD4" />
+      </LinearGradientBrush>
+      <SolidColorBrush x:Key="Samaat.GlyphTip" Color="#C3C9BC" />
+      <SolidColorBrush x:Key="Samaat.GlyphShine" Color="#FFFFFFFF" />
+      <Color x:Key="SystemAccentColor">#4A7A00</Color>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

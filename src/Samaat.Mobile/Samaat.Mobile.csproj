@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The phone app's UI and logic. Platform-neutral so tests render it headless; Samaat.Android hosts it. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
+    <ProjectReference Include="..\Samaat.Handoff\Samaat.Handoff.csproj" />
+    <ProjectReference Include="..\Samaat.Simulator\Samaat.Simulator.csproj" />
+    <ProjectReference Include="..\Samaat.Protocols.Jieli\Samaat.Protocols.Jieli.csproj" />
+    <ProjectReference Include="..\Samaat.Protocols.FastPair\Samaat.Protocols.FastPair.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Samaat.Mobile.Tests" />
+  </ItemGroup>
+</Project>

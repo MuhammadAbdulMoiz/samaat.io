@@ -333,7 +333,8 @@ public sealed class PhoneLinkClient : IAsyncDisposable
             Wake();
         }
 
-        if (previous is null || previous.Beacon.Pairing != heard.Beacon.Pairing || previous.Beacon.Name != heard.Beacon.Name)
+        if (previous is null || previous.Beacon.Pairing != heard.Beacon.Pairing || previous.Beacon.Name != heard.Beacon.Name
+            || !Equals(previous.Endpoint, heard.Endpoint))
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }
