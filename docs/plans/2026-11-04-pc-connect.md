@@ -1,0 +1,29 @@
+# Plan: connect and disconnect earbuds from Samaat
+
+Branch `claude/pc-connect` (from `master` at 7c8dcaf, the same commit as `feature/ui-redesign`).
+
+**User request (2026-11-04):** "add connect and disconnect in the app instead of bluetooth options".
+
+## How Windows does it
+For paired Bluetooth audio devices, Windows Settings' Connect/Disconnect sends a one-shot property to the device's Bluetooth audio KS filter: `KSPROPSETID_BtAudio` (`{7FA06C40-B8F6-4C7E-8556-E8C33A12E54D}`) with `KSPROPERTY_ONESHOT_RECONNECT` (0) or `KSPROPERTY_ONESHOT_DISCONNECT` (1) and `KSPROPERTY_TYPE_GET`. Tools such as ToothTray reach it like this: audio endpoint (`IMMDevice`, including unplugged endpoints) → `Activate(IDeviceTopology)` → `GetConnector(0)` → `GetConnectedTo` → `QueryInterface(IPart)` → `IPart.Activate(CLSCTX_ALL, IID_IKsControl)` → `IKsControl.KsProperty`. It works for devices that have audio endpoints (A2DP/HFP), which covers every device Samaat lists by default.
+
+## Scope
+1. **Core feature** `src/Samaat.Core/Connections/PcLink.cs`: `public interface IPcLinkFeature : IFeature { Task<CommandResult> ConnectAsync(CancellationToken ct = default); Task<CommandResult> DisconnectAsync(CancellationToken ct = default); }`. Results use the existing `CommandResult`/`CommandStatus`. Plus a helper `static Task<CommandResult> PcLink.AwaitStateAsync(IEarbudDevice device, ConnectionState wanted, TimeSpan timeout, TimeProvider time, CancellationToken ct)`: Confirmed when `device.Connection` reaches `wanted` (checked immediately, then on `ConnectionChanged`), TimedOut otherwise. It's used by every implementation, after its request succeeds.
+2. **Windows** `src/Samaat.Platform.Windows/BluetoothAudioLink.cs`: a minimal COM interop (`[ComImport]` `IMMDeviceEnumerator` from NAudio's `MMDeviceEnumerator` is fine for enumeration; own declarations for `IDeviceTopology`, `IConnector`, `IPart` and `IKsControl`, with correct vtable order and `[PreserveSig] int` + HRESULT checks). It finds the endpoints (render and capture, state Active|Unplugged) whose `PKEY_Device_ContainerId` equals the Bluetooth device's container id, and sends the one-shot to the first endpoint that accepts it. `WindowsEarbudDevice` gets an `IPcLinkFeature` (`WindowsPcLinkFeature`) when at least one matching endpoint exists at build time. Connect waits 15 s for Connected and disconnect waits 10 s for Disconnected (`AwaitStateAsync`). A failed HRESULT → `Rejected` with "Windows refused the request (0x…)". No endpoint → `Unsupported`. All COM work runs on a thread-pool (MTA) thread.
+   `// shortcut: one-shot KS property is what Windows Settings uses but is undocumented for apps; if it stops working, fall back to opening ms-settings:bluetooth`
+3. **Simulator**: `SimulatedPcLinkFeature` on every simulated device calls `SetConnected(true/false)` after the simulator's usual latency, so the UI and tests exercise both paths.
+4. **UI**
+   - **Links page**, "This computer" row: a ghost button **Connect** when disconnected, **Disconnect** when connected (accessible name "Connect {device} to this computer" / "Disconnect {device} from this computer"), with a busy state while the command runs and the existing `ErrorText` for failures. It's hidden when the device has no `IPcLinkFeature`. In that case the row's meta text says "Use Windows Bluetooth settings to connect this device." and has a link button "Open Bluetooth settings" (`ms-settings:bluetooth`).
+   - **Overview hero**: when the device is disconnected, a primary **Connect** button under the status line ("Disconnected · Connect"). When connected, no button (Disconnect lives on the Links page and in the tray, so it isn't pressed by accident).
+   - **Tray menu**: each device line gets a submenu, or the device line toggles, with **Connect**/**Disconnect**. Keep it to one item per device: "Connect {name}" or "Disconnect {name}".
+   - All three go through one `PcLinkCommands` helper on `DeviceViewModel` (an `IAsyncRelayCommand ConnectCommand`/`DisconnectCommand`, using `CommandRunner` with a 20 s timeout), so state and errors are consistent. A success toast is not needed: the connection dot changes. Failures show the existing toast.
+5. **Docs**: `docs/modules/connections.md` gains a "Connect and disconnect" section, plus a STATUS line.
+
+## Tests
+- Core: `AwaitState_AlreadyThere_ConfirmedImmediately`, `AwaitState_ReachesStateLater_Confirmed`, `AwaitState_Never_TimesOut` (FakeTimeProvider), `AwaitState_Cancelled_Throws or Cancelled` (match the existing CommandRunner conventions).
+- Simulator: `SimulatedPcLink_Disconnect_ThenConnect_ChangesState`.
+- App: `ConnectCommand_Disconnected_CallsFeature_AndUpdates`, `DisconnectCommand_Connected_CallsFeature`, `NoFeature_HidesButtons_ShowsSettingsLink`, `Failure_ShowsError`, `Busy_DisablesButtonsWhileRunning`, and a tray menu test for the item text per state.
+- Windows interop: no automated test (COM). Hardware check: with the T200 Lite and the Quantum, Disconnect from Links → it disconnects within about 10 s and the dot goes grey; Connect from the hero → it reconnects (buds out of the case) within about 15 s, and audio returns to it.
+
+## Done when
+Build with 0 warnings, all tests green, Codex passes the implementation, and the user confirms connect/disconnect on hardware. Merge into `feature/ui-redesign` and `master`.
