@@ -53,6 +53,20 @@ public sealed class SettingsViewModelTests : IDisposable
         new(store, detector ?? new LowBatteryDetector(), startup ?? new FakeStartup(), motion);
 
     [AvaloniaFact]
+    public void ChangingTheme_KeepsShareSettings()
+    {
+        var store = Store();
+        store.Save(new AppSettings { ShareTargetId = "tv", ShareDelayMs = 80 });
+        var vm = Create(store);
+        vm.Theme = ThemeChoice.Dark;
+        var saved = store.Load();
+        Assert.Equal("tv", saved.ShareTargetId);
+        Assert.Equal(80, saved.ShareDelayMs);
+        vm.SetShare("hp", 20);
+        Assert.Equal(("hp", 20), (store.Load().ShareTargetId, store.Load().ShareDelayMs));
+    }
+
+    [AvaloniaFact]
     public void LoadsSavedSettings_AndAppliesThemAtStartup()
     {
         var store = Store();

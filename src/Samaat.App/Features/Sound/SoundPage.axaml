@@ -3,6 +3,7 @@
              xmlns:overview="using:Samaat.App.Features.Overview"
              xmlns:shared="using:Samaat.App.Shared"
              xmlns:sound="using:Samaat.App.Features.Sound"
+             xmlns:audio="using:Samaat.Core.Audio"
              x:Class="Samaat.App.Features.Sound.SoundPage"
              x:DataType="overview:DeviceViewModel">
   <StackPanel Spacing="16">
@@ -150,6 +151,39 @@
           </StackPanel>
         </Border>
       </WrapPanel>
+    </StackPanel>
+  </Border>
+
+  <!-- Share audio -->
+  <Border Classes="panel" DataContext="{Binding Share}" x:DataType="sound:AudioShareViewModel">
+    <StackPanel Spacing="12">
+      <TextBlock Text="Share audio" Classes="panelTitle" />
+
+      <StackPanel IsVisible="{Binding !IsSupported}">
+        <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <TextBlock Text="Connect a second audio device to share to it." Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowNoTargets}" />
+
+      <StackPanel Spacing="12" IsVisible="{Binding HasTargets}">
+        <Grid ColumnDefinitions="*,Auto,Auto" MinHeight="40">
+          <TextBlock Text="Also play on" VerticalAlignment="Center" />
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}" Margin="0,0,12,0"
+                    AutomationProperties.Name="Second output">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="audio:AudioOutput"><TextBlock Text="{Binding Name}" /></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsSharing}" AutomationProperties.Name="Also play on" />
+        </Grid>
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding DelayText}" />
+          <Slider Minimum="0" Maximum="500" Value="{Binding DelayMs}" TickFrequency="10" IsSnapToTickEnabled="True"
+                  AutomationProperties.Name="Delay the copy" />
+        </StackPanel>
+        <TextBlock Text="{Binding HelpText}" Classes="meta" TextWrapping="Wrap" />
+      </StackPanel>
+      <TextBlock Text="{Binding Status}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
   </Border>
   </StackPanel>

@@ -66,4 +66,11 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
 #else
         new NoStartupRegistration();
 #endif
+
+    public Samaat.Core.Audio.IAudioShare CreateAudioShare() =>
+#if SAMAAT_WINDOWS
+        new Samaat.Core.Audio.AudioShare(new Samaat.Platform.Windows.WasapiBackend());
+#else
+        new Samaat.Core.Audio.NoAudioShare();
+#endif
 }

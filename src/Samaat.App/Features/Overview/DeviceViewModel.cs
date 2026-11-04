@@ -103,6 +103,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
     public EqualizerViewModel Equalizer { get; }
 
+    /// <summary>Shared by all devices; owned and disposed by the main view model.</summary>
+    public Sound.AudioShareViewModel? Share { get; set; }
+
     public ConnectionsViewModel Connections { get; }
 
     public DeviceInfoViewModel Info { get; }

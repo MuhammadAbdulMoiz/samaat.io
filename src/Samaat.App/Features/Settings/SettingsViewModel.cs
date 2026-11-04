@@ -17,6 +17,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IMotionPreference _motion;
     private bool? _reduceMotionOverride;
     private bool _syncing;
+    private string? _shareTargetId;
+    private int _shareDelayMs;
 
     public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
@@ -103,6 +105,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         SystemNotifications = SystemNotifications,
         CloseToTray = CloseToTray,
         StartWithWindows = StartWithWindows,
+        ShareTargetId = _shareTargetId,
+        ShareDelayMs = _shareDelayMs,
     }.Normalize();
 
     [RelayCommand]
@@ -157,6 +161,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         Changed();
     }
 
+    public string? ShareTargetId => _shareTargetId;
+
+    public int ShareDelayMs => _shareDelayMs;
+
+    /// <summary>Saves the Share audio choices alongside the other settings.</summary>
+    public void SetShare(string? targetId, int delayMs)
+    {
+        _shareTargetId = targetId;
+        _shareDelayMs = delayMs;
+        Changed();
+    }
+
     private void Changed()
     {
         if (_syncing)
@@ -187,6 +203,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             SystemNotifications = settings.SystemNotifications;
             CloseToTray = settings.CloseToTray;
             StartWithWindows = settings.StartWithWindows;
+            _shareTargetId = settings.ShareTargetId;
+            _shareDelayMs = settings.ShareDelayMs;
         }
         finally
         {
