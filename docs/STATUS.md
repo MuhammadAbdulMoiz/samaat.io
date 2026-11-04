@@ -6,7 +6,7 @@ Last updated: 2026-11-03
 
 - **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. The **first vendor adapter** (Jieli RCSP over BLE) reads per-bud battery and switches noise control (off, noise cancelling, transparency) and EQ presets on the Audionic ParadoX-E ([test notes](hardware-tests/2026-11-03-audionic-paradox-e.md), [protocol](protocols/jieli-rcsp.md)). Everything else runs against **simulated devices**.
 - **Not done:** multipoint and custom EQ bands on real earbuds, and any real device other than the ParadoX-E. The Quantum Zbuds have no usable vendor protocol.
-- **Tests:** 480 automated tests (Protocols 177, Core 156, App 147). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Tests:** 546 automated tests (Protocols 177, Core 199, App 170). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Links |
 |---|---|---|
@@ -56,6 +56,9 @@ The **Details** page shows vendor and product ID, address, advertised services, 
 
 ### Drivers by protocol ([details](../devices/README.md#generic-entries-generic))
 `devices/generic/` gives unknown earbuds a driver by protocol: any device advertising the Fast Pair Message Stream gets `fast-pair`, and any with Jieli's vendor ID `0x05D6` gets `jieli-rcsp`. A model entry always wins, so the four models keep their names and photos. `DeviceProfileDb` skips generic files on purpose. Drivers expose only what the buds answer for: Jieli noise control and EQ only when the buds list them when read back, and nothing without BLE `AE00`. Otherwise the device falls back to the Windows battery. Checked with `samaat-cli` on 2026-11-03: the ParadoX-E, T200 Lite, Quantum and Microsoft headset each still resolve to their own entry, and the Quantum advertises `fe010000-…`, not the Fast Pair stream. No unknown device has been tried on hardware yet.
+
+### Share audio and Switch here ([details](modules/audio-share.md))
+On the Sound page, the default output can be played on up to 3 other outputs at once, each with its own delay. Switch here makes any output the Windows default. Windows only (WASAPI loopback through NAudio; `IPolicyConfig` for switching). Checked on hardware with the Quantum and the laptop speakers.
 
 ### Tray and notifications ([details](modules/tray.md))
 Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windows notifications for low battery (verified on one PC only).

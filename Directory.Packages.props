@@ -11,6 +11,8 @@
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="NAudio.Core" Version="2.2.1" />
+    <PackageVersion Include="NAudio.Wasapi" Version="2.2.1" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />

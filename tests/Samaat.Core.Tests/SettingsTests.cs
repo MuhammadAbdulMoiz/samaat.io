@@ -58,6 +58,39 @@ public sealed class SettingsTests : IDisposable
         Assert.False(new Samaat.Core.Platform.NoMotionPreference().ReduceMotion);
 
     [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(501, 500)]
+    [InlineData(250, 250)]
+    public void Settings_ShareDelays_ClampedOnNormalize(int delay, int expected) =>
+        Assert.Equal(expected, new AppSettings { ShareDelays = new Dictionary<string, int> { ["tv"] = delay } }.Normalize().ShareDelays["tv"]);
+
+    [Fact]
+    public void Settings_NullShareDelays_LoadsAsEmpty()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(InDir(), "{\"lowThreshold\":30,\"shareDelays\":null}");
+
+        var loaded = new SettingsStore(InDir()).Load();
+
+        Assert.Equal(30, loaded.LowThreshold);
+        Assert.Empty(loaded.ShareDelays);
+    }
+
+    [Fact]
+    public void Settings_ShareDelays_RoundTrip()
+    {
+        var store = new SettingsStore(InDir());
+        var saved = new AppSettings { ShareDelays = new Dictionary<string, int> { ["speaker-1"] = 120, ["hp"] = 0 } };
+
+        Assert.True(store.Save(saved));
+
+        var loaded = new SettingsStore(InDir()).Load();
+        Assert.Equal(120, loaded.ShareDelays["speaker-1"]);
+        Assert.Equal(0, loaded.ShareDelays["hp"]);
+        Assert.Equal(2, loaded.ShareDelays.Count);
+    }
+
+    [Theory]
     [InlineData(2, 1, 5, 1)]
     [InlineData(99, 99, 50, 49)]
     [InlineData(20, 20, 20, 19)]
@@ -84,7 +117,8 @@ public sealed class SettingsTests : IDisposable
 
         Assert.True(store.Save(saved));
 
-        Assert.Equal(saved, new SettingsStore(InDir()).Load());
+        // Normalize copies ShareDelays, so reference equality on the dictionary would fail; compare the rest by value.
+        Assert.Equal(saved, new SettingsStore(InDir()).Load() with { ShareDelays = saved.ShareDelays });
         Assert.Contains("\"theme\": \"light\"", File.ReadAllText(InDir()));
         Assert.Null(store.LastError);
         Assert.False(File.Exists(InDir() + ".tmp"));

@@ -1,5 +1,7 @@
 using Samaat.App.Features.Overview;
 using Samaat.App.Features.Settings;
+using Samaat.App.Features.Sound;
+using Samaat.Core.Audio;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -67,7 +69,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         IStartupRegistration? startup = null,
         DeviceProfileDb? profiles = null,
         INotifier? notifier = null,
-        IMotionPreference? motion = null)
+        IMotionPreference? motion = null,
+        Func<IAudioShare>? audioShareFactory = null,
+        Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null)
     {
         _time = time ?? TimeProvider.System;
         _notifier = notifier ?? options.CreateNotifier();
@@ -75,6 +79,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         Settings = new SettingsViewModel(
             settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration(),
             motion ?? options.CreateMotionPreference());
+        AudioShare = new AudioShareViewModel(audioShareFactory ?? options.CreateAudioShare, outputSwitcher ?? options.CreateDefaultOutputSwitcher(), Settings);
         _registry = new DeviceRegistry(options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
@@ -98,6 +103,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     }
 
     public SettingsViewModel Settings { get; }
+
+    public AudioShareViewModel AudioShare { get; }
 
     public ObservableCollection<DeviceViewModel> Devices { get; } = [];
 
@@ -249,6 +256,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
             var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity));
+            vm.Share = AudioShare;
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
         }
@@ -302,6 +310,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public async ValueTask DisposeAsync()
     {
+        await AudioShare.DisposeAsync();
         _ageTimer.Stop();
         foreach (var timer in _toastTimers)
         {

@@ -17,6 +17,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IMotionPreference _motion;
     private bool? _reduceMotionOverride;
     private bool _syncing;
+    private Dictionary<string, int> _shareDelays = new();
 
     public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
@@ -103,6 +104,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SystemNotifications = SystemNotifications,
         CloseToTray = CloseToTray,
         StartWithWindows = StartWithWindows,
+        ShareDelays = new Dictionary<string, int>(_shareDelays),
     }.Normalize();
 
     [RelayCommand]
@@ -157,6 +159,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         Changed();
     }
 
+    /// <summary>The share delay saved for an output; 0 when none is saved.</summary>
+    public int GetShareDelay(string id) => _shareDelays.GetValueOrDefault(id);
+
+    /// <summary>Saves the share delay for one output alongside the other settings.</summary>
+    public void SetShareDelay(string id, int ms)
+    {
+        _shareDelays[id] = ms;
+        Changed();
+    }
+
     private void Changed()
     {
         if (_syncing)
@@ -187,6 +199,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             SystemNotifications = settings.SystemNotifications;
             CloseToTray = settings.CloseToTray;
             StartWithWindows = settings.StartWithWindows;
+            _shareDelays = new Dictionary<string, int>(settings.ShareDelays);
         }
         finally
         {
