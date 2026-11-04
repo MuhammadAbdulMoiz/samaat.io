@@ -39,8 +39,19 @@ public sealed partial class ConnectionsViewModel : ObservableObject, IDisposable
 
     public string LimitText => _feature is null ? "" : $"Up to {_feature.Options.MaxConnections} devices at once";
 
+    /// <summary>Why the multipoint switch is greyed out; null when it can be changed.</summary>
+    public string? MultipointDisabledReason => CanToggleMultipoint ? null : "These earbuds don't let Samaat change this";
+
+    public string UnavailableTitle => "Other devices aren't shown for these earbuds";
+
     public string UnavailableText =>
-        "Your earbuds may also be connected to other devices, like your phone. Samaat can show and switch them only for models whose protocol it supports.";
+        "Your phone or other devices may still be connected. Manage them on each device.";
+
+    /// <summary>The limits we always state (docs/PLAN.md §8), behind the "How links work" disclosure.</summary>
+    public string HelpText =>
+        "Samaat can list and switch other devices only when your earbuds' own protocol allows it. "
+        + "To forget a device completely, remove the pairing in that device's Bluetooth settings. "
+        + "While this computer is disconnected, Samaat can't read or change the earbuds.";
 
     public ObservableCollection<HostViewModel> Hosts { get; } = [];
 
@@ -57,6 +68,21 @@ public sealed partial class ConnectionsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     public partial bool IsBusy { get; set; }
+
+    /// <summary>"2 of 2": hosts connected now, out of how many the earbuds allow in the current mode.</summary>
+    [ObservableProperty]
+    public partial string ConnectedSummary { get; set; } = "";
+
+    /// <summary>Why the host actions are hidden; null while this computer is connected.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasHostsNote))]
+    public partial string? HostsNote { get; set; }
+
+    public bool HasHostsNote => HostsNote is not null;
+
+    /// <summary>Multipoint is supported but the earbuds report no hosts at all.</summary>
+    [ObservableProperty]
+    public partial bool ShowNoHosts { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
@@ -103,6 +129,7 @@ public sealed partial class ConnectionsViewModel : ObservableObject, IDisposable
         {
             IsConnected = _device.Connection == ConnectionState.Connected;
             ThisComputerText = IsConnected ? "Connected to this computer" : "Not connected to this computer";
+            HostsNote = IsConnected ? null : "Connect this computer to switch or disconnect other devices.";
             if (_feature is null)
             {
                 return;
@@ -115,6 +142,10 @@ public sealed partial class ConnectionsViewModel : ObservableObject, IDisposable
             {
                 Hosts.Add(new HostViewModel(host, _feature.Options, IsConnected, SwitchAsync, DisconnectAsync));
             }
+
+            var allowed = state.MultipointEnabled ? _feature.Options.MaxConnections : 1;
+            ShowNoHosts = Hosts.Count == 0;
+            ConnectedSummary = $"{state.Hosts.Count(h => h.IsConnected)} of {allowed}";
         }
         finally
         {
@@ -143,7 +174,10 @@ public sealed class HostViewModel
         IsConnected = host.IsConnected;
         CanSwitch = earbudsReachable && options.CanSwitch && host.State is HostLinkState.Connected or HostLinkState.Paired;
         CanDisconnect = earbudsReachable && options.CanDisconnect && host.IsConnected && !host.IsThisHost;
-        SwitchText = host.State == HostLinkState.Paired ? "Connect" : "Switch audio here";
+        SwitchText = host.State == HostLinkState.Paired ? "Connect" : "Switch here";
+        SwitchIconKey = host.State == HostLinkState.Paired ? "Icon.Link" : "Icon.Switch";
+        SwitchLabel = host.State == HostLinkState.Paired ? $"Connect {Name}" : $"Switch audio to {Name}";
+        DisconnectLabel = $"Disconnect {Name}";
         StateText = host.State switch
         {
             HostLinkState.Active => "Playing audio",
@@ -177,6 +211,13 @@ public sealed class HostViewModel
     public bool CanDisconnect { get; }
 
     public string SwitchText { get; }
+
+    public string SwitchIconKey { get; }
+
+    /// <summary>Accessible name for the switch or connect button, naming the host.</summary>
+    public string SwitchLabel { get; }
+
+    public string DisconnectLabel { get; }
 
     public string StateText { get; }
 

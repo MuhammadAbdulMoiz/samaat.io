@@ -81,3 +81,25 @@ Benchmark: OpenMouse's design notes (ideas only; no code, assets or colours copi
 | Shape | 4 px grid, 16 px panel padding and gaps, rows 40 px or more, buttons 32 px, switches 36x20, radii 6 / 10 / 14. |
 | Theme | Accent presets Lime, Emerald, Ice and Mono, all checked against the WCAG AA tests in both themes. |
 | Motion | New "Reduce motion" setting (follows Windows until changed): no page fade and no gliding values. |
+
+## Links page rework (2026-11-04)
+
+Goal: make the Links tab feel as considered as the Share audio card. It should work for earbuds with no multipoint protocol (most real devices, for example Quantum Zbuds) and for the simulator's multipoint Buds Pro. Reviewed with the design-critique, accessibility-review and ux-copy passes, plus stress renders (long names, six hosts, zero hosts, disconnected, busy with an error, no PC-link feature).
+
+| Before | After | Why |
+|---|---|---|
+| "Disconnect" was a borderless text button floating top right. It read as a label | A `Button.subtle` with the disconnect icon, inside the state row. Connect is `Button.primary` | An action needs an affordance. Connect is the one thing a disconnected user came to do, so it gets the fill. Disconnect is reversible but not the main path, so it stays quiet |
+| State, action and explanation sat in one flat block with no hierarchy | One row on the `Surface2` strip, like Share's "Playing on": a laptop tile that lights when connected, then a bold state ("Connected", "Connecting…"), one line of meaning, and the action | You read the state first, then what it means, then what you can do. The tile repeats the state without relying on colour alone |
+| A long grey paragraph about other devices sat inside "This computer" | A separate "Devices" panel with an honest empty-state row: "Other devices aren't shown for these earbuds", plus "Manage them on each device" | Keeps "this computer" about this computer. The empty state says what's missing and where to go, in two short lines |
+| A "Good to know" card of three grey sentences | A "How links work" disclosure (`ToggleButton.disclosure`), the same pattern as "How sharing works" | The limits are still always stated (PLAN §8) but no longer compete with live state. The "disconnected means no control" fact moved into the not-connected detail line, where it matters |
+| Multipoint was its own card, then a "Connected devices" card | One "Devices" panel: a "2 of 2" count chip, the multipoint switch row, a divider, then host rows | One concept, one panel. The count chip mirrors Share's "1 of 3" |
+| Host rows had `Button.primary` "Switch audio here" and boxed "Disconnect" on every row | `Border.shareRow` anatomy. The active host gets the accent row. Actions are `Button.ghost` with icons ("Switch here", "Connect", "Disconnect"), like Share | Several bright fills in a list shouted. Quiet actions keep the playing device as the focal point |
+| A busy bar pushed the title down by 12 px (negative margins don't shrink a StackPanel slot) | The bar is overlaid on the panel's top edge | No layout jump while a request runs |
+| Disabled Connect/Disconnect looked enabled | `Button.subtle:disabled` and `Button.primary:disabled` dim to 0.45, like a disabled switch. The headline reads "Connecting…" and the tooltip says "Wait for the current request to finish" | A disabled control says why |
+| Zero hosts showed only a header and a divider | "No other devices yet. Devices you pair these earbuds with appear here." | An empty list needs an empty state |
+
+**Accessibility.** Every button is 32 px or taller. The multipoint switch uses the `ToggleSwitch.share` template's 32 px hit area. Host buttons name their host ("Switch audio to Pixel phone", "Disconnect Pixel phone", "Connect Work laptop"). The locked multipoint switch carries `HelpText` and a tooltip ("These earbuds don't let Samaat change this"). Hidden host actions are explained in text when this computer is disconnected. Long host names trim with an ellipsis and keep the full name in a tooltip. No new colours: every text pair is already covered by the WCAG contrast tests.
+
+**Copy.** Sentence case and verbs first. "Switch here" matches Share. A not-yet-connected host gets "Connect". The busy states are "Connecting…" and "Disconnecting…". The fallback button is "Bluetooth settings", and its row says "Connect or disconnect in Windows Bluetooth settings".
+
+![Links, multipoint](../images/buds-pro-connections.png) ![Links, no multipoint](../images/buds-lite-connections-light.png)

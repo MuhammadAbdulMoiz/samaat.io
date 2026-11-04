@@ -132,6 +132,39 @@ public class PcLinkViewModelTests
     }
 
     [AvaloniaFact]
+    public async Task LinkText_FollowsStateAndRequest()
+    {
+        var (vm, link, _, _) = Create(ConnectionState.Disconnected);
+        Assert.Equal("Not connected", vm.LinkStateText);
+        Assert.Equal("Connect to see battery and change settings", vm.LinkDetailText);
+        Assert.Null(vm.LinkDisabledReason);
+
+        link.Gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var run = vm.ConnectCommand.ExecuteAsync(null);
+
+        Assert.Equal("Connecting…", vm.LinkStateText);
+        Assert.Equal("Waiting for the earbuds to respond", vm.LinkDetailText);
+        Assert.Equal("Wait for the current request to finish", vm.LinkDisabledReason);
+
+        link.Gate.SetResult();
+        await run;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal("Connected", vm.LinkStateText);
+        Assert.Equal("Battery, sound and controls work from here", vm.LinkDetailText);
+        Assert.Null(vm.LinkDisabledReason);
+    }
+
+    [AvaloniaFact]
+    public void NoFeature_LinkTextPointsToWindowsSettings()
+    {
+        var (vm, _, _, _) = Create(ConnectionState.Connected, withLink: false);
+
+        Assert.Equal("Connected", vm.LinkStateText);
+        Assert.Equal("Connect or disconnect in Windows Bluetooth settings", vm.LinkDetailText);
+    }
+
+    [AvaloniaFact]
     public async Task Failure_ShowsError()
     {
         var (vm, link, _, messages) = Create(ConnectionState.Disconnected);

@@ -51,7 +51,74 @@ public class ConnectionsViewModelTests
         Assert.True(tablet.CanSwitch);
         Assert.False(tablet.CanDisconnect);
         Assert.Equal("Connect", tablet.SwitchText);
-        Assert.Equal("Switch audio here", phone.SwitchText);
+        Assert.Equal("Switch here", phone.SwitchText);
+    }
+
+    [Fact]
+    public void HostActions_NameTheHostForScreenReaders()
+    {
+        var (vm, _) = Create();
+        var phone = vm.Hosts.Single(h => h.Id == "phone");
+        var tablet = vm.Hosts.Single(h => h.Id == "tablet");
+
+        Assert.Equal("Switch audio to Phone", phone.SwitchLabel);
+        Assert.Equal("Icon.Switch", phone.SwitchIconKey);
+        Assert.Equal("Disconnect Phone", phone.DisconnectLabel);
+        Assert.Equal("Connect Tablet", tablet.SwitchLabel);
+        Assert.Equal("Icon.Link", tablet.SwitchIconKey);
+    }
+
+    [Fact]
+    public async Task ConnectedSummary_CountsAgainstTheCurrentMode()
+    {
+        var (vm, _) = Create();
+
+        Assert.Equal("2 of 2", vm.ConnectedSummary);
+        Assert.False(vm.ShowNoHosts);
+
+        vm.MultipointEnabled = false;
+        await vm.PendingCommand;
+
+        Assert.Equal("1 of 1", vm.ConnectedSummary);
+    }
+
+    [Fact]
+    public void MultipointSwitch_SaysWhyItIsLocked()
+    {
+        var (open, _) = Create();
+        var (locked, _) = Create(new MultipointOptions(2, CanSwitch: true, CanDisconnect: true, CanToggleMultipoint: false));
+
+        Assert.Null(open.MultipointDisabledReason);
+        Assert.False(locked.CanToggleMultipoint);
+        Assert.Equal("These earbuds don't let Samaat change this", locked.MultipointDisabledReason);
+    }
+
+    [Fact]
+    public void NoHosts_ShowsEmptyState()
+    {
+        var feature = new SimulatedMultipoint(new MultipointOptions(3, true, true, true), new MultipointState(true, []), TimeSpan.Zero);
+        var device = new SimulatedEarbudDevice(new DeviceIdentity("d", "Buds"), SimulatedBatteryLayout.BudsAndCase, extraFeatures: [feature]);
+
+        var vm = new ConnectionsViewModel(device, post: a => a());
+
+        Assert.True(vm.ShowNoHosts);
+        Assert.Equal("0 of 3", vm.ConnectedSummary);
+    }
+
+    [Fact]
+    public void ThisComputerDisconnected_ExplainsHiddenHostActions()
+    {
+        var feature = new SimulatedMultipoint(new MultipointOptions(2, true, true, true),
+            new MultipointState(true, [new HostLink("phone", "Phone", HostKind.Phone, HostLinkState.Active, IsThisHost: false)]), TimeSpan.Zero);
+        var device = new SimulatedEarbudDevice(new DeviceIdentity("d", "Buds"), SimulatedBatteryLayout.BudsAndCase, extraFeatures: [feature]);
+        var vm = new ConnectionsViewModel(device, post: a => a());
+        Assert.False(vm.HasHostsNote);
+
+        device.SetConnected(false);
+
+        Assert.True(vm.HasHostsNote);
+        Assert.Contains("Connect this computer", vm.HostsNote);
+        Assert.All(vm.Hosts, h => Assert.False(h.CanSwitch || h.CanDisconnect));
     }
 
     [Fact]
@@ -111,6 +178,8 @@ public class ConnectionsViewModelTests
 
         Assert.False(vm.HasMultipoint);
         Assert.Equal("Connected to this computer", vm.ThisComputerText);
+        Assert.Equal("Other devices aren't shown for these earbuds", vm.UnavailableTitle);
         Assert.Contains("other devices", vm.UnavailableText);
+        Assert.Contains("remove the pairing", vm.HelpText);
     }
 }
