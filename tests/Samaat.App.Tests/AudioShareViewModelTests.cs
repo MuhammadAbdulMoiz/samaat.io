@@ -31,6 +31,8 @@ internal sealed class FakeAudioShare : IAudioShare
 
     public bool ThrowOnStart { get; set; }
 
+    public Func<string, Task>? StartGate { get; set; }
+
     public List<string> Started { get; } = [];
 
     public int StopCalls { get; private set; }
@@ -39,8 +41,13 @@ internal sealed class FakeAudioShare : IAudioShare
 
     public void Raise() => Changed?.Invoke(this, EventArgs.Empty);
 
-    public Task StartAsync(string targetId, CancellationToken ct = default)
+    public async Task StartAsync(string targetId, CancellationToken ct = default)
     {
+        if (StartGate is not null)
+        {
+            await StartGate(targetId);
+        }
+
         if (ThrowOnStart)
         {
             throw new InvalidOperationException("Boom");
@@ -51,7 +58,6 @@ internal sealed class FakeAudioShare : IAudioShare
         State = FailWith is null ? AudioShareState.Sharing : AudioShareState.Stopped;
         StatusText = FailWith;
         Raise();
-        return Task.CompletedTask;
     }
 
     public Task StopAsync()
@@ -221,6 +227,29 @@ public sealed class AudioShareViewModelTests : IDisposable
         Settle();
         Assert.False(vm.IsSharing);
         Assert.Equal("Boom", vm.Status);
+    }
+
+    [AvaloniaFact]
+    public async Task RapidTargetChanges_LastSelectionWins()
+    {
+        var gate = new TaskCompletionSource();
+        var share = new FakeAudioShare { StartGate = id => id == "tv" ? gate.Task : Task.CompletedTask };
+        var (vm, _, _) = Create(share);
+        vm.IsSharing = true;
+        vm.SelectedTarget = vm.Targets[1];
+        vm.SelectedTarget = vm.Targets[0];
+        vm.SelectedTarget = vm.Targets[1];
+        gate.SetResult();
+        for (var i = 0; i < 100 && share.Started.Count < 1; i++)
+        {
+            await Task.Delay(10);
+            Settle();
+        }
+
+        await Task.Delay(50);
+        Settle();
+        Assert.Equal("hp", share.Started[^1]);
+        Assert.Equal("hp", share.TargetId);
     }
 
     [AvaloniaFact]

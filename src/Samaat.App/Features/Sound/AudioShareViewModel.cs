@@ -12,6 +12,8 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
     private readonly SettingsViewModel _settings;
     private string? _savedTargetId;
     private bool _syncing;
+    private readonly SemaphoreSlim _gate = new(1, 1);
+    private int _version;
 
     public AudioShareViewModel(IAudioShare share, SettingsViewModel settings)
     {
@@ -105,22 +107,41 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         }
     }
 
+    // Operations run one at a time and only the latest request survives, so the last choice always wins.
     private async Task StopAsync()
     {
+        var version = ++_version;
+        await _gate.WaitAsync();
         try
         {
+            if (version != _version)
+            {
+                return;
+            }
+
             await _share.StopAsync();
         }
         catch (Exception e)
         {
             Status = e.Message;
         }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     private async Task StartAsync(string targetId)
     {
+        var version = ++_version;
+        await _gate.WaitAsync();
         try
         {
+            if (version != _version)
+            {
+                return;
+            }
+
             await _share.StartAsync(targetId);
         }
         catch (Exception e)
@@ -128,6 +149,10 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
             Refresh();
             Status = e.Message;
             return;
+        }
+        finally
+        {
+            _gate.Release();
         }
 
         Refresh();
