@@ -67,6 +67,15 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void VersionText_HasNoBuildHash()
+    {
+        var vm = Create(Store());
+
+        Assert.StartsWith("Version ", vm.VersionText);
+        Assert.DoesNotContain("+", vm.VersionText);
+    }
+
+    [AvaloniaFact]
     public void GetShareDelay_Missing_IsZero()
     {
         var vm = Create(Store());

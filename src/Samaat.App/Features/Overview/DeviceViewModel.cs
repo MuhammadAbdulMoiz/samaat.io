@@ -276,6 +276,10 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>The figures the battery panel shows: all four for earbuds, only the overall level otherwise.</summary>
     public ObservableCollection<BatteryFigureViewModel> ShownFigures { get; } = [];
 
+    /// <summary>True when left, right or case is reported, so the battery panel shows four tiles instead of one.</summary>
+    [ObservableProperty]
+    public partial bool ShowsComponentFigures { get; set; }
+
     /// <summary>True when this device is the one shown in the workspace (false in Settings).</summary>
     [ObservableProperty]
     public partial bool IsCurrent { get; set; }
@@ -492,6 +496,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         // Collapse to Overall only when no component (left, right or case) is reported.
         var components = Figures.Skip(1).Any(f => f.IsReported);
         var shown = components ? Figures.ToList() : [overall];
+        ShowsComponentFigures = components;
         if (!ShownFigures.SequenceEqual(shown))
         {
             ShownFigures.Clear();

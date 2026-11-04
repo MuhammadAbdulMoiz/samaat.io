@@ -42,6 +42,13 @@
   <Style Selector="TextBlock.muted">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
+  <!-- Small group heading inside a panel, e.g. "Device" and "Connection" on Details -->
+  <Style Selector="TextBlock.sectionLabel">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
   <Style Selector="TextBlock.meta">
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />

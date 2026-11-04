@@ -12,23 +12,74 @@
         x:DataType="shell:MainWindowViewModel"
         Title="Samaat"
         Width="1180" Height="780" MinWidth="640" MinHeight="520">
+  <Window.Resources>
+    <!-- Same S as the app icon (docs/logo/samaat-icon.svg), on an accent key inside a soft accent halo -->
+    <Border x:Key="BrandMark" x:Shared="False" Classes="brandHalo" ToolTip.Tip="Samaat">
+      <Border Classes="brandKey">
+        <Viewbox Width="30" Height="30">
+          <Canvas Width="100" Height="100">
+            <Path Data="M69,33 H44 A8.5,8.5 0 0 0 44,50 H56 A8.5,8.5 0 0 1 56,67 H31"
+                  Stroke="{DynamicResource Samaat.OnAccent}" StrokeThickness="14" StrokeLineCap="Round" />
+          </Canvas>
+        </Viewbox>
+      </Border>
+    </Border>
+
+    <!-- A device's own picture when there is one; otherwise a pair of buds, or headphones for a headset -->
+    <DataTemplate x:Key="DeviceThumb" x:DataType="overview:DeviceViewModel">
+      <Border Classes="deviceThumb">
+        <Panel>
+          <Image Source="{Binding ArtworkImage}" IsVisible="{Binding HasArtworkImage}" Width="28" Height="28"
+                 Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="HasBuds" />
+                <Binding Path="!HasArtworkImage" />
+              </MultiBinding>
+            </StackPanel.IsVisible>
+            <Viewbox Height="18"><Canvas Width="40" Height="56"><Path Classes="thumbGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas></Viewbox>
+            <Viewbox Height="18" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Classes="thumbGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas></Viewbox>
+          </StackPanel>
+          <PathIcon Classes="thumbGlyph" Data="{StaticResource Icon.Headphones}" Width="18" Height="18">
+            <PathIcon.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="!HasBuds" />
+                <Binding Path="!HasArtworkImage" />
+              </MultiBinding>
+            </PathIcon.IsVisible>
+          </PathIcon>
+        </Panel>
+      </Border>
+    </DataTemplate>
+  </Window.Resources>
+
   <Grid ColumnDefinitions="Auto,*">
 
     <!-- Sidebar: brand, devices, then alerts, refresh and settings -->
     <Border x:Name="Sidebar" Classes="sidebar" Classes.compact="{Binding IsSidebarCompact}">
       <DockPanel Margin="12">
-        <StackPanel DockPanel.Dock="Top" Classes="brand" Orientation="Horizontal" Spacing="10" Margin="0,4,0,20">
-          <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Samaat.Accent}" ToolTip.Tip="Samaat">
-            <!-- Same S as the app icon (docs/logo/samaat-icon.svg); the Viewbox scales the stroke with it. -->
-            <Viewbox Width="24" Height="24">
-              <Canvas Width="100" Height="100">
-                <Path Data="M69,33 H44 A8.5,8.5 0 0 0 44,50 H56 A8.5,8.5 0 0 1 56,67 H31"
-                      Stroke="{DynamicResource Samaat.OnAccent}" StrokeThickness="14" />
-              </Canvas>
-            </Viewbox>
-          </Border>
-          <TextBlock Classes="full display" Text="Samaat" FontSize="18" VerticalAlignment="Center" />
-        </StackPanel>
+        <!-- Brand: the app mark in an accent halo, the name and what it is, and the collapse toggle -->
+        <Panel DockPanel.Dock="Top" Margin="0,2,0,20">
+          <Grid Classes="full" ColumnDefinitions="Auto,*,Auto">
+            <ContentControl Content="{StaticResource BrandMark}" />
+            <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+              <TextBlock Classes="display" Text="Samaat" FontSize="18" />
+              <TextBlock Classes="meta" Text="Earbud companion" FontSize="11" />
+            </StackPanel>
+            <Button Grid.Column="2" Classes="icon sidebarToggle" Command="{Binding ToggleSidebarCommand}" VerticalAlignment="Center"
+                    ToolTip.Tip="{Binding SidebarToggleText}" AutomationProperties.Name="{Binding SidebarToggleText}">
+              <PathIcon Data="{StaticResource Icon.Menu}" />
+            </Button>
+          </Grid>
+          <StackPanel Classes="compactOnly" Spacing="10" HorizontalAlignment="Center">
+            <ContentControl Content="{StaticResource BrandMark}" HorizontalAlignment="Center" />
+            <Button Classes="icon sidebarToggle" Command="{Binding ToggleSidebarCommand}" HorizontalAlignment="Center"
+                    ToolTip.Tip="{Binding SidebarToggleText}" AutomationProperties.Name="{Binding SidebarToggleText}">
+              <PathIcon Data="{StaticResource Icon.Menu}" />
+            </Button>
+          </StackPanel>
+        </Panel>
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,12,0,0">
           <Border Classes="chip" IsVisible="{Binding ModeText, Converter={x:Static ObjectConverters.IsNotNull}}"
@@ -76,18 +127,19 @@
                           Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).SelectDeviceCommand}"
                           CommandParameter="{Binding}">
                     <Panel>
-                      <Grid Classes="full" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                        <TextBlock Classes="name" Text="{Binding Name}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="1" Classes="number" Text="{Binding SummaryShort}" Margin="8,0,0,0" />
-                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
-                          <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
-                          <TextBlock Classes="meta" Text="{Binding ConnectionText}" />
+                      <Grid Classes="full" ColumnDefinitions="Auto,*">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DeviceThumb}" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="2">
+                          <TextBlock Classes="name" Text="{Binding Name}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+                          <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Classes="meta" Text="{Binding ConnectionText}" Margin="6,0,0,0" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="2" Classes="number" Text="{Binding SummaryShort}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                          </Grid>
                         </StackPanel>
                       </Grid>
-                      <StackPanel Classes="compactOnly" Spacing="2" HorizontalAlignment="Center">
-                        <Border Classes="initials">
-                          <TextBlock Classes="number" Text="{Binding Initials}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                      <StackPanel Classes="compactOnly" Spacing="4" HorizontalAlignment="Center">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DeviceThumb}" HorizontalAlignment="Center" />
                         <TextBlock Classes="meta number" Text="{Binding SummaryShort}" HorizontalAlignment="Center" />
                       </StackPanel>
                     </Panel>

@@ -189,9 +189,34 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public bool ShowDevicePage => DevicePage is not null;
 
-    /// <summary>Set by the window when it is narrower than 900 px: the sidebar becomes an icon rail.</summary>
+    /// <summary>True when the sidebar is the 68 px icon rail: below 900 px wide, or when the user collapsed it.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SidebarToggleText))]
     public partial bool IsSidebarCompact { get; set; }
+
+    private bool _windowIsNarrow;
+    private bool? _sidebarChoice;
+
+    public string SidebarToggleText => IsSidebarCompact ? "Expand sidebar" : "Collapse sidebar";
+
+    /// <summary>Called by the window on resize. Crossing the 900 px line hands control back to the width.</summary>
+    public void SetWindowNarrow(bool narrow)
+    {
+        if (narrow != _windowIsNarrow)
+        {
+            _sidebarChoice = null;
+        }
+
+        _windowIsNarrow = narrow;
+        IsSidebarCompact = _sidebarChoice ?? narrow;
+    }
+
+    [RelayCommand]
+    private void ToggleSidebar()
+    {
+        _sidebarChoice = !IsSidebarCompact;
+        IsSidebarCompact = _sidebarChoice.Value;
+    }
 
     [ObservableProperty]
     public partial string? ModeText { get; set; }

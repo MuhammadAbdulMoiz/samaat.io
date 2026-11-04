@@ -4,7 +4,8 @@
              xmlns:set="using:Samaat.Core.Settings"
              x:Class="Samaat.App.Features.Settings.SettingsPage"
              x:DataType="vm:SettingsViewModel">
-  <StackPanel Spacing="16" MaxWidth="640" HorizontalAlignment="Left">
+  <!-- Settings: one panel per topic, every row an icon tile, a label with one line of meaning, and its control -->
+  <StackPanel Spacing="16" MaxWidth="720" HorizontalAlignment="Left">
 
     <StackPanel Spacing="4">
       <TextBlock Text="Settings" Classes="title" />
@@ -18,132 +19,195 @@
       </StackPanel>
     </Border>
 
-    <!-- Appearance -->
-    <Border Classes="panel">
-      <StackPanel Spacing="8">
-        <TextBlock Text="Appearance" Classes="panelTitle" />
-        <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-          <TextBlock Text="Mode" VerticalAlignment="Center" />
-          <Border Grid.Column="1" Classes="tabWell">
-            <StackPanel Orientation="Horizontal" Spacing="2">
-              <Button Classes="tab" Classes.selected="{Binding IsSystemTheme}" Content="System"
-                      Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.System}" />
-              <Button Classes="tab" Classes.selected="{Binding IsLightTheme}" Content="Light"
-                      Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.Light}" />
-              <Button Classes="tab" Classes.selected="{Binding IsDarkTheme}" Content="Dark"
-                      Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.Dark}" />
-            </StackPanel>
-          </Border>
-        </Grid>
-        <Border Classes="row">
-          <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-            <TextBlock Text="Accent" VerticalAlignment="Center" />
-            <Border Grid.Column="1" Classes="tabWell">
-              <StackPanel Orientation="Horizontal" Spacing="2">
-                <Button Classes="tab" Classes.selected="{Binding IsLimeAccent}" AutomationProperties.Name="Lime"
-                        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Lime}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Ellipse Width="12" Height="12" Fill="#C8F169" Stroke="{DynamicResource Samaat.Faint}" StrokeThickness="1" />
-                    <TextBlock Text="Lime" />
-                  </StackPanel>
-                </Button>
-                <Button Classes="tab" Classes.selected="{Binding IsEmeraldAccent}" AutomationProperties.Name="Emerald"
-                        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Emerald}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Ellipse Width="12" Height="12" Fill="#3DDC97" Stroke="{DynamicResource Samaat.Faint}" StrokeThickness="1" />
-                    <TextBlock Text="Emerald" />
-                  </StackPanel>
-                </Button>
-                <Button Classes="tab" Classes.selected="{Binding IsIceAccent}" AutomationProperties.Name="Ice"
-                        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Ice}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Ellipse Width="12" Height="12" Fill="#6CC4FF" Stroke="{DynamicResource Samaat.Faint}" StrokeThickness="1" />
-                    <TextBlock Text="Ice" />
-                  </StackPanel>
-                </Button>
-                <Button Classes="tab" Classes.selected="{Binding IsMonoAccent}" AutomationProperties.Name="Mono"
-                        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Mono}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Ellipse Width="12" Height="12" Fill="#E6E9EC" Stroke="{DynamicResource Samaat.Faint}" StrokeThickness="1" />
-                    <TextBlock Text="Mono" />
-                  </StackPanel>
-                </Button>
-              </StackPanel>
-            </Border>
-          </Grid>
-        </Border>
-        <Border Classes="row">
-          <Grid ColumnDefinitions="*,Auto">
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="Reduce motion" />
-              <TextBlock Text="Turns off fades and gliding values. Follows Windows until you change it." Classes="meta" TextWrapping="Wrap" />
-            </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding ReduceMotion}" AutomationProperties.Name="Reduce motion" />
-          </Grid>
-        </Border>
-      </StackPanel>
+<Border Classes="panel">
+<StackPanel Spacing="8">
+  <StackPanel Spacing="2" Margin="0,0,0,4">
+    <TextBlock Text="Appearance" Classes="panelTitle" />
+    <TextBlock Text="How Samaat looks" Classes="meta" />
+  </StackPanel>
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Theme}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Mode" />
+    <TextBlock Text="Follow Windows, or pick one" Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <Border Grid.Column="2" Classes="tabWell" VerticalAlignment="Center">
+    <StackPanel Orientation="Horizontal" Spacing="2">
+      <Button Classes="tab" Classes.selected="{Binding IsSystemTheme}" Content="System"
+              Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.System}" />
+      <Button Classes="tab" Classes.selected="{Binding IsLightTheme}" Content="Light"
+              Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.Light}" />
+      <Button Classes="tab" Classes.selected="{Binding IsDarkTheme}" Content="Dark"
+              Command="{Binding SetThemeCommand}" CommandParameter="{x:Static set:ThemeChoice.Dark}" />
+    </StackPanel>
+  </Border>
+</Grid>
+<Border Classes="row">
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Palette}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Accent" />
+    <TextBlock Text="Used for charge, selection and focus" Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+<Button Classes="swatch" Classes.selected="{Binding IsLimeAccent}" AutomationProperties.Name="Lime" ToolTip.Tip="Lime"
+        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Lime}">
+  <Panel>
+    <Ellipse Fill="#C8F169" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsLimeAccent}" />
+  </Panel>
+</Button>
+<Button Classes="swatch" Classes.selected="{Binding IsEmeraldAccent}" AutomationProperties.Name="Emerald" ToolTip.Tip="Emerald"
+        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Emerald}">
+  <Panel>
+    <Ellipse Fill="#3DDC97" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsEmeraldAccent}" />
+  </Panel>
+</Button>
+<Button Classes="swatch" Classes.selected="{Binding IsIceAccent}" AutomationProperties.Name="Ice" ToolTip.Tip="Ice"
+        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Ice}">
+  <Panel>
+    <Ellipse Fill="#6CC4FF" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsIceAccent}" />
+  </Panel>
+</Button>
+<Button Classes="swatch" Classes.selected="{Binding IsMonoAccent}" AutomationProperties.Name="Mono" ToolTip.Tip="Mono"
+        Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Mono}">
+  <Panel>
+    <Ellipse Fill="#E6E9EC" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsMonoAccent}" />
+  </Panel>
+</Button>
+</StackPanel>
+</Grid>
+</Border>
+<Border Classes="row">
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Sparkle}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Reduce motion" />
+    <TextBlock Text="Turns off fades and gliding values. Follows Windows until you change it." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding ReduceMotion}" AutomationProperties.Name="Reduce motion" />
+</Grid>
+</Border>
+</StackPanel>
+</Border>
+<Border Classes="panel">
+<StackPanel Spacing="8">
+  <StackPanel Spacing="2" Margin="0,0,0,4">
+    <TextBlock Text="Battery alerts" Classes="panelTitle" />
+    <TextBlock Text="When Samaat warns you about a low battery" Classes="meta" />
+  </StackPanel>
+<StackPanel Spacing="4">
+  <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+    <Border Classes="optionIcon" VerticalAlignment="Center">
+      <PathIcon Data="{StaticResource Icon.BatteryWarning}" Width="16" Height="16" />
     </Border>
-
-    <!-- Battery alerts -->
-    <Border Classes="panel">
-      <StackPanel Spacing="8">
-        <TextBlock Text="Battery alerts" Classes="panelTitle" />
-        <Grid ColumnDefinitions="*,60" RowDefinitions="Auto,Auto" MinHeight="40">
-          <TextBlock Text="Low battery warning" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" Text="{Binding LowThreshold, StringFormat={}{0:0}%}" Classes="number" TextAlignment="Right" VerticalAlignment="Center" />
-          <Slider Grid.Row="1" Grid.ColumnSpan="2" Minimum="5" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True"
-                  Value="{Binding LowThreshold}" AutomationProperties.Name="Low battery warning" />
-        </Grid>
-        <Grid ColumnDefinitions="*,60" RowDefinitions="Auto,Auto" MinHeight="40">
-          <TextBlock Text="Critical battery warning" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" Text="{Binding CriticalThreshold, StringFormat={}{0:0}%}" Classes="number" TextAlignment="Right" VerticalAlignment="Center" />
-          <Slider Grid.Row="1" Grid.ColumnSpan="2" Minimum="1" Maximum="{Binding CriticalMax}" TickFrequency="1" IsSnapToTickEnabled="True"
-                  Value="{Binding CriticalThreshold}" AutomationProperties.Name="Critical battery warning" />
-        </Grid>
-        <Border Classes="row">
-          <Grid ColumnDefinitions="*,Auto">
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="Include the charging case" />
-              <TextBlock Text="A low case is less urgent than low buds, so it is off by default." Classes="meta" TextWrapping="Wrap" />
-            </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding IncludeCase}" AutomationProperties.Name="Include the charging case" />
-          </Grid>
-        </Border>
-      </StackPanel>
+    <TextBlock Grid.Column="1" Text="Low battery warning" Margin="12,0" VerticalAlignment="Center" />
+    <Border Grid.Column="2" Classes="chip" VerticalAlignment="Center">
+      <TextBlock Text="{Binding LowThreshold, StringFormat={}{0:0}%}" Classes="number" />
     </Border>
-
-    <!-- Background -->
-    <Border Classes="panel">
-      <StackPanel Spacing="8">
-        <TextBlock Text="Background" Classes="panelTitle" />
-        <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-          <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="System notifications" />
-            <TextBlock Text="Also show battery alerts as system notifications." Classes="meta" TextWrapping="Wrap" />
-          </StackPanel>
-          <ToggleSwitch Grid.Column="1" IsChecked="{Binding SystemNotifications}" AutomationProperties.Name="System notifications" />
-        </Grid>
-        <Border Classes="row">
-          <Grid ColumnDefinitions="*,Auto">
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="Keep running in the tray" />
-              <TextBlock Text="Closing the window hides Samaat instead of quitting." Classes="meta" TextWrapping="Wrap" />
-            </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" AutomationProperties.Name="Keep running in the tray" />
-          </Grid>
-        </Border>
-        <Border Classes="row">
-          <Grid ColumnDefinitions="*,Auto">
-            <StackPanel VerticalAlignment="Center">
-              <TextBlock Text="Start with Windows" />
-              <TextBlock Text="Opens Samaat minimized when you sign in." Classes="meta" TextWrapping="Wrap" />
-              <TextBlock Text="{Binding StartupNote}" Classes="meta" IsVisible="{Binding !StartupSupported}" />
-            </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartWithWindows}" IsEnabled="{Binding StartupSupported}"
-                          AutomationProperties.Name="Start with Windows" />
-          </Grid>
-        </Border>
-      </StackPanel>
+  </Grid>
+  <Slider Margin="44,-8,0,-4" Minimum="5" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True"
+          Value="{Binding LowThreshold}" AutomationProperties.Name="Low battery warning" />
+</StackPanel>
+<Border Classes="row">
+<StackPanel Spacing="4">
+  <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+    <Border Classes="optionIcon" VerticalAlignment="Center">
+      <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" />
     </Border>
+    <TextBlock Grid.Column="1" Text="Critical battery warning" Margin="12,0" VerticalAlignment="Center" />
+    <Border Grid.Column="2" Classes="chip" VerticalAlignment="Center">
+      <TextBlock Text="{Binding CriticalThreshold, StringFormat={}{0:0}%}" Classes="number" />
+    </Border>
+  </Grid>
+  <Slider Margin="44,-8,0,-4" Minimum="1" Maximum="{Binding CriticalMax}" TickFrequency="1" IsSnapToTickEnabled="True"
+          Value="{Binding CriticalThreshold}" AutomationProperties.Name="Critical battery warning" />
+</StackPanel>
+</Border>
+<Border Classes="row">
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Include the charging case" />
+    <TextBlock Text="A low case is less urgent than low buds, so it is off by default." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding IncludeCase}" AutomationProperties.Name="Include the charging case" />
+</Grid>
+</Border>
+</StackPanel>
+</Border>
+<Border Classes="panel">
+<StackPanel Spacing="8">
+  <StackPanel Spacing="2" Margin="0,0,0,4">
+    <TextBlock Text="Background" Classes="panelTitle" />
+    <TextBlock Text="What Samaat does when the window is closed" Classes="meta" />
+  </StackPanel>
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Bell}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="System notifications" />
+    <TextBlock Text="Also show battery alerts as system notifications." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding SystemNotifications}" AutomationProperties.Name="System notifications" />
+</Grid>
+<Border Classes="row">
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Window}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Keep running in the tray" />
+    <TextBlock Text="Closing the window hides Samaat instead of quitting." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding CloseToTray}" AutomationProperties.Name="Keep running in the tray" />
+</Grid>
+</Border>
+<Border Classes="row">
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Power}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Start with Windows" />
+    <TextBlock Text="Opens Samaat minimized when you sign in." Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding StartupNote}" Classes="meta" IsVisible="{Binding !StartupSupported}" />
+  </StackPanel>
+  <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding StartWithWindows}" IsEnabled="{Binding StartupSupported}" AutomationProperties.Name="Start with Windows" />
+</Grid>
+</Border>
+</StackPanel>
+</Border>
+<Border Classes="panel">
+<Grid ColumnDefinitions="Auto,*">
+  <Border Classes="brandHalo">
+    <Border Classes="brandKey">
+      <Viewbox Width="30" Height="30">
+        <Canvas Width="100" Height="100">
+          <Path Data="M69,33 H44 A8.5,8.5 0 0 0 44,50 H56 A8.5,8.5 0 0 1 56,67 H31"
+                Stroke="{DynamicResource Samaat.OnAccent}" StrokeThickness="14" StrokeLineCap="Round" />
+        </Canvas>
+      </Viewbox>
+    </Border>
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+    <TextBlock Text="Samaat" Classes="display" FontSize="16" />
+    <TextBlock Text="{Binding VersionText}" Classes="meta" />
+    <TextBlock Text="A companion for Bluetooth earbuds from any brand." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+</Grid>
+</Border>
   </StackPanel>
 </UserControl>

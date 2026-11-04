@@ -4,33 +4,69 @@
              xmlns:ov="using:Samaat.App.Features.Overview"
              x:Class="Samaat.App.Features.Details.BluetoothDetailsPage"
              x:DataType="ov:DeviceViewModel">
+  <!-- Details: who the device is, how it is connected, and how far Samaat can go with it -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="DetailRow" x:DataType="vm:DetailsRow">
+      <Border Classes="row">
+        <Grid ColumnDefinitions="148,*,Auto" VerticalAlignment="Center">
+          <TextBlock Text="{Binding Label}" Classes="muted" VerticalAlignment="Center" />
+          <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="2" Classes="icon copy" IsVisible="{Binding CanCopy}" Click="OnCopyRow" Margin="8,-6,0,-6"
+                  ToolTip.Tip="{Binding CopyLabel}" AutomationProperties.Name="{Binding CopyLabel}">
+            <PathIcon Data="{StaticResource Icon.Copy}" />
+          </Button>
+        </Grid>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
   <StackPanel Spacing="16" DataContext="{Binding Details}" x:DataType="vm:BluetoothDetailsViewModel">
 
     <Border Classes="panel">
-      <StackPanel Spacing="4">
-        <TextBlock Text="Bluetooth details" Classes="panelTitle" />
-        <TextBlock Text="{Binding IdentifiedText}" Classes="meta" TextWrapping="Wrap" />
-        <ItemsControl ItemsSource="{Binding Rows}" Margin="0,8,0,0">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:DetailsRow">
-              <Border Classes="row">
-                <Grid ColumnDefinitions="160,*">
-                  <TextBlock Text="{Binding Label}" Classes="muted" />
-                  <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Border Classes="optionIcon" Classes.on="{Binding IsIdentified}" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.Bluetooth}" Width="16" Height="16" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+            <TextBlock Text="Bluetooth details" Classes="panelTitle" />
+            <TextBlock Text="{Binding IdentifiedText}" Classes="meta" TextWrapping="Wrap" />
+          </StackPanel>
+        </Grid>
+
+        <StackPanel>
+          <TextBlock Text="Device" Classes="sectionLabel" />
+          <ItemsControl ItemsSource="{Binding DeviceRows}" ItemTemplate="{StaticResource DetailRow}" />
+        </StackPanel>
+        <StackPanel>
+          <TextBlock Text="Connection" Classes="sectionLabel" />
+          <ItemsControl ItemsSource="{Binding ConnectionRows}" ItemTemplate="{StaticResource DetailRow}" />
+        </StackPanel>
       </StackPanel>
     </Border>
 
     <Border Classes="panel">
-      <StackPanel Spacing="6">
+      <StackPanel Spacing="12">
         <TextBlock Text="Support" Classes="panelTitle" />
-        <TextBlock Text="{Binding AdapterText}" TextWrapping="Wrap" />
-        <TextBlock Classes="meta" TextWrapping="Wrap"
-                   Text="Without a vendor adapter, Samaat shows what Windows and standard Bluetooth services report." />
+        <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" MinHeight="48">
+          <Grid ColumnDefinitions="Auto,*">
+            <Border Classes="optionIcon on" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource Icon.ShieldCheck}" Width="16" Height="16" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding TierText}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding TierDescription}" Classes="meta" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+        </Border>
+        <Grid ColumnDefinitions="Auto,*">
+          <PathIcon Data="{StaticResource Icon.Info}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Muted}" VerticalAlignment="Top" Margin="0,2,0,0" />
+          <StackPanel Grid.Column="1" Margin="8,0,0,0">
+            <TextBlock Text="{Binding AdapterText}" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Classes="meta" TextWrapping="Wrap"
+                       Text="Without a vendor adapter, Samaat shows what Windows and standard Bluetooth services report." />
+          </StackPanel>
+        </Grid>
       </StackPanel>
     </Border>
   </StackPanel>

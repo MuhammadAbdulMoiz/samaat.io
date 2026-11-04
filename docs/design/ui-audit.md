@@ -103,3 +103,22 @@ Goal: make the Links tab feel as considered as the Share audio card. It should w
 **Copy.** Sentence case and verbs first. "Switch here" matches Share. A not-yet-connected host gets "Connect". The busy states are "Connecting…" and "Disconnecting…". The fallback button is "Bluetooth settings", and its row says "Connect or disconnect in Windows Bluetooth settings".
 
 ![Links, multipoint](../images/buds-pro-connections.png) ![Links, no multipoint](../images/buds-lite-connections-light.png)
+
+## Overview, Details, Diagnostics, Settings and sidebar (2026-11-04)
+
+Follow-up to the Links rework, using the same row anatomy throughout: a 32 px icon tile, a label over one line of meaning, and the control on the right.
+
+| Before | After | Why |
+|---|---|---|
+| Sidebar brand: a small S square and the word "Samaat" | The S, drawn larger with round caps, on the accent key inside a soft accent halo. "Earbud companion" under the name, and a burger button that collapses or expands the sidebar | The mark reads as a logo, not a placeholder. The toggle makes the rail a choice, not only something narrow windows do |
+| Collapsed rail only below 900 px | Burger toggle in both states ("Collapse sidebar" / "Expand sidebar"). The choice holds until the window crosses 900 px, then the width takes over again | A manual collapse never fights the narrow-window layout |
+| Device rows were text only; the rail showed initials | Each row has a 36 px thumbnail: the device's own photo, a pair of bud glyphs, or headphones for a headset. The current device gets an accent edge and accent glyphs. The percentage moved onto the status line, so names get the full width | You recognise a device by its shape faster than by its name, and long names like "realme Buds T200 Lite" no longer cut off early |
+| Overview battery: bare numbers in columns, a text Refresh button | One tile per component, with a bud or case glyph and a charge icon. Unreported tiles are outline only. A lone Overall tile stays tile-sized. "Updated …" sits next to an icon refresh button | Components read as objects. A single figure no longer stretches across the panel |
+| Overview noise control and links were grey sentences | An icon-tile empty state for noise control. Links is one state row with "Manage ›", which opens the Links tab | Every card says its state, then where to act |
+| Details was one ten-row table with "Support" in the middle | A header with an identification tile, then "Device" and "Connection" groups, selectable values, and copy buttons for address and IDs. Support became a shield row with the adapter note | Grouping matches how people look things up, and copying an address is a common need |
+| Diagnostics: a header line, then a 16-row single-column list | A recognition header with Copy report and a "features available" meter. Working features show in a two-column grid. Technical details and the event log are separate disclosure panels with icons | Half the scroll length, and the summary is visible at a glance |
+| Settings: plain rows, accent as a tab well of words | Icon-tile rows in Appearance, Battery alerts and Background. Accent is four 32 px round swatches with a ring and a check. Thresholds show as chips. A new About panel shows the mark and version | Settings scan by icon, and colour is picked by colour |
+
+**Accessibility.** All new buttons are 32 px (icon buttons, swatches, copy). The burger, swatches and copy buttons have accessible names that match their tooltips. Battery tiles carry each component's accessible text. No new motion. Colours are tokens, except the fixed preset swatches, which have an outline so Mono stays visible on light backgrounds.
+
+![Overview](../images/buds-pro.png) ![Collapsed sidebar](../images/buds-pro-sidebar-collapsed.png) ![Diagnostics](../images/buds-pro-info.png) ![Settings](../images/settings.png)

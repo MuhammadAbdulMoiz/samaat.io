@@ -191,4 +191,28 @@ public class BluetoothDetailsViewModelTests
 
         Assert.Equal("Maker Model", vm.Subtitle);
     }
+
+    [AvaloniaFact]
+    public void GroupsRows_AndOffersCopyForIdentifiers()
+    {
+        var details = new DeviceDetails { Address = "F2:28:99:5A:7E:79", VendorId = 0x05D6, ProductId = 0x000A };
+
+        var info = Create(new DeviceIdentity("id", "Quantum", Details: details));
+
+        Assert.Equal(["Name", "Model", "Firmware", "Vendor", "Vendor / product ID"], info.DeviceRows.Select(r => r.Label));
+        Assert.Equal(["Connection", "Address", "Services", "Battery source"], info.ConnectionRows.Select(r => r.Label));
+        Assert.Contains(info.Rows, r => r.Label == "Support");
+        Assert.True(info.ConnectionRows.Single(r => r.Label == "Address").CanCopy);
+        Assert.Equal("Copy address", info.ConnectionRows.Single(r => r.Label == "Address").CopyLabel);
+        Assert.False(info.ConnectionRows.Single(r => r.Label == "Services").CanCopy);
+        Assert.False(info.IsIdentified);
+    }
+
+    [AvaloniaFact]
+    public void UnreportedAddress_HasNoCopyButton()
+    {
+        var info = Create(new DeviceIdentity("id", "Quantum"));
+
+        Assert.False(info.ConnectionRows.Single(r => r.Label == "Address").CanCopy);
+    }
 }

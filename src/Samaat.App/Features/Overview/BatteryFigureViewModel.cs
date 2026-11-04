@@ -7,6 +7,13 @@ public sealed partial class BatteryFigureViewModel(string label) : ObservableObj
 {
     public string Label { get; } = label;
 
+    /// <summary>Which picture the tile shows next to its label: a bud (mirrored for the right one), the case, or none for Overall.</summary>
+    public bool IsBud => Label.EndsWith(" bud", StringComparison.Ordinal);
+
+    public bool IsRightBud => Label == "Right bud";
+
+    public bool IsCase => Label == "Case";
+
     [ObservableProperty]
     public partial string Value { get; set; } = "–";
 

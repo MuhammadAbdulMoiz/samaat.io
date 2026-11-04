@@ -123,6 +123,8 @@ public class MainWindowTests
         var (window, viewModel) = await ShowAsync(DeviceProfileDb.Load(dir));
 
         List<string> VisibleNames() => window.GetVisualDescendants().OfType<Control>()
+            // The Overview battery tiles carry the same names; this test is about the rail.
+            .Where(c => !c.Classes.Contains("figureTile"))
             .Where(c => c.IsEffectivelyVisible && AutomationProperties.GetName(c) is { } n && (n.StartsWith("Left bud,") || n.StartsWith("Right bud,") || n.StartsWith("Case,")))
             .Select(c => AutomationProperties.GetName(c)!).ToList();
 
@@ -212,6 +214,21 @@ public class MainWindowTests
         {
             narrow!.Save(Path.Combine(directory, "buds-pro-narrow.png"));
         }
+
+        // Wide window with the sidebar collapsed by hand.
+        window.Width = 1180;
+        SettleAnimations();
+        Assert.False(viewModel.IsSidebarCompact);
+        viewModel.ToggleSidebarCommand.Execute(null);
+        SettleAnimations();
+        var collapsed = window.CaptureRenderedFrame();
+        Assert.NotNull(collapsed);
+        if (directory is not null)
+        {
+            collapsed!.Save(Path.Combine(directory, "buds-pro-sidebar-collapsed.png"));
+        }
+
+        viewModel.ToggleSidebarCommand.Execute(null);
 
 
         // The Share audio card needs fake outputs, so it gets its own window.

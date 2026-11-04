@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     {
         if (ViewModel is { } viewModel)
         {
-            viewModel.IsSidebarCompact = Bounds.Width < CompactWidth;
+            viewModel.SetWindowNarrow(Bounds.Width < CompactWidth);
         }
     }
 

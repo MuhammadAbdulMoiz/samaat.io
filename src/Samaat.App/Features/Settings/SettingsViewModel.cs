@@ -87,6 +87,12 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public string StartupNote { get; }
 
+    /// <summary>"Version 1.0.0" for the About section, without the build hash.</summary>
+    public string VersionText { get; } = "Version " + (typeof(SettingsViewModel).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0]
+        ?? typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "unknown");
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string? ErrorText { get; set; }

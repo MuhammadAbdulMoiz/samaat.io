@@ -2,49 +2,59 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:overview="using:Samaat.App.Features.Overview"
              xmlns:info="using:Samaat.App.Features.Info"
+             xmlns:c="using:Samaat.App.Shared.Controls"
              x:Class="Samaat.App.Features.Info.InfoPage"
              x:DataType="overview:DeviceViewModel">
+  <!-- Diagnostics: recognition and a feature meter up top, what works as a two-column grid, the rest grouped, raw detail last -->
   <StackPanel Spacing="16" DataContext="{Binding Info}" x:DataType="info:DeviceInfoViewModel">
 
-    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-      <StackPanel Spacing="2" VerticalAlignment="Center">
-        <TextBlock Text="Diagnostics" Classes="panelTitle" />
-        <TextBlock Text="{Binding SummaryText}" Classes="meta" TextWrapping="Wrap" />
-      </StackPanel>
-      <Button Grid.Column="1" Classes="subtle" Margin="12,0,0,0" Click="OnCopyReport" AutomationProperties.Name="Copy diagnostics report"
-              ToolTip.Tip="Copy a report to attach to a hardware bug report">
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <PathIcon Data="{StaticResource Icon.Copy}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
-          <TextBlock x:Name="CopyLabel" Text="Copy report" />
-        </StackPanel>
-      </Button>
-    </Grid>
-
-    <!-- How the device was recognised -->
+    <!-- How the device was recognised, how much works, and the report for bug filing -->
     <Border Classes="panel">
-      <StackPanel Spacing="4">
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Ellipse Classes="dot" Classes.on="{Binding IsRecognised}" VerticalAlignment="Center" />
-          <TextBlock Text="{Binding RecognitionTitle}" Classes="panelTitle" />
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Border Classes="optionIcon" Classes.on="{Binding IsRecognised}" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.ShieldCheck}" Width="16" Height="16" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding RecognitionTitle}" Classes="panelTitle" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding RecognitionMeta}" Classes="meta" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="2" Classes="subtle" Click="OnCopyReport" VerticalAlignment="Center" AutomationProperties.Name="Copy diagnostics report"
+                  ToolTip.Tip="Copy a report to attach to a hardware bug report">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <PathIcon Data="{StaticResource Icon.Copy}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
+              <TextBlock x:Name="CopyLabel" Text="Copy report" />
+            </StackPanel>
+          </Button>
+        </Grid>
+        <StackPanel Spacing="6" AutomationProperties.Name="{Binding SummaryText}">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Features available" Classes="meta" />
+            <TextBlock Grid.Column="1" Text="{Binding FeatureCountText}" Classes="number" FontSize="12" />
+          </Grid>
+          <ProgressBar Classes="level" Minimum="0" Maximum="100" Value="{Binding AvailablePercent}" />
+          <TextBlock Text="{Binding SummaryText}" Classes="meta" />
         </StackPanel>
-        <TextBlock Text="{Binding RecognitionMeta}" Classes="meta" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
 
-    <!-- One capability list: what works first, the rest grouped by module -->
+    <!-- One capability list: what works first, as a grid, the rest grouped by module -->
     <Border Classes="panel">
-      <StackPanel Spacing="4">
-        <TextBlock Text="Features" Classes="panelTitle" Margin="0,0,0,8" />
+      <StackPanel Spacing="12">
+        <TextBlock Text="Features" Classes="panelTitle" />
         <ItemsControl ItemsSource="{Binding AvailableRows}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="220" MaxColumns="2" Spacing="8" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="info:CapabilityRow">
-              <Border Classes="row" AutomationProperties.Name="{Binding AccessibleName}">
-                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" />
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+              <Border Classes="featureCell" AutomationProperties.Name="{Binding AccessibleName}">
+                <Grid ColumnDefinitions="Auto,*">
+                  <PathIcon Data="{StaticResource Icon.CheckCircle}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Top" Margin="0,1,0,0" />
+                  <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Meta}" Classes="meta" TextWrapping="Wrap" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding Meta}" Classes="meta" VerticalAlignment="Center" Margin="12,0,0,0" />
                 </Grid>
               </Border>
             </DataTemplate>
@@ -57,15 +67,15 @@
                 <StackPanel>
                   <ToggleButton x:Name="Toggle" Classes="disclosure" AutomationProperties.Name="{Binding Title}">
                     <Grid ColumnDefinitions="*,Auto,Auto">
-                      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <PathIcon Data="{StaticResource Icon.Dash}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Faint}" />
+                      <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <PathIcon Data="{StaticResource Icon.Dash}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Faint}" />
                         <TextBlock Text="{Binding Title}" />
                       </StackPanel>
-                      <TextBlock Grid.Column="1" Text="{Binding Reason}" Classes="meta" VerticalAlignment="Center" Margin="12,0" />
+                      <TextBlock Grid.Column="1" Text="{Binding Reason}" Classes="meta" VerticalAlignment="Center" Margin="12,0" TextTrimming="CharacterEllipsis" />
                       <PathIcon Grid.Column="2" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
                     </Grid>
                   </ToggleButton>
-                  <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding #Toggle.IsChecked}" Margin="20,4,0,0">
+                  <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding #Toggle.IsChecked}" Margin="26,4,0,0">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="info:CapabilityRow">
                         <Grid ColumnDefinitions="*,Auto" Margin="0,3" AutomationProperties.Name="{Binding AccessibleName}">
@@ -83,50 +93,57 @@
       </StackPanel>
     </Border>
 
-    <!-- Details for bug reports, closed until asked for -->
+    <!-- Technical details, closed until asked for -->
     <Border Classes="panel">
       <StackPanel>
         <ToggleButton x:Name="TechnicalToggle" Classes="disclosure" AutomationProperties.Name="Technical details">
-          <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-            <TextBlock Text="Technical details" Classes="panelTitle" VerticalAlignment="Center" />
-            <PathIcon Grid.Column="1" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
+          <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.Code}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Muted}" Margin="0,0,10,0" />
+            <TextBlock Grid.Column="1" Text="Technical details" Classes="panelTitle" VerticalAlignment="Center" />
+            <PathIcon Grid.Column="2" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
           </Grid>
         </ToggleButton>
-        <ItemsControl ItemsSource="{Binding TechnicalRows}" IsVisible="{Binding #TechnicalToggle.IsChecked}" Margin="0,4,0,0">
+        <ItemsControl ItemsSource="{Binding TechnicalRows}" IsVisible="{Binding #TechnicalToggle.IsChecked}" Margin="0,8,0,0">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="info:InfoRow">
-              <Grid ColumnDefinitions="140,*" Margin="0,3">
-                <TextBlock Text="{Binding Label}" Classes="meta" />
-                <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="number" FontSize="12" TextWrapping="Wrap" />
-              </Grid>
+              <Border Classes="row">
+                <Grid ColumnDefinitions="140,*">
+                  <TextBlock Text="{Binding Label}" Classes="meta" />
+                  <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" Classes="number" FontSize="12" TextWrapping="Wrap" />
+                </Grid>
+              </Border>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
+      </StackPanel>
+    </Border>
 
-        <Border Classes="row" Margin="0,8,0,0">
-          <StackPanel>
-            <ToggleButton x:Name="EventToggle" Classes="disclosure" AutomationProperties.Name="Event log">
-              <Grid ColumnDefinitions="*,Auto,Auto">
-                <TextBlock Text="Event log" Classes="panelTitle" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Events.Count}" Classes="meta number" VerticalAlignment="Center" Margin="12,0" />
-                <PathIcon Grid.Column="2" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
-              </Grid>
-            </ToggleButton>
-            <StackPanel IsVisible="{Binding #EventToggle.IsChecked}" Margin="0,4,0,0">
-              <TextBlock Text="Waiting for the device to report something…" Classes="meta" IsVisible="{Binding !Events.Count}" />
-              <ItemsControl ItemsSource="{Binding Events}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="info:EventRow">
-                    <Grid ColumnDefinitions="80,*" Margin="0,2">
-                      <TextBlock Text="{Binding Time}" Classes="number muted" FontSize="12" />
-                      <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="12" />
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-          </StackPanel>
-        </Border>
+    <!-- Event log, closed until asked for -->
+    <Border Classes="panel">
+      <StackPanel>
+        <ToggleButton x:Name="EventToggle" Classes="disclosure" AutomationProperties.Name="Event log">
+          <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+            <PathIcon Data="{StaticResource Icon.Info}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Muted}" Margin="0,0,10,0" />
+            <TextBlock Grid.Column="1" Text="Event log" Classes="panelTitle" VerticalAlignment="Center" />
+            <Border Grid.Column="2" Classes="chip" Padding="6,1" Margin="12,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Events.Count}" Classes="number" FontSize="11" />
+            </Border>
+            <PathIcon Grid.Column="3" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
+          </Grid>
+        </ToggleButton>
+        <StackPanel IsVisible="{Binding #EventToggle.IsChecked}" Margin="0,8,0,0">
+          <TextBlock Text="Waiting for the device to report something…" Classes="meta" IsVisible="{Binding !Events.Count}" />
+          <ItemsControl ItemsSource="{Binding Events}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="info:EventRow">
+                <Grid ColumnDefinitions="80,*" Margin="0,2">
+                  <TextBlock Text="{Binding Time}" Classes="number muted" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
       </StackPanel>
     </Border>
   </StackPanel>

@@ -129,6 +129,36 @@ public class RedesignShellTests
     }
 
     [AvaloniaFact]
+    public async Task SidebarToggle_CollapsesAndExpands_UntilTheWidthCrossesNineHundred()
+    {
+        var (window, vm) = await ShowAsync(1180);
+        var sidebar = window.FindControl<Border>("Sidebar")!;
+        Assert.Equal("Collapse sidebar", vm.SidebarToggleText);
+
+        vm.ToggleSidebarCommand.Execute(null);
+        Pump();
+        Assert.True(vm.IsSidebarCompact);
+        Assert.Equal(68, sidebar.Bounds.Width);
+        Assert.Equal("Expand sidebar", vm.SidebarToggleText);
+
+        // A resize that stays on the same side of 900 px keeps the user's choice.
+        window.Width = 1000;
+        Pump();
+        Assert.True(vm.IsSidebarCompact);
+
+        vm.ToggleSidebarCommand.Execute(null);
+        Pump();
+        Assert.False(vm.IsSidebarCompact);
+        Assert.Equal(240, sidebar.Bounds.Width);
+
+        // Crossing the line hands control back to the width.
+        window.Width = 800;
+        Pump();
+        Assert.True(vm.IsSidebarCompact);
+        await CloseAsync(window, vm);
+    }
+
+    [AvaloniaFact]
     public async Task SidebarIsCompact_BelowNineHundred_AndExpandsAgain()
     {
         var (window, vm) = await ShowAsync(1180);
@@ -247,8 +277,13 @@ public class RedesignShellTests
         var headset = vm.Devices.Single(d => d.Name == "Simulated Headset");
 
         Assert.Equal(["Overall"], headset.ShownFigures.Select(f => f.Label));
+        Assert.False(headset.ShowsComponentFigures);
         Assert.Equal("Left, right and case aren't reported for this device.", headset.BatteryReasonText);
         Assert.Equal(["Overall", "Left bud", "Right bud", "Case"], pro.ShownFigures.Select(f => f.Label));
+        Assert.True(pro.ShowsComponentFigures);
+        Assert.Equal([false, true, true, false], pro.ShownFigures.Select(f => f.IsBud));
+        Assert.True(pro.ShownFigures.Single(f => f.Label == "Right bud").IsRightBud);
+        Assert.True(pro.ShownFigures.Single(f => f.Label == "Case").IsCase);
 
         vm.SelectDeviceCommand.Execute(headset);
         Pump();
