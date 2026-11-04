@@ -49,7 +49,25 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
 
     public int SharingCount => _reserved.Count;
 
+    public string DefaultIconKey => IconKeyFor(DefaultName);
+
+    public string? SharingSummary => SharingCount > 0 ? $"{SharingCount} of {MaxShareTargets}" : null;
+
+    public bool IsAtLimit => SharingCount == MaxShareTargets;
+
+    public bool IsLive => SharingCount > 0;
+
+    internal static string IconKeyFor(string name)
+    {
+        static bool Has(string n, params string[] words) => words.Any(w => n.Contains(w, StringComparison.OrdinalIgnoreCase));
+        return Has(name, "speaker") ? "Icon.Sound"
+            : Has(name, "headphone", "headset", "buds", "earbuds") ? "Icon.Headphones"
+            : Has(name, "tv", "display", "monitor", "hdmi") ? "Icon.Desktop"
+            : "Icon.Sound";
+    }
+
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DefaultIconKey))]
     public partial string DefaultName { get; set; } = "the default output";
 
     [ObservableProperty]
@@ -89,6 +107,9 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
     private void SlotsChanged()
     {
         OnPropertyChanged(nameof(SharingCount));
+        OnPropertyChanged(nameof(SharingSummary));
+        OnPropertyChanged(nameof(IsAtLimit));
+        OnPropertyChanged(nameof(IsLive));
         foreach (var row in Rows)
         {
             row.RefreshCanToggle();
