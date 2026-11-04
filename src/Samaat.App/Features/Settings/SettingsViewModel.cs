@@ -17,8 +17,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IMotionPreference _motion;
     private bool? _reduceMotionOverride;
     private bool _syncing;
-    private string? _shareTargetId;
-    private int _shareDelayMs;
+    private Dictionary<string, int> _shareDelays = new();
 
     public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
@@ -105,8 +104,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SystemNotifications = SystemNotifications,
         CloseToTray = CloseToTray,
         StartWithWindows = StartWithWindows,
-        ShareTargetId = _shareTargetId,
-        ShareDelayMs = _shareDelayMs,
+        ShareDelays = new Dictionary<string, int>(_shareDelays),
     }.Normalize();
 
     [RelayCommand]
@@ -161,15 +159,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         Changed();
     }
 
-    public string? ShareTargetId => _shareTargetId;
+    /// <summary>The share delay saved for an output; 0 when none is saved.</summary>
+    public int GetShareDelay(string id) => _shareDelays.GetValueOrDefault(id);
 
-    public int ShareDelayMs => _shareDelayMs;
-
-    /// <summary>Saves the Share audio choices alongside the other settings.</summary>
-    public void SetShare(string? targetId, int delayMs)
+    /// <summary>Saves the share delay for one output alongside the other settings.</summary>
+    public void SetShareDelay(string id, int ms)
     {
-        _shareTargetId = targetId;
-        _shareDelayMs = delayMs;
+        _shareDelays[id] = ms;
         Changed();
     }
 
@@ -203,8 +199,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             SystemNotifications = settings.SystemNotifications;
             CloseToTray = settings.CloseToTray;
             StartWithWindows = settings.StartWithWindows;
-            _shareTargetId = settings.ShareTargetId;
-            _shareDelayMs = settings.ShareDelayMs;
+            _shareDelays = new Dictionary<string, int>(settings.ShareDelays);
         }
         finally
         {

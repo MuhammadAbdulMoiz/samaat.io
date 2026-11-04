@@ -53,17 +53,24 @@ public sealed class SettingsViewModelTests : IDisposable
         new(store, detector ?? new LowBatteryDetector(), startup ?? new FakeStartup(), motion);
 
     [AvaloniaFact]
-    public void ChangingTheme_KeepsShareSettings()
+    public void ChangingTheme_KeepsShareDelays()
     {
         var store = Store();
-        store.Save(new AppSettings { ShareTargetId = "tv", ShareDelayMs = 80 });
+        store.Save(new AppSettings { ShareDelays = new Dictionary<string, int> { ["tv"] = 80 } });
         var vm = Create(store);
         vm.Theme = ThemeChoice.Dark;
-        var saved = store.Load();
-        Assert.Equal("tv", saved.ShareTargetId);
-        Assert.Equal(80, saved.ShareDelayMs);
-        vm.SetShare("hp", 20);
-        Assert.Equal(("hp", 20), (store.Load().ShareTargetId, store.Load().ShareDelayMs));
+        Assert.Equal(80, store.Load().ShareDelays["tv"]);
+        vm.SetShareDelay("hp", 20);
+        var after = store.Load().ShareDelays;
+        Assert.Equal(80, after["tv"]);
+        Assert.Equal(20, after["hp"]);
+    }
+
+    [AvaloniaFact]
+    public void GetShareDelay_Missing_IsZero()
+    {
+        var vm = Create(Store());
+        Assert.Equal(0, vm.GetShareDelay("nope"));
     }
 
     [AvaloniaFact]

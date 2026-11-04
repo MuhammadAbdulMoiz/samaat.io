@@ -153,32 +153,37 @@ public sealed class AudioShareViewModelTests : IDisposable
         var (vm, _, store) = Create(share);
         vm.DelayMs = 120;
         Assert.Equal(120, share.DelayMs);
-        Assert.Equal(120, store.Load().ShareDelayMs);
+        Assert.Equal(120, store.Load().ShareDelays["tv"]);
     }
 
     [AvaloniaFact]
-    public void SelectedTarget_Saved_AndRestored()
+    public void Delay_FollowsTheSelectedTarget()
     {
-        var (vm, _, store) = Create(new FakeAudioShare());
+        var share = new FakeAudioShare();
+        var (vm, _, _) = Create(share, new AppSettings { ShareDelays = new Dictionary<string, int> { ["hp"] = 50 } });
+        Assert.Equal(0, vm.DelayMs);
         vm.SelectedTarget = vm.Targets[1];
-        Assert.Equal("hp", store.Load().ShareTargetId);
-        var (again, _, _) = Create(new FakeAudioShare());
-        Assert.Equal("hp", again.SelectedTarget?.Id);
+        Assert.Equal(50, vm.DelayMs);
+        Assert.Equal(50, share.DelayMs);
     }
 
     [AvaloniaFact]
-    public void SavedTarget_Missing_FallsBackToFirst()
+    public void SelectedTarget_RememberedInMemory()
     {
-        var (vm, _, _) = Create(new FakeAudioShare(), new AppSettings { ShareTargetId = "gone", ShareDelayMs = 50 });
-        Assert.Equal("tv", vm.SelectedTarget?.Id);
-        Assert.Equal(50, vm.DelayMs);
+        var share = new FakeAudioShare();
+        var (vm, _, _) = Create(share);
+        vm.SelectedTarget = vm.Targets[1];
+        share.Raise();
+        Settle();
+        Assert.Equal("hp", vm.SelectedTarget?.Id);
     }
 
     [AvaloniaFact]
     public void SelectedTarget_Removed_Reselects()
     {
         var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share, new AppSettings { ShareTargetId = "hp" });
+        var (vm, _, _) = Create(share);
+        vm.SelectedTarget = vm.Targets[1];
         Assert.Equal("hp", vm.SelectedTarget?.Id);
         share.Outputs = [new("spk", "Speakers", true), new("tv", "TV", false)];
         share.Raise();

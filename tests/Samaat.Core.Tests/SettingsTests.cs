@@ -61,20 +61,21 @@ public sealed class SettingsTests : IDisposable
     [InlineData(-1, 0)]
     [InlineData(501, 500)]
     [InlineData(250, 250)]
-    public void Settings_ShareDelay_ClampedOnNormalize(int delay, int expected) =>
-        Assert.Equal(expected, new AppSettings { ShareDelayMs = delay }.Normalize().ShareDelayMs);
+    public void Settings_ShareDelays_ClampedOnNormalize(int delay, int expected) =>
+        Assert.Equal(expected, new AppSettings { ShareDelays = new Dictionary<string, int> { ["tv"] = delay } }.Normalize().ShareDelays["tv"]);
 
     [Fact]
-    public void Settings_ShareFields_RoundTrip()
+    public void Settings_ShareDelays_RoundTrip()
     {
         var store = new SettingsStore(InDir());
-        var saved = new AppSettings { ShareTargetId = "speaker-1", ShareDelayMs = 120 };
+        var saved = new AppSettings { ShareDelays = new Dictionary<string, int> { ["speaker-1"] = 120, ["hp"] = 0 } };
 
         Assert.True(store.Save(saved));
 
         var loaded = new SettingsStore(InDir()).Load();
-        Assert.Equal("speaker-1", loaded.ShareTargetId);
-        Assert.Equal(120, loaded.ShareDelayMs);
+        Assert.Equal(120, loaded.ShareDelays["speaker-1"]);
+        Assert.Equal(0, loaded.ShareDelays["hp"]);
+        Assert.Equal(2, loaded.ShareDelays.Count);
     }
 
     [Theory]
@@ -104,7 +105,8 @@ public sealed class SettingsTests : IDisposable
 
         Assert.True(store.Save(saved));
 
-        Assert.Equal(saved, new SettingsStore(InDir()).Load());
+        // Normalize copies ShareDelays, so reference equality on the dictionary would fail; compare the rest by value.
+        Assert.Equal(saved, new SettingsStore(InDir()).Load() with { ShareDelays = saved.ShareDelays });
         Assert.Contains("\"theme\": \"light\"", File.ReadAllText(InDir()));
         Assert.Null(store.LastError);
         Assert.False(File.Exists(InDir() + ".tmp"));

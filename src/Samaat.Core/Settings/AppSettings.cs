@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace Samaat.Core.Settings;
 
 public enum AccentChoice
@@ -37,12 +39,10 @@ public sealed record AppSettings
 
     public bool StartWithWindows { get; init; }
 
-    /// <summary>Output the audio is shared to; null when sharing is off.</summary>
-    public string? ShareTargetId { get; init; }
+    /// <summary>Share delay in milliseconds per output id, so each device remembers its own.</summary>
+    public IReadOnlyDictionary<string, int> ShareDelays { get; init; } = FrozenDictionary<string, int>.Empty;
 
-    public int ShareDelayMs { get; init; }
-
-    /// <summary>Clamps thresholds to what the alert logic can use: low 5–50, critical 1 up to just below low.</summary>
+    /// <summary>Clamps thresholds to what the alert logic can use (low 5–50, critical 1 up to just below low) and share delays to 0–500 ms.</summary>
     public AppSettings Normalize()
     {
         var low = Math.Clamp(LowThreshold, 5, 50);
@@ -50,7 +50,7 @@ public sealed record AppSettings
         {
             LowThreshold = low,
             CriticalThreshold = Math.Clamp(CriticalThreshold, 1, low - 1),
-            ShareDelayMs = Math.Clamp(ShareDelayMs, 0, 500),
+            ShareDelays = ShareDelays.ToDictionary(p => p.Key, p => Math.Clamp(p.Value, 0, 500)),
         };
     }
 }

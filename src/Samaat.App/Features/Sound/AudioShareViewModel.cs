@@ -19,11 +19,6 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
     {
         _share = share;
         _settings = settings;
-        _savedTargetId = settings.ShareTargetId;
-        _syncing = true;
-        DelayMs = settings.ShareDelayMs;
-        _syncing = false;
-        _share.DelayMs = DelayMs;
         Refresh();
         _share.Changed += OnChanged;
     }
@@ -66,7 +61,10 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         }
 
         _share.DelayMs = value;
-        _settings.SetShare(_savedTargetId, value);
+        if (SelectedTarget is { } target)
+        {
+            _settings.SetShareDelay(target.Id, value);
+        }
     }
 
     partial void OnSelectedTargetChanged(AudioOutput? value)
@@ -77,7 +75,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         }
 
         _savedTargetId = value.Id;
-        _settings.SetShare(value.Id, DelayMs);
+        LoadDelay(value.Id);
         if (IsSharing)
         {
             _ = StartAsync(value.Id);
@@ -168,6 +166,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
             var outputs = _share.Outputs;
             Targets = outputs.Where(o => !o.IsDefault).ToList();
             SelectedTarget = Targets.FirstOrDefault(t => t.Id == _savedTargetId) ?? Targets.FirstOrDefault();
+            LoadDelay(SelectedTarget?.Id);
             OnPropertyChanged(nameof(HasTargets));
             OnPropertyChanged(nameof(ShowNoTargets));
             HelpText = $"Plays everything from {outputs.FirstOrDefault(o => o.IsDefault)?.Name ?? "the default output"} on a second output too. " +
@@ -179,6 +178,23 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         {
             _syncing = false;
         }
+    }
+
+    // Shows the delay saved for the target (0 when none) and pushes it to the share, without saving it again.
+    private void LoadDelay(string? targetId)
+    {
+        var wasSyncing = _syncing;
+        _syncing = true;
+        try
+        {
+            DelayMs = targetId is null ? 0 : _settings.GetShareDelay(targetId);
+        }
+        finally
+        {
+            _syncing = wasSyncing;
+        }
+
+        _share.DelayMs = DelayMs;
     }
 
     public async ValueTask DisposeAsync()
