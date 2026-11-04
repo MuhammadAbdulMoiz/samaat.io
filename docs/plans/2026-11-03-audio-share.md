@@ -221,3 +221,56 @@ Copy: title "Share audio". Toggle "Also play on". Slider "Delay the copy · {n} 
 - A pipe is retired by bumping the generation and unsubscribing before `Dispose`, so callbacks raised by the disposal are stale. Start while sharing replaces the pipe. Tests added for both.
 - The target name is cached at Start for the disconnect and default-change status.
 - The hardware reference in Review Focus 3 now points to Task 6.
+
+---
+
+# Part 2: More targets and "Switch here" (2026-11-04)
+
+**Request (user, after the first hardware test):** "add 3rd device support and option to switch audio so if i want to move to other device without sharing and disconnecting can we move to said device".
+
+**Goal:** Share the default output to up to **3** extra outputs at once, each with its own delay. Any listed output can also become the Windows default with one click ("Switch here"), with no sharing involved.
+
+**Architecture:** Keep the tested single-target `AudioShare` unchanged and run one per target. The card holds one row per non-default output. Each row owns its own `IAudioShare`, made by a factory when the row is first turned on, so each target gets its own loopback capture of the same source (WASAPI allows several). A separate idle "lister" `IAudioShare` (never started) supplies `Outputs` for the list. "Switch here" calls a new platform switcher that sets the Windows default render endpoint for all three roles. When a shared target becomes the default, its row disappears from the list (it is the source now) and its share is disposed. The other rows already follow the new default (Part 1, Review Focus 1).
+
+## Global Constraints (Part 2)
+- At most 3 outputs are shared at once. When 3 are on, the other rows' share toggles are disabled. `const int MaxShareTargets = 3` in the view model.
+- Each target has its own delay (0–500 ms, 10 ms steps), saved per device id in `AppSettings.ShareDelays` (`Dictionary<string,int>`, values clamped 0–500 in `Normalize`). The unreleased `ShareTargetId`/`ShareDelayMs` are removed (no migration: never shipped).
+- Sharing still never starts on its own at launch.
+- "Switch here" uses the undocumented but widely used `IPolicyConfig` COM interface (CLSID `870AF99C-171D-4F9E-AF0D-E63DF40C2BC9`, IID `F8679F50-850A-41CF-9C72-430F290290C8`, `SetDefaultEndpoint(string id, ERole role)`), called for eConsole, eMultimedia and eCommunications. It is Windows only: `NoDefaultOutputSwitcher` elsewhere, and the button is hidden when unsupported. A failure is shown as card status "Couldn't switch: {message}".
+- `// shortcut: IPolicyConfig is undocumented; if a Windows update breaks it, hide Switch here and point to Windows sound settings`
+- Help text adds: "Most Bluetooth adapters can't play to more than two headsets at once."
+- No NAudio in Core or App.
+
+## Review Focus (Part 2)
+1. **Switch to a device that is being shared to** → its row disappears and its share is disposed (no audio loop). The other shares keep running from the new default. (T9 test.)
+2. **A device disappears while it's shared to** → its row is removed and its share disposed, and the card status says "Stopped sharing to {name}: disconnected". (T9 test.)
+3. **4th toggle** → impossible: the toggles of rows that aren't sharing are disabled while 3 are sharing, and become enabled again when one stops. (T9 test.)
+4. **Rapid toggles on one row** keep the last intent (Part 1's version gate, kept per row). (T9 test.)
+5. **Quit with several shares running** → every row's share and the lister are disposed. (T9 test.)
+
+### Task 7: Per-device delays in settings (Core + SettingsViewModel)
+**Files:** `src/Samaat.Core/Settings/AppSettings.cs`, `src/Samaat.App/Features/Settings/SettingsViewModel.cs`, `src/Samaat.App/Features/Sound/AudioShareViewModel.cs` (its call site only), `tests/Samaat.Core.Tests/SettingsTests.cs`, `tests/Samaat.App.Tests/SettingsViewModelTests.cs`, `tests/Samaat.App.Tests/AudioShareViewModelTests.cs` (only where they used the removed members).
+**Produces:** `AppSettings.ShareDelays` (`IReadOnlyDictionary<string,int>`, default empty, a JSON object; `Normalize` clamps every value to 0–500). `SettingsViewModel.GetShareDelay(string id) → int` (0 when absent) and `SettingsViewModel.SetShareDelay(string id, int ms)`, saved through `Changed()`. Removes `ShareTargetId`, `ShareDelayMs` and `SetShare`. To keep the build green, the current single-target `AudioShareViewModel` switches to `GetShareDelay(targetId)`/`SetShareDelay(targetId, ms)` and remembers its last target only in memory. Task 9 replaces that VM anyway.
+- [ ] Tests: `Settings_ShareDelays_ClampedOnNormalize`; `Settings_ShareDelays_RoundTrip`; `ChangingTheme_KeepsShareDelays` (replaces `ChangingTheme_KeepsShareSettings`); `GetShareDelay_Missing_IsZero`.
+- [ ] Commit `feat(audio): per-device share delays`
+
+### Task 8: Default output switcher (Core + Platform.Windows)
+**Files:** create `src/Samaat.Core/Platform/IDefaultOutputSwitcher.cs` (interface + `NoDefaultOutputSwitcher`, same style as `IStartupRegistration.cs`), create `src/Samaat.Platform.Windows/WindowsDefaultOutputSwitcher.cs`, modify `src/Samaat.App/AppOptions.cs` (`CreateDefaultOutputSwitcher()`, `#if SAMAAT_WINDOWS` pattern), `tests/Samaat.Core.Tests` (one test).
+**Produces:** `public interface IDefaultOutputSwitcher { bool IsSupported { get; } void SetDefault(string outputId); }` (throws on failure). The Windows implementation is a `[ComImport]` `IPolicyConfig` with the Windows 7+ vtable order (`GetMixFormat`, `GetDeviceFormat`, `ResetDeviceFormat`, `SetDeviceFormat`, `GetProcessingPeriod`, `SetProcessingPeriod`, `GetShareMode`, `SetShareMode`, `GetPropertyValue`, `SetPropertyValue`, `SetDefaultEndpoint`, `SetEndpointVisibility`); unused slots are declared with `IntPtr` parameters. It is created via `Type.GetTypeFromCLSID` + `Activator.CreateInstance`, calls `SetDefaultEndpoint` for roles 0, 1 and 2, and releases with `Marshal.ReleaseComObject`. The output id is the same MMDevice id `AudioOutput.Id` already carries.
+- [ ] Test `NoDefaultOutputSwitcher_IsUnsupported`; `dotnet build Samaat.slnx` (COM glue checked on hardware).
+- [ ] Commit `feat(audio): switch the Windows default output`
+
+### Task 9: Share card with rows (App)
+**Files:** rework `src/Samaat.App/Features/Sound/AudioShareViewModel.cs`, create `src/Samaat.App/Features/Sound/ShareTargetViewModel.cs`, modify `src/Samaat.App/Features/Sound/SoundPage.axaml`, `src/Samaat.App/Shell/MainWindowViewModel.cs`, rework `tests/Samaat.App.Tests/AudioShareViewModelTests.cs`.
+**Consumes:** `IAudioShare` (unchanged), `IDefaultOutputSwitcher` (T8), `SettingsViewModel.GetShareDelay/SetShareDelay` (T7).
+**Produces:**
+- `AudioShareViewModel(Func<IAudioShare> createShare, IDefaultOutputSwitcher switcher, SettingsViewModel settings)`: one lister share created in the ctor, `string DefaultName`, `ObservableCollection<ShareTargetViewModel> Rows` (one per non-default output, reconciled by id on lister `Changed` so instances survive refreshes), `int SharingCount`, `string? Status`, `bool IsSupported`, `string UnavailableText`, `bool CanSwitch` (= switcher.IsSupported), and help text. Removing a row disposes it. If it was sharing, Status = "Stopped sharing to {name}: disconnected", unless it left because it became the default.
+- `ShareTargetViewModel` (per output): `Id`, `Name`, `bool IsSharing` (two-way), `bool CanToggle` (IsSharing || parent.SharingCount < 3), `int DelayMs` (two-way, saved via `SetShareDelay`, pushed to its share), `string DelayText`, `string? Status`, `IRelayCommand SwitchHereCommand` (calls `switcher.SetDefault(Id)`; on exception the parent Status = "Couldn't switch: {message}"). It owns its `IAudioShare`, created on the first toggle-on and disposed with the row. It keeps Part 1's semantics: a `_syncing` guard, the `SemaphoreSlim` plus version gate (last intent wins), catch → Status, `Changed` marshalled with `Dispatcher.UIThread.Post`.
+- MainWindowViewModel takes `Func<IAudioShare>? audioShareFactory = null` (default `options.CreateAudioShare`) and `IDefaultOutputSwitcher? outputSwitcher = null` (default `options.CreateDefaultOutputSwitcher()`). The rest of the wiring is unchanged.
+- XAML: the card header shows "Playing on {DefaultName}". Each row shows the name, a "Switch here" button (visible when CanSwitch), the share toggle (enabled by CanToggle), and, when sharing, the delay slider (0–500, tick 10, snap) and the row status. With no rows: "Connect another audio device to share to it or switch to it." Existing panel and control styles only.
+- [ ] Tests (fakes: a factory returning `FakeAudioShare`s, a lister fake whose Outputs a test can change, and a `FakeSwitcher` that records calls): `Rows_ExcludeDefault`; `Toggle_StartsThatRowsShare`; `ThreeSharing_DisablesOtherToggles_ReenablesWhenOneStops`; `SwitchHere_CallsSwitcher`; `SwitchHere_Failure_ShowsStatus`; `SharedRow_BecomesDefault_RowRemoved_ShareDisposed`; `SharedDevice_Removed_ShowsDisconnectedStatus`; `Delay_PerRow_SavedAndPushed`; `RapidToggles_LastIntentWins`; `Dispose_DisposesAllSharesAndLister`; `Unsupported_ShowsWindowsOnlyText`.
+- [ ] `dotnet build Samaat.slnx` and `dotnet test Samaat.slnx` green.
+- [ ] Commit `feat(audio): share to up to three outputs; switch here`
+
+### Task 10: Hardware retest + docs (controller with the user)
+Share to the speakers and a Bluetooth headset at once, and use "Switch here" between outputs (including onto a device that is being shared to). Then write `docs/modules/audio-share.md` and update STATUS.
