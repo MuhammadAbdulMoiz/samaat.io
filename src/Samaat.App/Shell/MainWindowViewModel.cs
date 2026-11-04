@@ -71,7 +71,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         INotifier? notifier = null,
         IMotionPreference? motion = null,
         Func<IAudioShare>? audioShareFactory = null,
-        Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null)
+        Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null,
+        IReadOnlyList<IDeviceSource>? sources = null)
     {
         _time = time ?? TimeProvider.System;
         _notifier = notifier ?? options.CreateNotifier();
@@ -80,7 +81,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
             settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration(),
             motion ?? options.CreateMotionPreference());
         AudioShare = new AudioShareViewModel(audioShareFactory ?? options.CreateAudioShare, outputSwitcher ?? options.CreateDefaultOutputSwitcher(), Settings);
-        _registry = new DeviceRegistry(options.CreateSources(_time));
+        _registry = new DeviceRegistry(sources ?? options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
             StatusText = $"{failure.Source.Name} failed: {failure.Error.Message}");
@@ -246,6 +247,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     private void SyncDevices()
     {
         var current = _registry.Devices;
+        var selectedId = SelectedDevice?.Device.Identity.Id;
         foreach (var stale in Devices.Where(vm => !current.Contains(vm.Device)).ToList())
         {
             stale.PropertyChanged -= OnDevicePropertyChanged;
@@ -255,16 +257,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
-            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity));
+            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings);
             vm.Share = AudioShare;
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
         }
 
-        SelectedDevice ??= Devices.FirstOrDefault();
-        if (SelectedDevice is not null && !Devices.Contains(SelectedDevice))
+        if (SelectedDevice is null || !Devices.Contains(SelectedDevice))
         {
-            SelectedDevice = Devices.FirstOrDefault();
+            SelectedDevice = Devices.FirstOrDefault(d => d.Device.Identity.Id == selectedId) ?? Devices.FirstOrDefault();
         }
 
         UpdateAlertCount();

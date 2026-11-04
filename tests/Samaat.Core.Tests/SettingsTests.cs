@@ -117,8 +117,8 @@ public sealed class SettingsTests : IDisposable
 
         Assert.True(store.Save(saved));
 
-        // Normalize copies ShareDelays, so reference equality on the dictionary would fail; compare the rest by value.
-        Assert.Equal(saved, new SettingsStore(InDir()).Load() with { ShareDelays = saved.ShareDelays });
+        // Normalize copies the dictionaries, so reference equality on the dictionary would fail; compare the rest by value.
+        Assert.Equal(saved, new SettingsStore(InDir()).Load() with { ShareDelays = saved.ShareDelays, ArtworkChoices = saved.ArtworkChoices });
         Assert.Contains("\"theme\": \"light\"", File.ReadAllText(InDir()));
         Assert.Null(store.LastError);
         Assert.False(File.Exists(InDir() + ".tmp"));

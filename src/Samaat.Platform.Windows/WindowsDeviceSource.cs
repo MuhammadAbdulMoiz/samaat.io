@@ -33,6 +33,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
     private readonly DriverRegistry _registry;
     private readonly DeviceWatcher _pairedWatcher;
     private readonly Dictionary<string, WindowsEarbudDevice> _devices = [];
+    private readonly Dictionary<string, IDisposable> _reconnectWatches = [];
     private readonly SemaphoreSlim _discoverLock = new(1, 1);
     private bool _enumerationCompleted;
 
@@ -72,15 +73,14 @@ public sealed class WindowsDeviceSource : IDeviceSource
             {
                 if (_devices.TryGetValue(info.Id, out var existing))
                 {
-                    if (existing.GetFeature<IBatteryFeature>() is not null)
+                    if (DriverRetry.CanReuse(existing))
                     {
                         seen.Add(info.Id);
                         continue;
                     }
 
-                    // Built before Windows had a battery level for it; rebuild so a Refresh can pick one up.
-                    await existing.DisposeAsync();
-                    _devices.Remove(info.Id);
+                    // No battery yet, or its vendor driver failed: rebuild so a Refresh can pick them up.
+                    await RemoveAsync(info.Id);
                 }
 
                 var device = await CreateDeviceAsync(info, bleByContainer, cancellationToken);
@@ -88,13 +88,16 @@ public sealed class WindowsDeviceSource : IDeviceSource
                 {
                     _devices[info.Id] = device;
                     seen.Add(info.Id);
+                    if (DriverRetry.NeedsDriverRetry(device))
+                    {
+                        _reconnectWatches[info.Id] = DriverRetry.WatchForReconnect(device, RaiseIfEnumerated);
+                    }
                 }
             }
 
             foreach (var gone in _devices.Keys.Except(seen).ToList())
             {
-                await _devices[gone].DisposeAsync();
-                _devices.Remove(gone);
+                await RemoveAsync(gone);
             }
 
             return _devices.Values.ToList<IEarbudDevice>();
@@ -310,6 +313,17 @@ public sealed class WindowsDeviceSource : IDeviceSource
         return result;
     }
 
+    private async Task RemoveAsync(string id)
+    {
+        if (_reconnectWatches.Remove(id, out var watch))
+        {
+            watch.Dispose();
+        }
+
+        await _devices[id].DisposeAsync();
+        _devices.Remove(id);
+    }
+
     private void RaiseIfEnumerated()
     {
         if (_enumerationCompleted)
@@ -325,6 +339,12 @@ public sealed class WindowsDeviceSource : IDeviceSource
             _pairedWatcher.Stop();
         }
 
+        foreach (var watch in _reconnectWatches.Values)
+        {
+            watch.Dispose();
+        }
+
+        _reconnectWatches.Clear();
         foreach (var device in _devices.Values)
         {
             await device.DisposeAsync();

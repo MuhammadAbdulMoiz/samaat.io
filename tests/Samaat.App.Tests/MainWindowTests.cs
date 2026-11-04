@@ -117,7 +117,7 @@ public class MainWindowTests
         }
 
         File.WriteAllText(Path.Combine(dir, "pro.json"), """
-            { "id": "sim.pro", "displayName": "Pro", "match": { "namePattern": "^Simulated Buds Pro$" },
+            { "id": "sim.pro", "displayName": "Pro", "match": { "namePattern": "^Simulated Buds Pro$" }, "image": "left.png",
               "images": { "left": "left.png", "right": "right.png", "case": "case.png" } }
             """);
         var (window, viewModel) = await ShowAsync(DeviceProfileDb.Load(dir));
@@ -131,7 +131,8 @@ public class MainWindowTests
 
         viewModel.SelectDeviceCommand.Execute(viewModel.Devices.Single(d => d.Name == "Simulated Buds Lite")); // no profile
         Dispatcher.UIThread.RunJobs();
-        Assert.Empty(VisibleNames());
+        Assert.False(viewModel.SelectedDevice!.ShowArtworkParts); // no profile photos: the unknown pieces look instead
+        Assert.True(viewModel.SelectedDevice.ShowUnknownPieces);
 
         window.Close();
         await viewModel.DisposeAsync();
