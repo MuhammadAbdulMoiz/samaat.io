@@ -257,7 +257,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
-            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity));
+            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings);
             vm.Share = AudioShare;
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);

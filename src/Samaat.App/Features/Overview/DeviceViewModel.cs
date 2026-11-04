@@ -25,14 +25,19 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly Action<DeviceViewModel, BatteryAlert> _onAlert;
 
     private readonly DeviceProfile? _profile;
+    private readonly IReadOnlyList<DeviceProfile> _profiles;
+    private readonly Settings.SettingsViewModel? _settings;
+    private string? _choice;
+    private ResolvedLook? _look;
 
     public DeviceViewModel(IEarbudDevice device, LowBatteryDetector alerts, TimeProvider time, Action<DeviceViewModel, BatteryAlert> onAlert,
-        DeviceProfile? profile = null)
+        DeviceProfile? profile = null, IReadOnlyList<DeviceProfile>? profiles = null, Settings.SettingsViewModel? settings = null)
     {
         _device = device;
         _profile = profile;
-        ArtworkImage = LoadArtwork(profile?.Image);
-        ArtworkParts = LoadArtworkParts(profile?.PartImages);
+        _profiles = profiles ?? [];
+        _settings = settings;
+        _choice = settings?.GetArtworkChoice(device.Identity.Id);
         _battery = device.GetFeature<IBatteryFeature>();
         _alerts = alerts;
         _time = time;
@@ -116,8 +121,10 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>Two letters for the collapsed sidebar rail.</summary>
     public string Initials { get; }
 
-    /// <summary>The model's photo from its device profile; null draws the built-in earbud or headset artwork.</summary>
-    public Avalonia.Media.Imaging.Bitmap? ArtworkImage { get; }
+    /// <summary>The photo of the model in the current look; null when the look is one of the "?" drawings.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasArtworkImage))]
+    public partial Avalonia.Media.Imaging.Bitmap? ArtworkImage { get; set; }
 
     public bool HasArtworkImage => ArtworkImage is not null;
 
@@ -133,12 +140,102 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Left bud, right bud and case photos with their figures; empty unless the profile has all three.</summary>
-    public IReadOnlyList<ArtworkPartViewModel> ArtworkParts { get; }
+    /// <summary>Left bud, right bud and case photos with their figures; empty unless the look is the split photo.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<ArtworkPartViewModel> ArtworkParts { get; set; } = [];
 
     /// <summary>The rail shows the split photo: all three parts exist and the device reports each bud.</summary>
     [ObservableProperty]
     public partial bool ShowArtworkParts { get; set; }
+
+    /// <summary>One faint silhouette with a "?" badge: no photo, and the device reports a combined level.</summary>
+    [ObservableProperty]
+    public partial bool ShowUnknownSingle { get; set; }
+
+    /// <summary>Faint left bud, right bud and case with "?" badges, each with its own figure.</summary>
+    [ObservableProperty]
+    public partial bool ShowUnknownPieces { get; set; }
+
+    /// <summary>The "Change look" menu: Automatic, the two unknown looks, then every model that has a photo.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<LookOptionViewModel> LookOptions { get; set; } = [];
+
+    /// <summary>Picks an artwork look for this device ("auto", "unknown.single", "unknown.pieces" or a profile id) and remembers it.</summary>
+    [RelayCommand]
+    private void ChangeLook(string? key)
+    {
+        _choice = key is null or "auto" ? null : key;
+        _settings?.SetArtworkChoice(_device.Identity.Id, _choice);
+        ApplyLook(Tile(BatteryComponent.Left).IsReported || Tile(BatteryComponent.Right).IsReported);
+    }
+
+    private const string UnknownSingleKey = "unknown.single", UnknownPiecesKey = "unknown.pieces";
+
+    /// <summary>
+    /// Which artwork to draw. A photo needs the profile's full photo; its part photos are used only with it and when each bud is reported.
+    /// A choice that names no usable model (a removed profile, or one without a photo) acts as Automatic.
+    /// </summary>
+    public static ResolvedLook ResolveLook(string? choice, DeviceProfile? matched, IReadOnlyList<DeviceProfile> profiles, bool reportsBuds, bool looksLikeEarbuds)
+    {
+        // looksLikeEarbuds only picks the drawn silhouette inside UnknownSingle, which the view does from HasBuds.
+        _ = looksLikeEarbuds;
+        switch (choice)
+        {
+            case UnknownSingleKey:
+                return new ResolvedLook(LookKind.UnknownSingle);
+            case UnknownPiecesKey:
+                return new ResolvedLook(LookKind.UnknownPieces);
+        }
+
+        var profile = (choice is null or "auto" ? null : profiles.FirstOrDefault(p => p.Id == choice && p.Image is not null))
+            ?? (matched?.Image is not null ? matched : null);
+        return profile is null
+            ? new ResolvedLook(reportsBuds ? LookKind.UnknownPieces : LookKind.UnknownSingle)
+            : new ResolvedLook(reportsBuds && profile.PartImages is not null ? LookKind.PartsPhoto : LookKind.Photo, profile);
+    }
+
+    private void ApplyLook(bool reportsBuds)
+    {
+        var look = ResolveLook(_choice, _profile, _profiles, reportsBuds, LooksLikeEarbuds);
+        var key = _choice is UnknownSingleKey or UnknownPiecesKey || _profiles.Any(p => p.Id == _choice && p.Image is not null) ? _choice! : "auto";
+        if (!Equals(look, _look))
+        {
+            _look = look;
+            ArtworkImage = LoadArtwork(look.Profile?.Image);
+            if (look.Profile is not null && ArtworkImage is null)
+            {
+                look = _look = new ResolvedLook(reportsBuds ? LookKind.UnknownPieces : LookKind.UnknownSingle); // no photo to show
+                ArtworkImage = null;
+            }
+
+            ArtworkParts = look.Kind == LookKind.PartsPhoto ? LoadArtworkParts(look.Profile!.PartImages) : [];
+            if (look.Kind == LookKind.PartsPhoto && ArtworkParts.Count != 3)
+            {
+                look = _look = new ResolvedLook(LookKind.Photo, look.Profile); // a broken part photo keeps the whole photo
+            }
+
+            ShowArtworkParts = look.Kind == LookKind.PartsPhoto;
+            ShowUnknownSingle = look.Kind == LookKind.UnknownSingle;
+            ShowUnknownPieces = look.Kind == LookKind.UnknownPieces;
+        }
+
+        if (LookOptions.Count > 0 && LookOptions.Single(o => o.IsSelected).Key == key)
+        {
+            return;
+        }
+
+        LookOptions =
+        [
+            Option("auto", "Automatic", key),
+            Option(UnknownSingleKey, "Unknown · single", key),
+            Option(UnknownPiecesKey, "Unknown · separate pieces", key),
+            .. _profiles.Where(p => p.Image is not null).OrderBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                .Select(p => Option(p.Id, p.DisplayName, key)),
+        ];
+    }
+
+    private LookOptionViewModel Option(string key, string label, string current) =>
+        new(key, label, key == current, new RelayCommand(() => ChangeLook(key)));
 
     private IReadOnlyList<ArtworkPartViewModel> LoadArtworkParts(ProfilePartImages? images)
     {
@@ -361,7 +458,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         };
 
         HasBuds = buds || LooksLikeEarbuds;
-        ShowArtworkParts = buds && ArtworkParts.Count == 3;
+        ApplyLook(buds);
         HasSummary = summary is not null;
         SummaryFigure = summary is { } figure ? figure.ToString() : "–";
         SummaryUnit = HasSummary ? "%" : "";

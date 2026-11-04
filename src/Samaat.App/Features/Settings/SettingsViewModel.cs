@@ -18,6 +18,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool? _reduceMotionOverride;
     private bool _syncing;
     private Dictionary<string, int> _shareDelays = new();
+    private Dictionary<string, string> _artworkChoices = new();
 
     public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
@@ -105,6 +106,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         CloseToTray = CloseToTray,
         StartWithWindows = StartWithWindows,
         ShareDelays = new Dictionary<string, int>(_shareDelays),
+        ArtworkChoices = new Dictionary<string, string>(_artworkChoices),
     }.Normalize();
 
     [RelayCommand]
@@ -169,6 +171,24 @@ public sealed partial class SettingsViewModel : ObservableObject
         Changed();
     }
 
+    /// <summary>The artwork look saved for a device; null means automatic.</summary>
+    public string? GetArtworkChoice(string id) => _artworkChoices.GetValueOrDefault(id);
+
+    /// <summary>Saves the artwork look for a device; null (automatic) removes the entry.</summary>
+    public void SetArtworkChoice(string id, string? choice)
+    {
+        if (choice is null)
+        {
+            _artworkChoices.Remove(id);
+        }
+        else
+        {
+            _artworkChoices[id] = choice;
+        }
+
+        Changed();
+    }
+
     private void Changed()
     {
         if (_syncing)
@@ -200,6 +220,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             CloseToTray = settings.CloseToTray;
             StartWithWindows = settings.StartWithWindows;
             _shareDelays = new Dictionary<string, int>(settings.ShareDelays);
+            _artworkChoices = new Dictionary<string, string>(settings.ArtworkChoices);
         }
         finally
         {

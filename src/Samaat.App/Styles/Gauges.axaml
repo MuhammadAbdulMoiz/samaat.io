@@ -39,6 +39,29 @@
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
   </Style>
 
+  <!-- Unknown looks: faint silhouette with a small "?" badge -->
+  <Style Selector="Path.unknownShape">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Faint}" />
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="Border.unknownBadge">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Faint}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+  <Style Selector="Border.unknownBadge > TextBlock">
+    <Setter Property="Text" Value="?" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <!-- Motion: levels glide to new values instead of jumping -->
   <Style Selector="c|BatteryRing">
     <Setter Property="Transitions">

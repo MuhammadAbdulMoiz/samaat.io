@@ -42,6 +42,9 @@ public sealed record AppSettings
     /// <summary>Share delay in milliseconds per output id, so each device remembers its own.</summary>
     public IReadOnlyDictionary<string, int> ShareDelays { get; init; } = FrozenDictionary<string, int>.Empty;
 
+    /// <summary>The artwork look picked per device id: "unknown.single", "unknown.pieces" or a profile id; absent means automatic.</summary>
+    public IReadOnlyDictionary<string, string> ArtworkChoices { get; init; } = FrozenDictionary<string, string>.Empty;
+
     /// <summary>Clamps thresholds to what the alert logic can use (low 5–50, critical 1 up to just below low) and share delays to 0–500 ms.</summary>
     public AppSettings Normalize()
     {
@@ -51,6 +54,7 @@ public sealed record AppSettings
             LowThreshold = low,
             CriticalThreshold = Math.Clamp(CriticalThreshold, 1, low - 1),
             ShareDelays = (ShareDelays ?? FrozenDictionary<string, int>.Empty).ToDictionary(p => p.Key, p => Math.Clamp(p.Value, 0, 500)),
+            ArtworkChoices = (ArtworkChoices ?? FrozenDictionary<string, string>.Empty).ToDictionary(p => p.Key, p => p.Value),
         };
     }
 }
