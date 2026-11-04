@@ -204,6 +204,13 @@ public sealed class WindowsDeviceSource : IDeviceSource
             features.Insert(0, battery);
         }
 
+        WindowsPcLinkFeature? pcLink = null;
+        if (containerId is { } linkContainer && await BluetoothAudioLink.CountEndpointsAsync(linkContainer) > 0)
+        {
+            pcLink = new WindowsPcLinkFeature(linkContainer, _time);
+            features.Add(pcLink);
+        }
+
         var identity = new DeviceIdentity(
             info.Id,
             name,
@@ -213,7 +220,13 @@ public sealed class WindowsDeviceSource : IDeviceSource
             tier,
             await ReadDetailsAsync(bluetooth, ids, cancellationToken));
 
-        return new WindowsEarbudDevice(identity, bluetooth, features, gatt);
+        var created = new WindowsEarbudDevice(identity, bluetooth, features, gatt);
+        if (pcLink is not null)
+        {
+            pcLink.Device = created;
+        }
+
+        return created;
     }
 
     /// <summary>RFCOMM service UUIDs from the cached SDP record: vendor protocols announce themselves here.</summary>

@@ -41,7 +41,8 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
         DeviceIdentity identity,
         SimulatedBatteryLayout layout,
         TimeProvider? time = null,
-        IEnumerable<IFeature>? extraFeatures = null)
+        IEnumerable<IFeature>? extraFeatures = null,
+        TimeSpan? commandLatency = null)
     {
         Identity = identity;
         Layout = layout;
@@ -62,7 +63,7 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
             _ => new() { [BatteryComponent.Combined] = new(55, BudStatus.Unknown) },
         };
         _battery = new SimulatedBatteryFeature(_cells.Keys.ToHashSet());
-        _features = [_battery, .. extraFeatures ?? []];
+        _features = [_battery, new SimulatedPcLinkFeature(this, commandLatency ?? TimeSpan.Zero, _time), .. extraFeatures ?? []];
         _battery.Publish(Snapshot());
     }
 

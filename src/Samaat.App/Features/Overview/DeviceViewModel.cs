@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
+using Samaat.Core.Commands;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
@@ -23,6 +24,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     private readonly LowBatteryDetector _alerts;
     private readonly TimeProvider _time;
     private readonly Action<DeviceViewModel, BatteryAlert> _onAlert;
+    private readonly Action<string>? _onMessage;
+    private readonly IPcLinkFeature? _pcLink;
 
     private readonly DeviceProfile? _profile;
     private readonly IReadOnlyList<DeviceProfile> _profiles;
@@ -31,7 +34,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     private ResolvedLook? _look;
 
     public DeviceViewModel(IEarbudDevice device, LowBatteryDetector alerts, TimeProvider time, Action<DeviceViewModel, BatteryAlert> onAlert,
-        DeviceProfile? profile = null, IReadOnlyList<DeviceProfile>? profiles = null, Settings.SettingsViewModel? settings = null)
+        DeviceProfile? profile = null, IReadOnlyList<DeviceProfile>? profiles = null, Settings.SettingsViewModel? settings = null,
+        Action<string>? onMessage = null)
     {
         _device = device;
         _profile = profile;
@@ -42,6 +46,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         _alerts = alerts;
         _time = time;
         _onAlert = onAlert;
+        _onMessage = onMessage;
+        _pcLink = device.GetFeature<IPcLinkFeature>();
         Initials = string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
         if (Initials.Length == 0)
         {
@@ -310,7 +316,73 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public partial string BatteryReasonText { get; set; } = "";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowConnect), nameof(ShowDisconnect), nameof(LinkAccessibleName))]
+    [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(DisconnectCommand))]
     public partial bool IsConnected { get; set; }
+
+    // Connect and disconnect from this computer. This type owns the single in-flight link operation;
+    // the hero, the Links page and the tray all go through the two commands.
+    private static readonly TimeSpan LinkTimeout = TimeSpan.FromSeconds(20);
+
+    public bool HasPcLink => _pcLink is not null;
+
+    public bool ShowConnect => HasPcLink && !IsConnected;
+
+    public bool ShowDisconnect => HasPcLink && IsConnected;
+
+    public bool ShowSettingsFallback => !HasPcLink;
+
+    public string SettingsFallbackText => "Use Windows Bluetooth settings to connect this device.";
+
+    public string LinkAccessibleName => IsConnected ? $"Disconnect {Name} from this computer" : $"Connect {Name} to this computer";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(DisconnectCommand))]
+    public partial bool IsLinkBusy { get; set; }
+
+    private bool CanConnect() => _pcLink is not null && !IsLinkBusy && !IsConnected;
+
+    private bool CanDisconnect() => _pcLink is not null && !IsLinkBusy && IsConnected;
+
+    [RelayCommand(CanExecute = nameof(CanConnect))]
+    private Task ConnectAsync() => CanConnect() ? RunLinkAsync(_pcLink!.ConnectAsync) : Task.CompletedTask;
+
+    [RelayCommand(CanExecute = nameof(CanDisconnect))]
+    private Task DisconnectAsync() => CanDisconnect() ? RunLinkAsync(_pcLink!.DisconnectAsync) : Task.CompletedTask;
+
+    private async Task RunLinkAsync(Func<CancellationToken, Task<CommandResult>> command)
+    {
+        IsLinkBusy = true;
+        Connections.ErrorText = null;
+        try
+        {
+            var result = await CommandRunner.RunAsync(command, LinkTimeout, _time);
+            if (!result.Succeeded)
+            {
+                var text = result.UserMessage!;
+                Connections.ErrorText = text;
+                _onMessage?.Invoke(text);
+            }
+        }
+        finally
+        {
+            IsLinkBusy = false;
+            Update();
+        }
+    }
+
+    [RelayCommand]
+    private void OpenBluetoothSettings()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("ms-settings:bluetooth") { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            _onMessage?.Invoke("Couldn't open Windows Bluetooth settings.");
+        }
+    }
 
     [ObservableProperty]
     public partial string ConnectionText { get; set; } = "";

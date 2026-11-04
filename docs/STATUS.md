@@ -6,7 +6,7 @@ Last updated: 2026-11-03
 
 - **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. The **first vendor adapter** (Jieli RCSP over BLE) reads per-bud battery and switches noise control (off, noise cancelling, transparency) and EQ presets on the Audionic ParadoX-E ([test notes](hardware-tests/2026-11-03-audionic-paradox-e.md), [protocol](protocols/jieli-rcsp.md)). Everything else runs against **simulated devices**.
 - **Not done:** multipoint and custom EQ bands on real earbuds, and any real device other than the ParadoX-E. The Quantum Zbuds have no usable vendor protocol.
-- **Tests:** 593 automated tests (Protocols 177, Core 216, App 200). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Tests:** 616 automated tests (Protocols 177, Core 229, App 210). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Links |
 |---|---|---|
@@ -35,7 +35,7 @@ Left / right / case or a single level, charging state, where each bud is, data a
 Noise cancelling, adaptive, transparency and off. ANC strength and ambient level sliders, wind reduction, conversation awareness. The UI layout follows from what the device reports. Changes are optimistic, confirmed by the device, and rolled back on failure.
 
 ### Module 3: Multipoint and connected devices ([details](modules/connections.md))
-Host list with states, switch / connect / disconnect, a multipoint switch, and a connection limit. Without device support, it honestly shows only this computer and explains why.
+Host list with states, switch / connect / disconnect, a multipoint switch, and a connection limit. This computer can be connected and disconnected from Samaat (Links page, overview, tray). Without device support, it honestly shows only this computer and explains why.
 
 ### Architecture pass (OpenMouse patterns, [details](ARCHITECTURE.md))
 - **Driver registry and device catalog**: devices resolve to *generic*, *recognised (adapter not built yet)* or *driver*. `devices/**/*.json` entries carry a `verified` flag. Adding a model is a data change, and adding a vendor needs no UI changes.
@@ -95,7 +95,7 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 ### Known limitations today
 - Windows gives a single combined battery level only. L/R/case needs a vendor adapter.
 - A disconnected device still shows the last battery level Windows stored (Windows Settings hides it).
-- This computer can't be connected or disconnected from Samaat (no public WinRT API for classic audio).
+- Connect / Disconnect for this computer (Links page, overview, tray) uses the same Bluetooth audio KS property as Windows Settings. Built and checked against the real filters read-only; **not yet run on hardware** (undocumented API, fallback is `ms-settings:bluetooth`).
 - A device that starts reporting battery after launch appears on the next **Refresh**.
 - System notifications are verified on one PC only.
 
