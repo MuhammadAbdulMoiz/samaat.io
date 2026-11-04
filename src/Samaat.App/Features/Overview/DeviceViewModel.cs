@@ -316,7 +316,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public partial string BatteryReasonText { get; set; } = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowConnect), nameof(ShowDisconnect), nameof(LinkAccessibleName))]
+    [NotifyPropertyChangedFor(nameof(ShowConnect), nameof(ShowDisconnect), nameof(LinkAccessibleName), nameof(LinkStateText), nameof(LinkDetailText))]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(DisconnectCommand))]
     public partial bool IsConnected { get; set; }
 
@@ -336,7 +336,23 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
     public string LinkAccessibleName => IsConnected ? $"Disconnect {Name} from this computer" : $"Connect {Name} to this computer";
 
+    /// <summary>The Links page headline for this computer: the state, or the request in flight.</summary>
+    public string LinkStateText => IsLinkBusy
+        ? IsConnected ? "Disconnecting…" : "Connecting…"
+        : IsConnected ? "Connected" : "Not connected";
+
+    /// <summary>One line under the headline: what the state means, or where to change it.</summary>
+    public string LinkDetailText =>
+        IsLinkBusy ? "Waiting for the earbuds to respond"
+        : !HasPcLink ? "Connect or disconnect in Windows Bluetooth settings"
+        : IsConnected ? "Battery, sound and controls work from here"
+        : "Connect to see battery and change settings";
+
+    /// <summary>Why Connect or Disconnect is unavailable right now; null when it isn't.</summary>
+    public string? LinkDisabledReason => IsLinkBusy ? "Wait for the current request to finish" : null;
+
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LinkStateText), nameof(LinkDetailText), nameof(LinkDisabledReason))]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand), nameof(DisconnectCommand))]
     public partial bool IsLinkBusy { get; set; }
 

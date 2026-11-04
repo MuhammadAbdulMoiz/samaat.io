@@ -5,105 +5,168 @@
              xmlns:shared="using:Samaat.App.Shared"
              x:Class="Samaat.App.Features.Connections.ConnectionsPage"
              x:DataType="overview:DeviceViewModel">
+  <!-- Links: this computer first (state, one action, one line of meaning), then every other device the earbuds know.
+       Row anatomy follows the Share audio card: 32 px icon tile, name over meta, quiet actions on the right. -->
   <StackPanel Spacing="16">
 
-    <!-- This computer: its link state, and connect or disconnect it from here -->
+    <!-- This computer -->
     <Border Classes="panel">
-      <StackPanel Spacing="8">
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsLinkBusy}" Margin="-16,-16,-16,0" />
-        <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-          <StackPanel Spacing="4" VerticalAlignment="Center">
-            <TextBlock Text="This computer" Classes="panelTitle" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding Connections.ThisComputerText}" />
-            </StackPanel>
-          </StackPanel>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="12,0,0,0">
-            <Button Classes="ghost" Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}"
-                    AutomationProperties.Name="{Binding LinkAccessibleName}" />
-            <Button Classes="ghost" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}"
-                    AutomationProperties.Name="{Binding LinkAccessibleName}" />
-            <Button Classes="ghost" Content="Open Bluetooth settings" Command="{Binding OpenBluetoothSettingsCommand}"
-                    IsVisible="{Binding ShowSettingsFallback}" />
-          </StackPanel>
-        </Grid>
-        <TextBlock Text="{Binding SettingsFallbackText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowSettingsFallback}" />
-        <TextBlock Text="{Binding Connections.UnavailableText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding !Connections.HasMultipoint}" />
-      </StackPanel>
-    </Border>
+      <Panel>
+        <StackPanel Spacing="12">
+          <TextBlock Text="This computer" Classes="panelTitle" />
 
-  <StackPanel Spacing="16" DataContext="{Binding Connections}" x:DataType="conn:ConnectionsViewModel">
-
-    <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
-
-    <!-- Multipoint -->
-    <Border Classes="panel" IsVisible="{Binding HasMultipoint}">
-      <Grid ColumnDefinitions="*,Auto" MinHeight="40">
-        <StackPanel VerticalAlignment="Center">
-          <TextBlock Text="Multipoint" Classes="panelTitle" />
-          <TextBlock Text="{Binding LimitText}" Classes="meta" />
-        </StackPanel>
-        <ToggleSwitch Grid.Column="1" IsChecked="{Binding MultipointEnabled}" IsEnabled="{Binding CanToggleMultipoint}"
-                      AutomationProperties.Name="Multipoint" />
-      </Grid>
-    </Border>
-
-    <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
-      <StackPanel Orientation="Horizontal" Spacing="6">
-        <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-        <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
-      </StackPanel>
-    </Border>
-
-    <!-- Hosts: one panel, one row each -->
-    <Border Classes="panel" IsVisible="{Binding HasMultipoint}">
-      <StackPanel Spacing="8">
-        <TextBlock Text="Connected devices" Classes="panelTitle" />
-        <ItemsControl ItemsSource="{Binding Hosts}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="conn:HostViewModel">
-              <Border Classes="row host" Classes.active="{Binding IsActive}" CornerRadius="6" Padding="8">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                  <Border Classes="optionIcon" Classes.on="{Binding IsActive}" VerticalAlignment="Center">
-                    <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
-                  </Border>
-                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                      <Border Classes="chip" Padding="6,1" IsVisible="{Binding IsThisHost}">
-                        <TextBlock Text="This computer" FontSize="11" />
-                      </Border>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding StateText}" Classes="meta" />
-                    </StackPanel>
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button Classes="subtle" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding CanDisconnect}" />
-                    <Button Classes="primary" Content="{Binding SwitchText}" Command="{Binding SwitchCommand}" IsVisible="{Binding CanSwitch}" />
-                  </StackPanel>
-                </Grid>
+          <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" MinHeight="48">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Classes="optionIcon" Classes.on="{Binding IsConnected}" VerticalAlignment="Center">
+                <PathIcon Data="{StaticResource Icon.Laptop}" Width="16" Height="16" />
               </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
+              <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding LinkStateText}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding LinkDetailText}" Classes="meta" TextWrapping="Wrap" />
+              </StackPanel>
+              <Panel Grid.Column="2" VerticalAlignment="Center">
+                <Button Classes="primary" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}"
+                        AutomationProperties.Name="{Binding LinkAccessibleName}" AutomationProperties.HelpText="{Binding LinkDisabledReason}"
+                        ToolTip.Tip="{Binding LinkDisabledReason}" ToolTip.ShowOnDisabled="True">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource Icon.Link}" Width="14" Height="14" Foreground="{DynamicResource Samaat.OnAccent}" />
+                    <TextBlock Text="Connect" />
+                  </StackPanel>
+                </Button>
+                <Button Classes="subtle" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}"
+                        AutomationProperties.Name="{Binding LinkAccessibleName}" AutomationProperties.HelpText="{Binding LinkDisabledReason}"
+                        ToolTip.Tip="{Binding LinkDisabledReason}" ToolTip.ShowOnDisabled="True">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource Icon.Disconnect}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
+                    <TextBlock Text="Disconnect" />
+                  </StackPanel>
+                </Button>
+                <Button Classes="subtle" Command="{Binding OpenBluetoothSettingsCommand}" IsVisible="{Binding ShowSettingsFallback}"
+                        AutomationProperties.Name="Open Bluetooth settings">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource Icon.Settings}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
+                    <TextBlock Text="Bluetooth settings" />
+                  </StackPanel>
+                </Button>
+              </Panel>
+            </Grid>
+          </Border>
+
+          <Border Classes="alert critical" HorizontalAlignment="Left" IsVisible="{Binding Connections.HasError}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+              <TextBlock Text="{Binding Connections.ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+</StackPanel>
+        <!-- Overlaid on the panel's top edge so it never shifts the content -->
+        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsLinkBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+      </Panel>
     </Border>
 
-    <!-- Limits we always state (docs/PLAN.md §8) -->
-    <Border Classes="panel">
-      <StackPanel Spacing="6">
-        <TextBlock Text="Good to know" Classes="panelTitle" />
-        <TextBlock Classes="meta" TextWrapping="Wrap"
-                   Text="Samaat can list and switch other devices only when your earbuds' own protocol allows it." />
-        <TextBlock Classes="meta" TextWrapping="Wrap"
-                   Text="To forget a device completely, remove the pairing in that device's Bluetooth settings." />
-        <TextBlock Classes="meta" TextWrapping="Wrap"
-                   Text="While this computer is disconnected, Samaat may not be able to read or change the earbuds." />
-      </StackPanel>
+    <!-- Devices: multipoint and every host the earbuds report, or an honest empty state -->
+    <Border Classes="panel" DataContext="{Binding Connections}" x:DataType="conn:ConnectionsViewModel">
+      <Panel>
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Devices" Classes="panelTitle" VerticalAlignment="Center" />
+            <Border Grid.Column="1" Classes="chip" IsVisible="{Binding HasMultipoint}"
+                    ToolTip.Tip="Devices connected now, out of how many the earbuds allow">
+              <TextBlock Text="{Binding ConnectedSummary}" Classes="number" />
+            </Border>
+          </Grid>
+
+          <!-- No multipoint protocol: say what we can't see and where to manage it -->
+          <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding !HasMultipoint}">
+            <Border Classes="optionIcon" VerticalAlignment="Top">
+              <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding UnavailableTitle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+
+          <!-- Multipoint: a switch row, then the hosts -->
+          <Grid ColumnDefinitions="*,Auto" MinHeight="40" IsVisible="{Binding HasMultipoint}">
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="Multipoint" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding LimitText}" Classes="meta" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" Classes="share" VerticalAlignment="Center"
+                          IsChecked="{Binding MultipointEnabled}" IsEnabled="{Binding CanToggleMultipoint}"
+                          AutomationProperties.Name="Multipoint" AutomationProperties.HelpText="{Binding MultipointDisabledReason}"
+                          ToolTip.Tip="{Binding MultipointDisabledReason}" ToolTip.ShowOnDisabled="True" />
+          </Grid>
+
+          <Border Classes="divider" IsVisible="{Binding HasMultipoint}" />
+
+          <ItemsControl ItemsSource="{Binding Hosts}" IsVisible="{Binding HasMultipoint}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="conn:HostViewModel">
+                <Border Classes="shareRow" Classes.sharing="{Binding IsActive}">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Classes="optionIcon" Classes.on="{Binding IsActive}" VerticalAlignment="Center">
+                      <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border Classes="chip" Padding="5,0" VerticalAlignment="Center" IsVisible="{Binding IsThisHost}">
+                          <TextBlock Text="This computer" FontSize="11" />
+                        </Border>
+                        <TextBlock Text="{Binding StateText}" Classes="meta" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                      <Button Classes="ghost" Command="{Binding DisconnectCommand}" IsVisible="{Binding CanDisconnect}"
+                              AutomationProperties.Name="{Binding DisconnectLabel}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <PathIcon Data="{StaticResource Icon.Disconnect}" Width="14" Height="14" />
+                          <TextBlock Text="Disconnect" FontSize="12" />
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="ghost" Command="{Binding SwitchCommand}" IsVisible="{Binding CanSwitch}"
+                              AutomationProperties.Name="{Binding SwitchLabel}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <PathIcon Data="{Binding SwitchIconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="14" Height="14" />
+                          <TextBlock Text="{Binding SwitchText}" FontSize="12" />
+                        </StackPanel>
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding ShowNoHosts}">
+            <Border Classes="optionIcon">
+              <PathIcon Data="{StaticResource Icon.Bluetooth}" Width="16" Height="16" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="No other devices yet" FontWeight="SemiBold" />
+              <TextBlock Text="Devices you pair these earbuds with appear here." Classes="meta" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+
+          <TextBlock Text="{Binding HostsNote}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding HasHostsNote}" />
+
+          <!-- The limits we always state (docs/PLAN.md §8), one click away instead of a card of grey sentences -->
+          <StackPanel>
+            <ToggleButton x:Name="HowToggle" Classes="disclosure" AutomationProperties.Name="How links work">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="How links work" Classes="meta" VerticalAlignment="Center" />
+                <PathIcon Grid.Column="1" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
+              </Grid>
+            </ToggleButton>
+            <TextBlock Text="{Binding HelpText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding #HowToggle.IsChecked}" Margin="0,4,0,0" />
+          </StackPanel>
+</StackPanel>
+        <!-- Overlaid on the panel's top edge so it never shifts the content -->
+        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+      </Panel>
     </Border>
-  </StackPanel>
   </StackPanel>
 </UserControl>

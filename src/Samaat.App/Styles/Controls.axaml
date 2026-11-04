@@ -119,6 +119,11 @@
     <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
   </Style>
 
+  <!-- Disabled filled buttons dim like a disabled switch, so a pending request reads as "wait", not "broken" -->
+  <Style Selector="Button.subtle:disabled, Button.primary:disabled">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+
   <!-- Thin indeterminate bar while a command is waiting for the device -->
   <Style Selector="ProgressBar.busy">
     <Setter Property="Height" Value="3" />
