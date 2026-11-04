@@ -27,5 +27,12 @@ Branch `claude/share-card-ux` (from `feature/ui-redesign` at cb37255). The user 
 - VM: `IconKey_FromName` (Theory over the rule), `StateText_FollowsSharingAndDelay`, `SharingSummary_CountsAndHidesAtZero`, `IsAtLimit_AtThree`, `IsLive_WhenAnySharing`, `AccessibleLabels_IncludeName`.
 - UI: the existing App tests and the screenshot test stay green. The new screenshot is reviewed by eye (controller) in dark and light.
 
+## Review fixes (Codex plan R1)
+- **Reuse house styles:** the count uses the existing `Border.chip` and statuses use the existing `Border.alert` (`Base.axaml`) with `Icon.Warning`. The only new styles are `Border.shareRow` (+ `.sharing`), `Button.ghost` and `Ellipse.liveDot`.
+- **Toggle hit area:** a `ToggleSwitch.share` style sets `MinHeight="32"` and a transparent hit area, padded so the whole 32 px cell toggles. The switch keeps no On/Off content.
+- **Why it's disabled:** `ShareTargetViewModel.DisabledReason` is "Up to 3 devices can be shared at once" when `!CanToggle`, else null. It's bound to the toggle's `ToolTip.Tip` and `AutomationProperties.HelpText`, and notifies when `CanToggle` changes. Test: `DisabledReason_AtLimit_ExplainsWhy`.
+- **Screenshot harness:** `MainWindowTests.ShowAsync` gains optional `Func<IAudioShare>? audioShareFactory` and `IDefaultOutputSwitcher? outputSwitcher` parameters passed into `MainWindowViewModel`. The share capture uses them, sets the fake outputs, turns Speakers on with a 120 ms delay, settles, scrolls to the card, and captures.
+- **Notification tests (optional, accepted):** the aggregate-property tests also assert `PropertyChanged` fires for `SharingSummary`, `IsAtLimit`, `IsLive` and each row's `CanToggle`/`DisabledReason` when slots change.
+
 ## Done when
 `dotnet build Samaat.slnx` gives 0 warnings, `dotnet test Samaat.slnx` is green, the dark and light share screenshots are reviewed, and Codex has passed the implementation. Then merge into `feature/ui-redesign`, then into `master`.
