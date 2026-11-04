@@ -14,6 +14,7 @@ public sealed class WasapiBackend : IAudioBackend
 {
     private readonly MMDeviceEnumerator _enumerator = new();
     private readonly Notifier _notifier;
+    private volatile bool _disposed;
 
     public WasapiBackend()
     {
@@ -53,7 +54,8 @@ public sealed class WasapiBackend : IAudioBackend
             source = _enumerator.GetDevice(sourceId);
             target = _enumerator.GetDevice(targetId);
             capture = new WasapiLoopbackCapture(source);
-            var pipe = new Pipe(capture, delayMs, target.AudioClient.MixFormat);
+            using var client = target.AudioClient;
+            var pipe = new Pipe(capture, delayMs, client.MixFormat);
             output = new WasapiOut(target, AudioClientShareMode.Shared, true, 50);
             output.Init(pipe.CreateOutputProvider());
             pipe.Attach(output);
@@ -76,13 +78,15 @@ public sealed class WasapiBackend : IAudioBackend
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         _enumerator.UnregisterEndpointNotificationCallback(_notifier);
         _enumerator.Dispose();
     }
 
     private void RaiseOutputsChanged() =>
         // MMDevice calls are forbidden inside the notification callback, and the handler calls GetOutputs.
-        ThreadPool.QueueUserWorkItem(_ => OutputsChanged?.Invoke(this, EventArgs.Empty));
+        ThreadPool.QueueUserWorkItem(_ => { if (!_disposed) OutputsChanged?.Invoke(this, EventArgs.Empty); });
 
     private sealed class Notifier(WasapiBackend owner) : IMMNotificationClient
     {
@@ -148,7 +152,7 @@ public sealed class WasapiBackend : IAudioBackend
             {
                 bool replay;
                 lock (_gate) { _stopped += value; replay = _raised; }
-                if (replay) value?.Invoke(this, _error);
+                if (replay && value is not null) ThreadPool.QueueUserWorkItem(_ => value(this, _error));
             }
             remove { lock (_gate) _stopped -= value; }
         }
@@ -196,7 +200,8 @@ public sealed class WasapiBackend : IAudioBackend
                 _error = error;
                 h = _stopped;
             }
-            h?.Invoke(this, error);
+            // Off the audio thread: the handler disposes the pipe, which joins that thread.
+            if (h is not null) ThreadPool.QueueUserWorkItem(_ => h(this, error));
         }
 
         public void Dispose()
