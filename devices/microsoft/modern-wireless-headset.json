@@ -3,7 +3,7 @@
   "id": "microsoft.modern-wireless-headset",
   "displayName": "Microsoft Modern Wireless Headset",
   "manufacturer": "Microsoft",
-  // Paired on the test PC but never connected during testing; no vendor protocol investigated.
+  // Known model with no driver of its own (never connected during testing); a generic protocol driver (Fast Pair) still probes it if it advertises the stream.
   "driver": "none",
   "match": {
     "sdpUuids": [],

@@ -939,11 +939,11 @@ public sealed class ParadoxCatalogTests
     }
 
     [Fact]
-    public void Quantum_StillResolvesToItsOwnEntry()
+    public void Quantum_StillResolvesToItsOwnEntry_WithTheJieliDriver()
     {
         var resolution = Registry().Resolve(Windows("Quantum"));
 
         Assert.Equal("zero-lifestyle.quantum-zbuds", resolution.Entry!.Id);
-        Assert.NotEqual(DriverResolutionKind.Driver, resolution.Kind);
+        Assert.Equal("jieli-rcsp", resolution.Driver!.Id);
     }
 }

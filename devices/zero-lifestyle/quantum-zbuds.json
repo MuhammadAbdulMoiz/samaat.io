@@ -3,7 +3,7 @@
   "id": "zero-lifestyle.quantum-zbuds",
   "displayName": "Zero Lifestyle Quantum Zbuds",
   "manufacturer": "Zero Lifestyle",
-  // No vendor protocol found, so no driver exists: DeviceCatalog shows it as recognised.
+  // Known model with no driver of its own; generic protocol drivers (Jieli by vendor ID) still probe it.
   "driver": "none",
   "match": {
     "deviceId": { "vid": "0x05D6", "pid": "0x000A" },

@@ -23,6 +23,7 @@ Every field given in `match` must agree. The highest score wins: vendor + produc
 `generic/fast-pair.json` (any device advertising the Fast Pair Message Stream `df21fe2c-…`) and `generic/jieli.json` (any device with Jieli's vendor ID `0x05D6`) give unknown earbuds a driver by protocol. They carry `"generic": true`, which means:
 
 - **Any matching model entry wins**, whatever its score. A model keeps its own name, photos and profile.
+- **A model with no driver of its own still gets a matching protocol driver.** If its `driver` is `none` or not registered, the best-scoring generic entry whose driver is registered supplies the driver; the model entry keeps the identity. No match stays "Recognised".
 - `DeviceProfileDb` **skips them on purpose** (no error): they describe a protocol, not a model, so they have no display name, artwork or notes to show. Loading them as profiles could also tie a name-only model on specificity and take its place.
 - The driver decides what is real. The Jieli driver gives nothing without the BLE `AE00` service, and offers noise control or EQ only when the buds list them when read back. The Fast Pair driver gives nothing when the battery is unknown. Either way the device falls back to the Windows battery.
 

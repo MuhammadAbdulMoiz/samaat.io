@@ -74,7 +74,8 @@ public sealed class ShippedDeviceTests
         var resolution = Registry().Resolve(new DeviceSignals("Quantum", VendorId: 0x05D6, ProductId: 0x000A, ServiceUuids: WithMessageStream));
 
         Assert.Equal("zero-lifestyle.quantum-zbuds", resolution.Entry!.Id);
-        Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
+        Assert.Equal(DriverResolutionKind.Driver, resolution.Kind);
+        Assert.Equal("fast-pair", resolution.Driver!.Id);
     }
 
     [Fact]
@@ -139,11 +140,12 @@ public sealed class ShippedDeviceTests
         var resolution = Registry().Resolve(new DeviceSignals("Microsoft Modern Wireless Headset", ServiceUuids: WithMessageStream));
 
         Assert.Equal("microsoft.modern-wireless-headset", resolution.Entry!.Id);
-        Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
+        Assert.Equal(DriverResolutionKind.Driver, resolution.Kind);
+        Assert.Equal("fast-pair", resolution.Driver!.Id);
     }
 
     [Fact]
-    public void Quantum_WithItsRealServices_IsItsOwnEntryWithNoDriver()
+    public void Quantum_WithItsRealServices_IsItsOwnEntryWithTheJieliDriver()
     {
         var signals = new DeviceSignals("Quantum", VendorId: 0x05D6, ProductId: 0x000A,
             ServiceUuids: new HashSet<Guid> { Guid.Parse("fe010000-1234-5678-abcd-00805f9b34fb") });
@@ -151,8 +153,8 @@ public sealed class ShippedDeviceTests
         var resolution = Registry().Resolve(signals);
 
         Assert.Equal("zero-lifestyle.quantum-zbuds", resolution.Entry!.Id);
-        Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
-        Assert.Null(resolution.Driver);
+        Assert.Equal(DriverResolutionKind.Driver, resolution.Kind);
+        Assert.Equal("jieli-rcsp", resolution.Driver!.Id);
         Assert.NotEqual("fast-pair", resolution.Entry.Driver);
         Assert.Null(GenericEntry("generic.fast-pair").Match.Score(signals));
     }

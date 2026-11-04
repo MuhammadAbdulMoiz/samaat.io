@@ -25,10 +25,10 @@ public enum DriverResolutionKind
     /// <summary>Not in the catalog: only standard and OS-level information.</summary>
     Generic,
 
-    /// <summary>A known model whose driver isn't implemented yet.</summary>
+    /// <summary>A known model whose driver isn't implemented and no protocol driver matches it.</summary>
     KnownModelNoDriver,
 
-    /// <summary>A known model with a driver.</summary>
+    /// <summary>A known model with its own driver, or with a matching protocol driver (generic entry) when it has none.</summary>
     Driver,
 }
 
@@ -67,9 +67,23 @@ public sealed class DriverRegistry(DeviceCatalog catalog)
             return new DriverResolution(DriverResolutionKind.Generic, null, null);
         }
 
-        return _drivers.TryGetValue(entry.Driver, out var driver)
-            ? new DriverResolution(DriverResolutionKind.Driver, entry, driver)
-            : new DriverResolution(DriverResolutionKind.KnownModelNoDriver, entry, null);
+        if (_drivers.TryGetValue(entry.Driver, out var driver))
+        {
+            return new DriverResolution(DriverResolutionKind.Driver, entry, driver);
+        }
+
+        // A model with no driver of its own still gets the best protocol driver its signals match; the model entry keeps the identity.
+        var protocolDriver = Catalog.Entries
+            .Where(e => e.Generic && _drivers.ContainsKey(e.Driver))
+            .Select(e => (e.Driver, Score: e.Match.Score(signals)))
+            .Where(x => x.Score is not null)
+            .OrderByDescending(x => x.Score)
+            .Select(x => _drivers[x.Driver])
+            .FirstOrDefault();
+
+        return protocolDriver is null
+            ? new DriverResolution(DriverResolutionKind.KnownModelNoDriver, entry, null)
+            : new DriverResolution(DriverResolutionKind.Driver, entry, protocolDriver);
     }
 }
 

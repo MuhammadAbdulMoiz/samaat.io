@@ -193,6 +193,48 @@ public class DriverRegistryTests
         Assert.Same(driver, resolution.Driver);
     }
 
+    private static readonly Guid ProtoService = Guid.Parse("df21fe2c-2515-4fdb-8886-f12c4d67927c");
+
+    private static readonly DeviceCatalog ModelAndProtocol = DeviceCatalog.Parse([
+        """{ "id": "acme.model", "displayName": "Acme Model", "driver": "none", "match": { "namePattern": "^Acme" }, "features": [] }""",
+        """{ "id": "generic.proto", "driver": "proto", "generic": true, "match": { "serviceUuid": "df21fe2c-2515-4fdb-8886-f12c4d67927c" }, "features": [] }""",
+    ]);
+
+    [Fact]
+    public void ModelWithoutDriver_GetsMatchingProtocolDriver_KeepsModelEntry()
+    {
+        var registry = new DriverRegistry(ModelAndProtocol);
+        var driver = new FakeDriver("proto");
+        registry.Register(driver);
+
+        var resolution = registry.Resolve(new DeviceSignals("Acme Pods", ServiceUuids: new HashSet<Guid> { ProtoService }));
+
+        Assert.Equal(DriverResolutionKind.Driver, resolution.Kind);
+        Assert.Equal("acme.model", resolution.Entry!.Id);
+        Assert.Same(driver, resolution.Driver);
+    }
+
+    [Fact]
+    public void ModelWithoutDriver_NoProtocolMatch_StaysKnownModelNoDriver()
+    {
+        var registry = new DriverRegistry(ModelAndProtocol);
+        registry.Register(new FakeDriver("proto"));
+
+        var resolution = registry.Resolve(new DeviceSignals("Acme Pods"));
+
+        Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
+        Assert.Null(resolution.Driver);
+    }
+
+    [Fact]
+    public void ModelWithoutDriver_GenericDriverNotRegistered_StaysKnownModelNoDriver()
+    {
+        var resolution = new DriverRegistry(ModelAndProtocol).Resolve(new DeviceSignals("Acme Pods", ServiceUuids: new HashSet<Guid> { ProtoService }));
+
+        Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
+        Assert.Null(resolution.Driver);
+    }
+
     [Fact]
     public void DuplicateDriverIds_AreRejected()
     {
