@@ -45,5 +45,9 @@ Branch `claude/buds-unknown` (from `feature/ui-redesign` at 7fbb245).
 - **Reuse decision:** `public static bool CanReuse(IEarbudDevice device)` (= has a battery && !NeedsDriverRetry) lives in `DriverRetry`, and `WindowsDeviceSource` calls it. Tests: `CanReuse_DriverFailed_False`, `CanReuse_DriverWorked_True`, `CanReuse_NoBattery_False`.
 - **Picker eligibility:** only profiles with `Image != null` are listed. Part photos are used only together with a full photo.
 
+## Review fixes (Codex plan R2)
+- `WindowsDeviceSource.DisposeAsync` disposes and clears every retry-watch handle before disposing the cached devices.
+- Test seam for selection: `MainWindowViewModel` gains an optional `IReadOnlyList<IDeviceSource>? sources = null` ctor parameter (default `options.CreateSources(...)`, as today). The test passes a small fake `IDeviceSource` whose `DiscoverAsync` result the test changes (replacing the second device with a new instance of the same id) and whose `DevicesChanged` it raises, then asserts the selected VM is the replacement.
+
 ## Done when
 `dotnet build Samaat.slnx` gives 0 warnings, `dotnet test Samaat.slnx` is green, the screenshots are reviewed in dark and light, Codex has passed the implementation, and the user has checked Part A on hardware. Merge into `feature/ui-redesign`.
