@@ -238,7 +238,7 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         }
 
         // Kept so a later DisposeAsync of the row can wait for this disposal.
-        var dispose = share.DisposeAsync().AsTask();
+        var dispose = DisposeShareAsync(share);
         _disposing = dispose;
         try
         {
@@ -249,6 +249,9 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
             Status = e.Message;
         }
     }
+
+    // async so a synchronous throw from DisposeAsync becomes a faulted task the callers observe.
+    private static async Task DisposeShareAsync(IAudioShare share) => await share.DisposeAsync();
 
     public async ValueTask DisposeAsync()
     {

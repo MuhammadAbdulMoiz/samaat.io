@@ -77,9 +77,16 @@ internal sealed class FakeAudioShare : IAudioShare
         Raise();
     }
 
+    public bool ThrowOnDispose { get; set; }
+
     public ValueTask DisposeAsync()
     {
         DisposeCalls++;
+        if (ThrowOnDispose)
+        {
+            throw new InvalidOperationException("Dispose boom");
+        }
+
         return new(StopAsync());
     }
 }
@@ -388,6 +395,20 @@ public sealed class AudioShareViewModelTests : IDisposable
         gate.SetResult();
         await dispose;
         Assert.Equal(AudioShareState.Off, _created[1].State);
+    }
+
+    [AvaloniaFact]
+    public void TearDown_DisposeThrowsSynchronously_ShowsStatus()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        _created[1].ThrowOnDispose = true;
+        _created[1].State = AudioShareState.Stopped;
+        _created[1].Raise();
+        Settle();
+        Assert.Equal("Dispose boom", vm.Rows[0].Status);
+        Assert.False(vm.Rows[0].IsSharing);
     }
 
     [AvaloniaFact]
