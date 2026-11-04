@@ -105,7 +105,7 @@ internal static class BluetoothAudioLink
         try
         {
             var targets = new List<PcLinkTarget>();
-            foreach (var endpoint in endpoints)
+            foreach (var (endpoint, index) in endpoints.Select((e, i) => (e, i)))
             {
                 try
                 {
@@ -115,7 +115,7 @@ internal static class BluetoothAudioLink
                 catch (Exception ex) when (ex is COMException or InvalidCastException or InvalidOperationException)
                 {
                     var hr = Marshal.GetHRForException(ex);
-                    targets.Add(new PcLinkTarget($"walk:{endpoint.ID}", () => hr < 0 ? hr : EFail));
+                    targets.Add(new PcLinkTarget($"endpoint-{index}", () => hr < 0 ? hr : EFail));
                 }
             }
 
