@@ -201,6 +201,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         if (!Equals(look, _look))
         {
             _look = look;
+            var oldImage = ArtworkImage;
+            var oldParts = ArtworkParts;
             ArtworkImage = LoadArtwork(look.Profile?.Image);
             if (look.Profile is not null && ArtworkImage is null)
             {
@@ -217,6 +219,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             ShowArtworkParts = look.Kind == LookKind.PartsPhoto;
             ShowUnknownSingle = look.Kind == LookKind.UnknownSingle;
             ShowUnknownPieces = look.Kind == LookKind.UnknownPieces;
+            DisposeArtwork(oldImage, oldParts); // after the bindings moved on to the new values
         }
 
         if (LookOptions.Count > 0 && LookOptions.Single(o => o.IsSelected).Key == key)
@@ -232,6 +235,15 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             .. _profiles.Where(p => p.Image is not null).OrderBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase)
                 .Select(p => Option(p.Id, p.DisplayName, key)),
         ];
+    }
+
+    private static void DisposeArtwork(Avalonia.Media.Imaging.Bitmap? image, IReadOnlyList<ArtworkPartViewModel> parts)
+    {
+        image?.Dispose();
+        foreach (var part in parts)
+        {
+            part.Image.Dispose();
+        }
     }
 
     private LookOptionViewModel Option(string key, string label, string current) =>
@@ -502,6 +514,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _device.ConnectionChanged -= OnDeviceChanged;
+        DisposeArtwork(ArtworkImage, ArtworkParts);
         if (_battery is not null)
         {
             _battery.Changed -= OnBatteryChanged;

@@ -29,11 +29,9 @@ public class SelectionTests
 
         public string Name => "Fake";
 
-        public event EventHandler? DevicesChanged
-        {
-            add { }
-            remove { }
-        }
+        public event EventHandler? DevicesChanged;
+
+        public void RaiseDevicesChanged() => DevicesChanged?.Invoke(this, EventArgs.Empty);
 
         public Task<IReadOnlyList<IEarbudDevice>> DiscoverAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<IEarbudDevice>>(Devices.ToList());
@@ -53,7 +51,12 @@ public class SelectionTests
         vm.SelectedDevice = vm.Devices[1];
 
         source.Devices = [source.Devices[0], new PlainDevice("b"), source.Devices[2]];
-        await vm.RefreshDevicesAsync();
+        source.RaiseDevicesChanged();
+        for (var i = 0; i < 200 && !vm.Devices.Any(d => d.Device == source.Devices[1]); i++)
+        {
+            await Task.Delay(25);
+            Dispatcher.UIThread.RunJobs();
+        }
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("b", vm.SelectedDevice!.Device.Identity.Id);

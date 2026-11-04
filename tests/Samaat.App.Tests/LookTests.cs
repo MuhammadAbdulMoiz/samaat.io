@@ -158,4 +158,21 @@ public sealed class LookTests : IDisposable
         Assert.Empty(new SettingsStore(Path.Combine(_dir, "settings.json")).Load().ArtworkChoices);
         Assert.Empty((new AppSettings { ArtworkChoices = null! }).Normalize().ArtworkChoices);
     }
+
+    [AvaloniaFact]
+    public void ChangingTheLook_DisposesTheEarlierBitmaps()
+    {
+        var device = Create(Settings(), layout: SimulatedBatteryLayout.BudsAndCase);
+
+        device.ChangeLookCommand.Execute("c");
+        var parts = device.ArtworkParts.Select(p => p.Image).ToList();
+        var photo = device.ArtworkImage!;
+        device.ChangeLookCommand.Execute("b");
+        Assert.All(parts, b => Assert.ThrowsAny<Exception>(() => _ = b.PixelSize));
+        Assert.ThrowsAny<Exception>(() => _ = photo.PixelSize);
+
+        var second = device.ArtworkImage!;
+        device.ChangeLookCommand.Execute("unknown.single");
+        Assert.ThrowsAny<Exception>(() => _ = second.PixelSize);
+    }
 }
