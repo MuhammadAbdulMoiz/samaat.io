@@ -1,0 +1,7 @@
+{
+  "format": "projectmx",
+  "version": 1,
+  "run_commands": [
+    "dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0"
+  ]
+}
