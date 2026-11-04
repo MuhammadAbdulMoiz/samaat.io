@@ -1,0 +1,94 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:overview="using:Samaat.App.Features.Overview"
+             xmlns:c="using:Samaat.App.Shared.Controls"
+             x:Class="Samaat.App.Shared.Parts.DeviceStage"
+             x:DataType="overview:DeviceViewModel">
+  <!-- The device's artwork on the canvas inside its level ring. Studio's rail and Focus's hero both use it,
+       so the two can't drift apart; Focus scales it up with a Viewbox. -->
+  <Border Classes="stage" Height="216">
+    <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
+      <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
+      <!-- Split photo: each bud and the case with its own level, buds above the case as in the product photo -->
+      <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="overview:ArtworkPartViewModel">
+            <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figure.HasLevel}" Spacing="2"
+                        AutomationProperties.Name="{Binding Figure.AccessibleText}" ToolTip.Tip="{Binding Figure.AccessibleText}">
+              <Image Source="{Binding Image}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+              <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" IsVisible="{Binding Figure.IsCharging}"
+                          Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Center" />
+                <TextBlock Classes="number" Classes.charging="{Binding Figure.IsCharging}" Text="{Binding Figure.Value}" />
+                <TextBlock Classes="meta" Text="{Binding Figure.Unit}" VerticalAlignment="Bottom" />
+              </StackPanel>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <!-- Unknown look, separate pieces: faint left bud, right bud and case, same layout as the split photo -->
+      <Grid Classes="unknownPieces" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6"
+            HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownPieces}">
+        <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figures[1].HasLevel}" Spacing="2"
+                    AutomationProperties.Name="{Binding Figures[1].AccessibleText}" ToolTip.Tip="{Binding Figures[1].AccessibleText}">
+          <Panel Height="64" HorizontalAlignment="Center">
+            <Viewbox Height="64"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+          </Panel>
+          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+            <TextBlock Classes="number" Text="{Binding Figures[1].Value}" />
+            <TextBlock Classes="meta" Text="{Binding Figures[1].Unit}" VerticalAlignment="Bottom" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Classes="artworkPart" Classes.missing="{Binding !Figures[2].HasLevel}" Spacing="2"
+                    AutomationProperties.Name="{Binding Figures[2].AccessibleText}" ToolTip.Tip="{Binding Figures[2].AccessibleText}">
+          <Panel Height="64" HorizontalAlignment="Center">
+            <Viewbox Height="64" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+          </Panel>
+          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+            <TextBlock Classes="number" Text="{Binding Figures[2].Value}" />
+            <TextBlock Classes="meta" Text="{Binding Figures[2].Unit}" VerticalAlignment="Bottom" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="artworkPart" Classes.missing="{Binding !Figures[3].HasLevel}" Spacing="2"
+                    AutomationProperties.Name="{Binding Figures[3].AccessibleText}" ToolTip.Tip="{Binding Figures[3].AccessibleText}">
+          <Panel Height="50" HorizontalAlignment="Center">
+            <Viewbox Height="50"><Canvas Width="64" Height="48"><Path Data="{StaticResource Glyph.Case}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+          </Panel>
+          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+            <TextBlock Classes="number" Text="{Binding Figures[3].Value}" />
+            <TextBlock Classes="meta" Text="{Binding Figures[3].Unit}" VerticalAlignment="Bottom" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+      <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Panel.IsVisible>
+          <MultiBinding Converter="{x:Static BoolConverters.And}">
+            <Binding Path="!ShowArtworkParts" />
+            <Binding Path="!ShowUnknownPieces" />
+          </MultiBinding>
+        </Panel.IsVisible>
+        <c:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
+                       Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
+        <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
+               Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+        <!-- Unknown look, single: one faint silhouette with a "?" badge -->
+        <Panel Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownSingle}">
+          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasBuds}">
+            <Viewbox Width="40"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Viewbox Width="40" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+          </StackPanel>
+          <PathIcon Data="{StaticResource Icon.Headphones}" Width="84" Height="84" Foreground="{DynamicResource Samaat.Faint}" Opacity="0.55"
+                    IsVisible="{Binding !HasBuds}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+        </Panel>
+      </Panel>
+    </Panel>
+  </Border>
+</UserControl>

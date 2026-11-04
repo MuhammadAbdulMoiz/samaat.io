@@ -1,7 +1,12 @@
 using System.ComponentModel;
+using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Input;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Avalonia.Controls;
 using Samaat.App.Features.Settings;
+using Samaat.Core.Settings;
 
 namespace Samaat.App.Shell;
 
@@ -9,6 +14,11 @@ public partial class MainWindow : Window
 {
     /// <summary>Below this window width the sidebar collapses to an icon rail.</summary>
     public const double CompactWidth = 900;
+
+    /// <summary>The window's minimum width; Glance is built to work in a smaller window.</summary>
+    public const double StandardMinWidth = 640;
+
+    public const double GlanceMinWidth = 400;
 
     private static readonly TimeSpan FadeDuration = TimeSpan.FromMilliseconds(180);
 
@@ -47,6 +57,7 @@ public partial class MainWindow : Window
 
         UpdateCompact();
         ApplyMotion();
+        ApplyLayout();
     }
 
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
@@ -54,6 +65,12 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(SettingsViewModel.ReduceMotion))
         {
             ApplyMotion();
+        }
+        else if (e.PropertyName == nameof(SettingsViewModel.Dashboard))
+        {
+            ApplyLayout();
+            // Let the bindings show the new layout first, then rescue keyboard focus if it was left on a hidden control.
+            Dispatcher.UIThread.Post(KeepFocus, DispatcherPriority.Loaded);
         }
     }
 
@@ -63,5 +80,28 @@ public partial class MainWindow : Window
         var reduce = _settings?.ReduceMotion == true;
         Classes.Set("reduce-motion", reduce);
         PageHost.PageTransition = new CrossFade(reduce ? TimeSpan.Zero : FadeDuration);
+    }
+
+    private void ApplyLayout() =>
+        MinWidth = _settings?.Dashboard == DashboardView.Glance ? GlanceMinWidth : StandardMinWidth;
+
+    /// <summary>After a layout switch, focus moves to the new layout when the focused control was hidden by it.</summary>
+    private void KeepFocus()
+    {
+        if (FocusManager?.GetFocusedElement() is Visual { IsEffectivelyVisible: true })
+        {
+            return;
+        }
+
+        Control? root = _settings?.Dashboard switch
+        {
+            DashboardView.Focus => FocusLayout,
+            DashboardView.Glance => GlanceLayout,
+            _ => DeviceLayout,
+        };
+        var target = root?.GetVisualDescendants().OfType<InputElement>()
+            .FirstOrDefault(e => e.Focusable && e.IsEffectivelyVisible && e.IsEffectivelyEnabled && e is not ScrollViewer);
+        // Unspecified: no focus ring after a mouse switch; Tab still continues from here.
+        (target ?? (InputElement)LayoutButton).Focus(NavigationMethod.Unspecified);
     }
 }

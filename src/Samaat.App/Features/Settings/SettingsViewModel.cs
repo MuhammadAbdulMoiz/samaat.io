@@ -19,6 +19,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _syncing;
     private Dictionary<string, int> _shareDelays = new();
     private Dictionary<string, string> _artworkChoices = new();
+    private Dictionary<string, DateTimeOffset> _lastConnected = new();
+    private int _version = AppSettings.CurrentVersion;
 
     public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
@@ -56,6 +58,29 @@ public sealed partial class SettingsViewModel : ObservableObject
     public bool IsIceAccent => Accent == AccentChoice.Ice;
 
     public bool IsMonoAccent => Accent == AccentChoice.Mono;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStudioView), nameof(IsFocusView), nameof(IsGlanceView), nameof(DashboardName))]
+    public partial DashboardView Dashboard { get; set; }
+
+    public bool IsStudioView => Dashboard == DashboardView.Studio;
+
+    public bool IsFocusView => Dashboard == DashboardView.Focus;
+
+    public bool IsGlanceView => Dashboard == DashboardView.Glance;
+
+    /// <summary>The layout's name as the switcher shows it.</summary>
+    public string DashboardName => DashboardNames.Name(Dashboard);
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsConnectedFilter), nameof(IsRecentFilter), nameof(IsPairedFilter))]
+    public partial DeviceFilter DeviceFilter { get; set; }
+
+    public bool IsConnectedFilter => DeviceFilter == DeviceFilter.Connected;
+
+    public bool IsRecentFilter => DeviceFilter == DeviceFilter.Recent;
+
+    public bool IsPairedFilter => DeviceFilter == DeviceFilter.Paired;
 
     /// <summary>What the switch shows: the user's choice, or the system setting until they make one.</summary>
     [ObservableProperty]
@@ -102,6 +127,10 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>The settings as currently applied.</summary>
     public AppSettings Current => new AppSettings
     {
+        Version = _version,
+        Dashboard = Dashboard,
+        DeviceFilter = DeviceFilter,
+        LastConnected = new Dictionary<string, DateTimeOffset>(_lastConnected),
         Theme = Theme,
         Accent = Accent,
         ReduceMotion = _reduceMotionOverride,
@@ -113,13 +142,23 @@ public sealed partial class SettingsViewModel : ObservableObject
         StartWithWindows = StartWithWindows,
         ShareDelays = new Dictionary<string, int>(_shareDelays),
         ArtworkChoices = new Dictionary<string, string>(_artworkChoices),
-    }.Normalize();
+    }.Normalize().Upgraded();
 
     [RelayCommand]
     private void SetTheme(ThemeChoice theme) => Theme = theme;
 
     [RelayCommand]
     private void SetAccent(AccentChoice accent) => Accent = accent;
+
+    [RelayCommand]
+    private void SetDashboard(DashboardView view) => Dashboard = view;
+
+    [RelayCommand]
+    private void SetDeviceFilter(DeviceFilter filter) => DeviceFilter = filter;
+
+    partial void OnDashboardChanged(DashboardView value) => Changed();
+
+    partial void OnDeviceFilterChanged(DeviceFilter value) => Changed();
 
     partial void OnThemeChanged(ThemeChoice value) => Changed();
 
@@ -195,6 +234,20 @@ public sealed partial class SettingsViewModel : ObservableObject
         Changed();
     }
 
+    /// <summary>When the device was last seen connected; null if never (as far as Samaat knows).</summary>
+    public DateTimeOffset? GetLastConnected(string id) => _lastConnected.TryGetValue(id, out var at) ? at : null;
+
+    /// <summary>Remembers that these devices were connected at this time, for the "Recent" filter.</summary>
+    public void MarkConnected(IEnumerable<string> ids, DateTimeOffset at)
+    {
+        foreach (var id in ids)
+        {
+            _lastConnected[id] = at;
+        }
+
+        Changed();
+    }
+
     private void Changed()
     {
         if (_syncing)
@@ -227,6 +280,10 @@ public sealed partial class SettingsViewModel : ObservableObject
             StartWithWindows = settings.StartWithWindows;
             _shareDelays = new Dictionary<string, int>(settings.ShareDelays);
             _artworkChoices = new Dictionary<string, string>(settings.ArtworkChoices);
+            _lastConnected = new Dictionary<string, DateTimeOffset>(settings.LastConnected);
+            _version = settings.Version;
+            Dashboard = settings.Dashboard;
+            DeviceFilter = settings.DeviceFilter;
         }
         finally
         {
