@@ -73,4 +73,11 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
 #else
         new Samaat.Core.Audio.NoAudioShare();
 #endif
+
+    public IDefaultOutputSwitcher CreateDefaultOutputSwitcher() =>
+#if SAMAAT_WINDOWS
+        new Samaat.Platform.Windows.WindowsDefaultOutputSwitcher();
+#else
+        new NoDefaultOutputSwitcher();
+#endif
 }

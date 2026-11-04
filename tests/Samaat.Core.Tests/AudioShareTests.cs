@@ -336,4 +336,13 @@ public class AudioShareTests
         Assert.Equal(0, backend.OpenPipes);
         Assert.Single(backend.Opens);
     }
+
+    [Fact]
+    public void NoDefaultOutputSwitcher_IsUnsupported()
+    {
+        var switcher = new Samaat.Core.Platform.NoDefaultOutputSwitcher();
+
+        Assert.False(switcher.IsSupported);
+        Assert.Throws<NotSupportedException>(() => switcher.SetDefault("spk"));
+    }
 }
