@@ -45,4 +45,4 @@ Code: `Samaat.Core/Connections/PcLink.cs` (`IPcLinkFeature`, `AwaitStateAsync`, 
 
 - Any real device (needs a vendor adapter).
 - Connect and disconnect from this computer is built but has not run on hardware yet; see the checklist in docs/plans/2026-11-04-pc-connect.md.
-- A companion app on other devices (a "later" idea in the plan, not a promise).
+- Moving earbuds to a phone running Samaat now works with any earbuds, through the computer's connect and disconnect: see [phone-handoff.md](phone-handoff.md).
