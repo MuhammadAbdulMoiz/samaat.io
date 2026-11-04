@@ -309,6 +309,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public async ValueTask DisposeAsync()
     {
+        await AudioShare.DisposeAsync();
         _ageTimer.Stop();
         foreach (var timer in _toastTimers)
         {
@@ -322,6 +323,5 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         }
 
         await _registry.DisposeAsync();
-        await AudioShare.DisposeAsync();
     }
 }

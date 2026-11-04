@@ -18,7 +18,9 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         _share = share;
         _settings = settings;
         _savedTargetId = settings.ShareTargetId;
+        _syncing = true;
         DelayMs = settings.ShareDelayMs;
+        _syncing = false;
         _share.DelayMs = DelayMs;
         Refresh();
         _share.Changed += OnChanged;
@@ -74,6 +76,10 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
 
         _savedTargetId = value.Id;
         _settings.SetShare(value.Id, DelayMs);
+        if (IsSharing)
+        {
+            _ = StartAsync(value.Id);
+        }
     }
 
     partial void OnIsSharingChanged(bool value)
@@ -85,7 +91,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
 
         if (!value)
         {
-            _ = _share.StopAsync();
+            _ = StopAsync();
         }
         else if (SelectedTarget is { } target)
         {
@@ -93,7 +99,21 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         }
         else
         {
+            _syncing = true;
             IsSharing = false;
+            _syncing = false;
+        }
+    }
+
+    private async Task StopAsync()
+    {
+        try
+        {
+            await _share.StopAsync();
+        }
+        catch (Exception e)
+        {
+            Status = e.Message;
         }
     }
 

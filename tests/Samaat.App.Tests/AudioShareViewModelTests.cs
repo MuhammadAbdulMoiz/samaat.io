@@ -29,6 +29,10 @@ internal sealed class FakeAudioShare : IAudioShare
 
     public string? FailWith { get; set; }
 
+    public bool ThrowOnStart { get; set; }
+
+    public List<string> Started { get; } = [];
+
     public int StopCalls { get; private set; }
 
     public event EventHandler? Changed;
@@ -37,6 +41,12 @@ internal sealed class FakeAudioShare : IAudioShare
 
     public Task StartAsync(string targetId, CancellationToken ct = default)
     {
+        if (ThrowOnStart)
+        {
+            throw new InvalidOperationException("Boom");
+        }
+
+        Started.Add(targetId);
         TargetId = targetId;
         State = FailWith is null ? AudioShareState.Sharing : AudioShareState.Stopped;
         StatusText = FailWith;
@@ -176,6 +186,41 @@ public sealed class AudioShareViewModelTests : IDisposable
         var (vm, _, _) = Create(new FakeAudioShare { IsSupported = false, Outputs = [] });
         Assert.False(vm.IsSupported);
         Assert.Equal("Sharing audio needs Windows.", vm.UnavailableText);
+    }
+
+    [AvaloniaFact]
+    public void Toggle_On_WithoutTarget_DoesNotStop()
+    {
+        var share = new FakeAudioShare { Outputs = [new("spk", "Speakers", true)] };
+        var (vm, _, _) = Create(share);
+        vm.IsSharing = true;
+        Settle();
+        Assert.False(vm.IsSharing);
+        Assert.Equal(0, share.StopCalls);
+    }
+
+    [AvaloniaFact]
+    public void ChangeTarget_WhileSharing_RestartsOnNewTarget()
+    {
+        var share = new FakeAudioShare();
+        var (vm, _, _) = Create(share);
+        vm.IsSharing = true;
+        Settle();
+        vm.SelectedTarget = vm.Targets[1];
+        Settle();
+        Assert.Equal(["tv", "hp"], share.Started);
+        Assert.True(vm.IsSharing);
+    }
+
+    [AvaloniaFact]
+    public void Start_Throws_ShowsMessage_AndTurnsToggleOff()
+    {
+        var share = new FakeAudioShare { ThrowOnStart = true };
+        var (vm, _, _) = Create(share);
+        vm.IsSharing = true;
+        Settle();
+        Assert.False(vm.IsSharing);
+        Assert.Equal("Boom", vm.Status);
     }
 
     [AvaloniaFact]
