@@ -26,11 +26,24 @@ public partial class App : Application
             {
                 try
                 {
-                    return iconPng ??= AppIcon.RenderPng();
+                    return iconPng ??= AppIcon.Png();
                 }
                 catch (Exception e)
                 {
-                    Trace.WriteLine($"Samaat icon rendering failed: {e.Message}");
+                    Trace.WriteLine($"Samaat icon loading failed: {e.Message}");
+                    return null;
+                }
+            }
+
+            WindowIcon? LoadIcon()
+            {
+                try
+                {
+                    return AppIcon.Window();
+                }
+                catch (Exception e)
+                {
+                    Trace.WriteLine($"Samaat icon loading failed: {e.Message}");
                     return null;
                 }
             }
@@ -38,7 +51,7 @@ public partial class App : Application
             var notifier = Options.CreateNotifier(IconPng);
             var viewModel = new MainWindowViewModel(Options, notifier: notifier);
             var window = new MainWindow { DataContext = viewModel };
-            WindowIcon? icon = IconPng() is { } png ? new WindowIcon(new MemoryStream(png)) : null;
+            var icon = LoadIcon();
             window.Icon = icon;
 
             TrayController? tray = null;

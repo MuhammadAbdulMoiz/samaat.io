@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#20252B"/><stop offset="1" stop-color="#0B0D10"/></linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A414A"/><stop offset="1" stop-color="#15181C"/></linearGradient>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4FF8F"/><stop offset=".55" stop-color="#C8F169"/><stop offset="1" stop-color="#7FC21F"/></linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <rect x="1" y="1" width="98" height="98" rx="23" fill="url(#tile)" stroke="url(#edge)" stroke-width="1.5"/>
+  <circle cx="50" cy="50" r="38" fill="none" stroke="#C8F169" stroke-opacity=".05"/>
+  <path d="M69 33 H44 a8.5 8.5 0 0 0 0 17 H56 a8.5 8.5 0 0 1 0 17 H31" fill="none" stroke="#C8F169" stroke-width="14" filter="url(#glow)" opacity=".55"/>
+  <path d="M69 33 H44 a8.5 8.5 0 0 0 0 17 H56 a8.5 8.5 0 0 1 0 17 H31" fill="none" stroke="url(#lime)" stroke-width="14"/>
+</svg>

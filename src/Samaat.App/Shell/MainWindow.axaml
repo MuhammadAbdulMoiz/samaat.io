@@ -19,8 +19,13 @@
       <DockPanel Margin="12">
         <StackPanel DockPanel.Dock="Top" Classes="brand" Orientation="Horizontal" Spacing="10" Margin="0,4,0,20">
           <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Samaat.Accent}" ToolTip.Tip="Samaat">
-            <TextBlock Text="S" Classes="display" FontSize="18" Foreground="{DynamicResource Samaat.OnAccent}"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <!-- Same S as the app icon (docs/logo/samaat-icon.svg); the Viewbox scales the stroke with it. -->
+            <Viewbox Width="24" Height="24">
+              <Canvas Width="100" Height="100">
+                <Path Data="M69,33 H44 A8.5,8.5 0 0 0 44,50 H56 A8.5,8.5 0 0 1 56,67 H31"
+                      Stroke="{DynamicResource Samaat.OnAccent}" StrokeThickness="14" />
+              </Canvas>
+            </Viewbox>
           </Border>
           <TextBlock Classes="full display" Text="Samaat" FontSize="18" VerticalAlignment="Center" />
         </StackPanel>
