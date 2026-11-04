@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Samaat.App.Features.Settings"
              xmlns:set="using:Samaat.Core.Settings"
+             xmlns:phone="using:Samaat.App.Features.Phone"
              x:Class="Samaat.App.Features.Settings.SettingsPage"
              x:DataType="vm:SettingsViewModel">
   <StackPanel Spacing="16" MaxWidth="640" HorizontalAlignment="Left">
@@ -15,6 +16,77 @@
       <StackPanel Orientation="Horizontal" Spacing="6">
         <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
         <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <!-- Phone: pair phones running Samaat, to move earbuds between them and this computer -->
+    <Border Classes="panel" IsVisible="{Binding PhoneLink, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="8" DataContext="{Binding PhoneLink}" x:DataType="phone:PhoneLinkViewModel">
+        <Grid ColumnDefinitions="*,Auto" MinHeight="40">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Phone" Classes="panelTitle" />
+            <TextBlock Text="Move your earbuds between this computer and your Android phone from either one." Classes="meta" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="primary" Content="Pair a phone" Command="{Binding PairCommand}" IsVisible="{Binding ShowPairButton}"
+                  VerticalAlignment="Center" Margin="12,0,0,0" />
+        </Grid>
+
+        <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+            <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- Waiting for the phone to dial in -->
+        <Border Classes="row" IsVisible="{Binding ShowWaiting}">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="6" VerticalAlignment="Center">
+              <ProgressBar Classes="busy" IsIndeterminate="True" />
+              <TextBlock Text="{Binding WaitingText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="ghost" Content="Cancel" Command="{Binding CancelPairingCommand}" VerticalAlignment="Center" Margin="12,0,0,0" />
+          </Grid>
+        </Border>
+
+        <!-- A phone asked: compare the code -->
+        <Border Classes="row" IsVisible="{Binding HasRequest}">
+          <StackPanel Spacing="8" DataContext="{Binding Request}" x:DataType="phone:PairingPromptViewModel">
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Code}" Classes="number" FontSize="32" FontWeight="SemiBold" LetterSpacing="2"
+                       AutomationProperties.Name="Pairing code" />
+            <TextBlock Text="{Binding Hint}" Classes="meta" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" Content="Pair" Command="{Binding AcceptCommand}" IsEnabled="{Binding !IsAnswering}" />
+              <Button Classes="ghost" Content="Cancel" Command="{Binding DeclineCommand}" IsEnabled="{Binding !IsAnswering}" />
+              <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Paired phones -->
+        <ItemsControl ItemsSource="{Binding Phones}" IsVisible="{Binding HasPhones}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="phone:PairedPhoneViewModel">
+              <Border Classes="row">
+                <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+                  <Border Classes="optionIcon" Classes.on="{Binding IsOnline}" VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Ellipse Classes="dot" Classes.on="{Binding IsOnline}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding StatusText}" Classes="meta" />
+                    </StackPanel>
+                  </StackPanel>
+                  <Button Grid.Column="2" Classes="subtle" Content="Forget" Command="{Binding ForgetCommand}"
+                          AutomationProperties.Name="{Binding ForgetAccessibleName}" VerticalAlignment="Center" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
       </StackPanel>
     </Border>
 
@@ -145,5 +217,6 @@
         </Border>
       </StackPanel>
     </Border>
+
   </StackPanel>
 </UserControl>

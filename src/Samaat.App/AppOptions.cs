@@ -1,6 +1,8 @@
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Core.Platform;
+using Samaat.Handoff;
+using Samaat.Handoff.Storage;
 using Samaat.Simulator;
 
 namespace Samaat.App;
@@ -73,6 +75,17 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
 #else
         new Samaat.Core.Audio.NoAudioShare();
 #endif
+
+    /// <summary>The phone link, with paired phones kept next to the settings file (encrypted with DPAPI on Windows).</summary>
+    public PhoneLinkHost CreatePhoneLinkHost(string storePath, Func<IReadOnlyList<IEarbudDevice>> devices)
+    {
+#if SAMAAT_WINDOWS
+        ISecretProtector protector = new Samaat.Platform.Windows.DpapiSecretProtector();
+#else
+        ISecretProtector protector = PlainSecretProtector.Instance;
+#endif
+        return new PhoneLinkHost(new PeerStore(storePath, protector), new PhoneLinkHostOptions(Environment.MachineName), devices);
+    }
 
     public IDefaultOutputSwitcher CreateDefaultOutputSwitcher() =>
 #if SAMAAT_WINDOWS

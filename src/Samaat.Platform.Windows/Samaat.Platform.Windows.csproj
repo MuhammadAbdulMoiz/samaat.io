@@ -5,11 +5,13 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
+    <ProjectReference Include="..\Samaat.Handoff\Samaat.Handoff.csproj" />
     <ProjectReference Include="..\Samaat.Transport\Samaat.Transport.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.Standard\Samaat.Protocols.Standard.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NAudio.Core" />
     <PackageReference Include="NAudio.Wasapi" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 </Project>

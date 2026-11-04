@@ -117,6 +117,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>Shared by all devices; owned and disposed by the main view model.</summary>
     public Sound.AudioShareViewModel? Share { get; set; }
 
+    /// <summary>The Links page's "Your phone" card; set by the shell.</summary>
+    public Phone.PhoneMoveViewModel? PhoneMove { get; set; }
+
     public ConnectionsViewModel Connections { get; }
 
     public DeviceInfoViewModel Info { get; }
@@ -598,5 +601,6 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         Connections.Dispose();
         Info.Dispose();
         Details.Dispose();
+        PhoneMove?.Dispose();
     }
 }
