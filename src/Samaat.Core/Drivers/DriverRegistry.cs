@@ -32,7 +32,7 @@ public enum DriverResolutionKind
     Driver,
 }
 
-public sealed record DriverResolution(DriverResolutionKind Kind, CatalogEntry? Entry, IEarbudDriver? Driver)
+public sealed record DriverResolution(DriverResolutionKind Kind, CatalogEntry? Entry, IEarbudDriver? Driver, bool ProtocolFallback = false)
 {
     public string Description => Kind switch
     {
@@ -83,7 +83,7 @@ public sealed class DriverRegistry(DeviceCatalog catalog)
 
         return protocolDriver is null
             ? new DriverResolution(DriverResolutionKind.KnownModelNoDriver, entry, null)
-            : new DriverResolution(DriverResolutionKind.Driver, entry, protocolDriver);
+            : new DriverResolution(DriverResolutionKind.Driver, entry, protocolDriver, ProtocolFallback: true);
     }
 }
 

@@ -23,6 +23,9 @@ public sealed class WindowsDeviceSource : IDeviceSource
     // One budget for the by-address BLE connection plus the driver session (auth and first push).
     private static readonly TimeSpan DriverBudget = TimeSpan.FromSeconds(8);
 
+    // shortcut: a 3 s cap keeps driverless models quick to appear when the probe fails; raise it if real fallback buds need longer to answer
+    private static readonly TimeSpan FallbackProbeBudget = TimeSpan.FromSeconds(3);
+
     private static readonly string[] AepProperties = [ContainerIdProperty, ManufacturerProperty, ModelNameProperty];
 
     private readonly TimeProvider _time;
@@ -138,7 +141,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
         var isDriver = resolution.Kind == DriverResolutionKind.Driver;
         if (isDriver)
         {
-            budget.CancelAfter(DriverBudget);
+            budget.CancelAfter(resolution.ProtocolFallback ? FallbackProbeBudget : DriverBudget);
         }
 
         var bleToken = isDriver ? budget.Token : cancellationToken;

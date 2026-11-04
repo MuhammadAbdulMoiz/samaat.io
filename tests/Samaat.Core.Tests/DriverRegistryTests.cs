@@ -168,6 +168,7 @@ public class DriverRegistryTests
 
         Assert.Equal(DriverResolutionKind.Generic, resolution.Kind);
         Assert.Null(resolution.Entry);
+        Assert.False(resolution.ProtocolFallback);
     }
 
     [Fact]
@@ -191,6 +192,7 @@ public class DriverRegistryTests
 
         Assert.Equal(DriverResolutionKind.Driver, resolution.Kind);
         Assert.Same(driver, resolution.Driver);
+        Assert.False(resolution.ProtocolFallback);
     }
 
     private static readonly Guid ProtoService = Guid.Parse("df21fe2c-2515-4fdb-8886-f12c4d67927c");
@@ -212,6 +214,7 @@ public class DriverRegistryTests
         Assert.Equal(DriverResolutionKind.Driver, resolution.Kind);
         Assert.Equal("acme.model", resolution.Entry!.Id);
         Assert.Same(driver, resolution.Driver);
+        Assert.True(resolution.ProtocolFallback);
     }
 
     [Fact]
@@ -224,6 +227,7 @@ public class DriverRegistryTests
 
         Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
         Assert.Null(resolution.Driver);
+        Assert.False(resolution.ProtocolFallback);
     }
 
     [Fact]
@@ -233,6 +237,7 @@ public class DriverRegistryTests
 
         Assert.Equal(DriverResolutionKind.KnownModelNoDriver, resolution.Kind);
         Assert.Null(resolution.Driver);
+        Assert.False(resolution.ProtocolFallback);
     }
 
     [Fact]

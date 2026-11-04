@@ -18,8 +18,9 @@ public static class DeviceCapabilities
             .Concat(ConnectionCapabilities.For(device))
             .ToList();
 
-        // A recognised model without a driver: the catalog knows more than the generic sources.
-        if (device.GetFeature<IDeviceDiagnostics>()?.Resolution is { Kind: DriverResolutionKind.KnownModelNoDriver, Entry: { } entry })
+        // A recognised model without its own driver (or on a protocol fallback): the catalog knows more than the generic sources.
+        if (device.GetFeature<IDeviceDiagnostics>()?.Resolution is { Entry: { } entry } resolution
+            && (resolution.Kind == DriverResolutionKind.KnownModelNoDriver || resolution is { Kind: DriverResolutionKind.Driver, ProtocolFallback: true }))
         {
             var fromCatalog = CatalogCapabilities.For(entry, device.Connection).ToDictionary(c => c.Feature);
             return implemented.Select(c => c.Device == DeviceSupport.Unknown && fromCatalog.TryGetValue(c.Feature, out var known) ? known : c);

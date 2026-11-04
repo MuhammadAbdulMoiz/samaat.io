@@ -33,6 +33,27 @@ public class DeviceCapabilitiesTests
         Assert.Equal(CapabilityUiState.Undetected, set.Get(FeatureId.Transparency).UiState);
     }
 
+
+    [Fact]
+    public void ProtocolFallbackModel_KeepsCatalogFeaturesTheDriverLacks()
+    {
+        var resolution = new DriverResolution(DriverResolutionKind.Driver, Acme, new FakeDeviceDriver(), ProtocolFallback: true);
+        var device = new FakeDevice(battery: null, extraFeatures: [new DeviceDiagnostics(new DeviceSignals("Acme Buds"), resolution)]);
+
+        var set = new CapabilitySet(DeviceCapabilities.For(device));
+
+        Assert.Equal("Supported by your device, not yet by Samaat", set.Get(FeatureId.NoiseCancelling).DisabledReason);
+    }
+
+    private sealed class FakeDeviceDriver : IEarbudDriver
+    {
+        public string Id => "proto";
+
+        public string DisplayName => "proto";
+
+        public Task<IReadOnlyList<IFeature>> OpenAsync(DriverContext context, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<IFeature>>([]);
+    }
     [Fact]
     public void ImplementedFeatures_WinOverCatalog()
     {
