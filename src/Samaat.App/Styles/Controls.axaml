@@ -150,4 +150,55 @@
       </Transitions>
     </Setter>
   </Style>
+
+  <!-- Share audio rows: the option-row anatomy as a Border, since it holds interactive controls -->
+  <Style Selector="Border.shareRow">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="MinHeight" Value="48" />
+    <Setter Property="Padding" Value="8,6" />
+  </Style>
+  <Style Selector="Border.shareRow.sharing">
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Border.shareRow.sharing Border.optionIcon">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Border.shareRow.sharing Border.optionIcon PathIcon">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
+  </Style>
+  <Style Selector="Border.shareRow Button.ghost">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Border.shareRow Button.ghost:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Border.shareRow Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Ellipse.liveDot">
+    <Setter Property="Width" Value="6" />
+    <Setter Property="Height" Value="6" />
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+
+  <!-- Same 36x20 switch with a transparent 32 px hit area -->
+  <Style Selector="ToggleSwitch.share">
+    <Setter Property="Margin" Value="8,0,0,0" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="Transparent" MinHeight="32" Padding="0,6">
+          <Border Name="Track" Width="36" Height="20" CornerRadius="10" BorderThickness="1" Background="Transparent"
+                  BorderBrush="{DynamicResource Samaat.Faint}">
+            <Panel Name="PART_MovingKnobs">
+              <Ellipse Name="Knob" Width="12" Height="12" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Samaat.Muted}" />
+            </Panel>
+          </Border>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
 </Styles>

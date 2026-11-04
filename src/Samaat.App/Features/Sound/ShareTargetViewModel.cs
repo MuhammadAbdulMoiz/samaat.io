@@ -37,13 +37,16 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
     public IRelayCommand SwitchHereCommand { get; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StateText))]
     public partial bool IsSharing { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DelayText))]
+    [NotifyPropertyChangedFor(nameof(StateText))]
     public partial int DelayMs { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasStatus))]
     public partial string? Status { get; set; }
 
     /// <summary>The share ended by itself while the row was meant to be sharing; lets the card report a disconnect if the row then goes away.</summary>
@@ -51,9 +54,27 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
 
     public string DelayText => $"Delay · {DelayMs} ms";
 
+    public string IconKey => AudioShareViewModel.IconKeyFor(Name);
+
+    public string StateText => !IsSharing ? "Not sharing" : DelayMs > 0 ? $"Sharing · {DelayMs} ms delay" : "Sharing";
+
+    public bool HasStatus => !string.IsNullOrEmpty(Status);
+
+    public string ShareLabel => $"Share to {Name}";
+
+    public string SwitchLabel => $"Switch to {Name}";
+
+    public string DelayLabel => $"Delay for {Name}";
+
+    public string? DisabledReason => CanToggle ? null : "Up to 3 devices can be shared at once";
+
     public bool CanToggle => _parent.IsReserved(this) || _parent.SharingCount < AudioShareViewModel.MaxShareTargets;
 
-    internal void RefreshCanToggle() => OnPropertyChanged(nameof(CanToggle));
+    internal void RefreshCanToggle()
+    {
+        OnPropertyChanged(nameof(CanToggle));
+        OnPropertyChanged(nameof(DisabledReason));
+    }
 
     partial void OnDelayMsChanged(int value)
     {

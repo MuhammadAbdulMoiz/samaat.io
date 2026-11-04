@@ -18,11 +18,13 @@ namespace Samaat.App.Tests;
 
 public class MainWindowTests
 {
-    private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync(DeviceProfileDb? profiles = null)
+    private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync(
+        DeviceProfileDb? profiles = null, Func<Samaat.Core.Audio.IAudioShare>? audioShareFactory = null, Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null)
     {
         // A temp-directory store, so tests never read or write the real %APPDATA% settings.
         var settings = new SettingsStore(Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"), "settings.json"));
-        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), settings: settings, profiles: profiles);
+        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), settings: settings, profiles: profiles,
+            audioShareFactory: audioShareFactory, outputSwitcher: outputSwitcher);
         var window = new MainWindow { DataContext = viewModel };
         window.Show();
         await viewModel.RefreshDevicesAsync();
@@ -200,6 +202,54 @@ public class MainWindowTests
             narrow!.Save(Path.Combine(directory, "buds-pro-narrow.png"));
         }
 
+
+        // The Share audio card needs fake outputs, so it gets its own window.
+        var fakes = new List<FakeAudioShare>();
+        var (shareWindow, shareViewModel) = await ShowAsync(audioShareFactory: () =>
+        {
+            var fake = new FakeAudioShare();
+            if (fakes.Count == 0)
+            {
+                fake.Outputs =
+                [
+                    new("hp", "Headphones (Quantum)", true),
+                    new("spk", "Speakers (Realtek)", false),
+                    new("tv", "LG TV", false),
+                    new("xm5", "WH-1000XM5 Headset", false),
+                ];
+            }
+
+            fakes.Add(fake);
+            return fake;
+        }, outputSwitcher: new FakeSwitcher());
+        shareViewModel.SelectDeviceCommand.Execute(shareViewModel.Devices[0]);
+        shareViewModel.NavigateCommand.Execute(AppSection.Sound);
+        var speakers = shareViewModel.AudioShare.Rows[0];
+        speakers.IsSharing = true;
+        await Task.Delay(100);
+        Dispatcher.UIThread.RunJobs();
+        speakers.DelayMs = 120;
+        foreach (var (variant, suffix) in new[] { (ThemeVariant.Dark, ""), (ThemeVariant.Light, "-light") })
+        {
+            Application.Current!.RequestedThemeVariant = variant;
+            SettleAnimations();
+            var scroller = shareWindow.GetVisualDescendants().OfType<ScrollViewer>().First(s => s.Extent.Height > s.Viewport.Height);
+            shareViewModel.Alerts.Clear();
+            scroller.ScrollToEnd();
+            SettleAnimations();
+            SettleAnimations();
+            Assert.Empty(shareViewModel.Alerts);
+            var shareFrame = shareWindow.CaptureRenderedFrame();
+            Assert.NotNull(shareFrame);
+            if (directory is not null)
+            {
+                shareFrame!.Save(Path.Combine(directory, $"buds-pro-sound-share{suffix}.png"));
+            }
+        }
+
+        shareWindow.Close();
+        await shareViewModel.DisposeAsync();
+        Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
         window.Close();
         await viewModel.DisposeAsync();
     }

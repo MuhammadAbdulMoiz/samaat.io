@@ -157,41 +157,109 @@
   <!-- Share audio -->
   <Border Classes="panel" DataContext="{Binding Share}" x:DataType="sound:AudioShareViewModel">
     <StackPanel Spacing="12">
-      <TextBlock Text="Share audio" Classes="panelTitle" />
-      <TextBlock Text="{Binding DefaultName, StringFormat='Playing on {0}'}" FontWeight="SemiBold" IsVisible="{Binding IsSupported}" />
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Share audio" Classes="panelTitle" />
+        <Border Grid.Column="1" Classes="chip" IsVisible="{Binding SharingSummary, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <TextBlock Text="{Binding SharingSummary}" Classes="number" />
+        </Border>
+      </Grid>
 
-      <StackPanel IsVisible="{Binding !IsSupported}">
-        <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" />
-      </StackPanel>
+      <!-- The source: everything shared is a copy of this output -->
+      <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" IsVisible="{Binding IsSupported}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Border Classes="optionIcon on">
+            <PathIcon Data="{Binding DefaultIconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+            <TextBlock Text="Playing on" Classes="meta" />
+            <TextBlock Text="{Binding DefaultName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding IsLive}">
+            <Ellipse Classes="liveDot" />
+            <TextBlock Text="Live" Classes="meta" Foreground="{DynamicResource Samaat.Accent}" FontWeight="SemiBold" />
+          </StackPanel>
+        </Grid>
+      </Border>
 
-      <TextBlock Text="Connect another audio device to share to it or switch to it." Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowNoRows}" />
+      <!-- Empty states -->
+      <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding !IsSupported}">
+        <Border Classes="optionIcon">
+          <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" />
+        </Border>
+        <TextBlock Grid.Column="1" Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" VerticalAlignment="Center" Margin="12,0,0,0" />
+      </Grid>
+      <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding ShowNoRows}">
+        <Border Classes="optionIcon">
+          <PathIcon Data="{StaticResource Icon.Headphones}" Width="16" Height="16" />
+        </Border>
+        <TextBlock Grid.Column="1" Text="Connect another audio device to share to it or switch to it." Classes="meta" TextWrapping="Wrap"
+                   VerticalAlignment="Center" Margin="12,0,0,0" />
+      </Grid>
 
-      <StackPanel Spacing="12" IsVisible="{Binding HasRows}">
-        <ItemsControl ItemsSource="{Binding Rows}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="sound:ShareTargetViewModel">
-              <StackPanel Spacing="4" Margin="0,0,0,8">
-                <Grid ColumnDefinitions="*,Auto,Auto" MinHeight="40">
-                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                  <Button Grid.Column="1" Content="Switch here" Command="{Binding SwitchHereCommand}" Margin="0,0,12,0"
-                          IsVisible="{Binding $parent[ItemsControl].((sound:AudioShareViewModel)DataContext).CanSwitch}" />
-                  <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsSharing}" IsEnabled="{Binding CanToggle}"
-                                OnContent="Share" OffContent="Share" AutomationProperties.Name="Share" />
+      <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding HasRows}">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="sound:ShareTargetViewModel">
+            <Border Classes="shareRow" Classes.sharing="{Binding IsSharing}">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                  <Border Classes="optionIcon" Classes.on="{Binding IsSharing}">
+                    <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding StateText}" Classes="meta" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                  <Button Grid.Column="2" Classes="ghost" Command="{Binding SwitchHereCommand}" AutomationProperties.Name="{Binding SwitchLabel}"
+                          IsVisible="{Binding $parent[ItemsControl].((sound:AudioShareViewModel)DataContext).CanSwitch}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <PathIcon Data="{StaticResource Icon.Switch}" Width="14" Height="14" />
+                      <TextBlock Text="Switch here" FontSize="12" />
+                    </StackPanel>
+                  </Button>
+                  <ToggleSwitch Grid.Column="3" Classes="share" IsChecked="{Binding IsSharing}" IsEnabled="{Binding CanToggle}"
+                                AutomationProperties.Name="{Binding ShareLabel}" AutomationProperties.HelpText="{Binding DisabledReason}"
+                                ToolTip.Tip="{Binding DisabledReason}" />
                 </Grid>
-                <StackPanel Spacing="4" IsVisible="{Binding IsSharing}">
-                  <TextBlock Text="{Binding DelayText}" />
+                <StackPanel Spacing="2" IsVisible="{Binding IsSharing}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Delay" />
+                    <TextBlock Grid.Column="1" Text="{Binding DelayMs, StringFormat='{}{0} ms'}" Classes="number" />
+                  </Grid>
                   <Slider Minimum="0" Maximum="500" Value="{Binding DelayMs}" TickFrequency="10" IsSnapToTickEnabled="True"
-                          AutomationProperties.Name="Delay" />
+                          AutomationProperties.Name="{Binding DelayLabel}" />
+                  <TextBlock Text="Add delay if this device plays ahead" Classes="meta" />
                 </StackPanel>
-                <TextBlock Text="{Binding Status}" Classes="meta" TextWrapping="Wrap"
-                           IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <Border Classes="alert" HorizontalAlignment="Left" IsVisible="{Binding HasStatus}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+                    <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
               </StackPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <TextBlock Text="{Binding HelpText}" Classes="meta" TextWrapping="Wrap" />
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <TextBlock Text="Up to 3 devices at once" Classes="meta" IsVisible="{Binding IsAtLimit}" />
+
+      <Border Classes="alert" HorizontalAlignment="Left" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+          <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <StackPanel IsVisible="{Binding HasRows}">
+        <ToggleButton x:Name="HowToggle" Classes="disclosure" AutomationProperties.Name="How sharing works">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="How sharing works" Classes="meta" VerticalAlignment="Center" />
+            <PathIcon Grid.Column="1" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
+          </Grid>
+        </ToggleButton>
+        <TextBlock Text="{Binding HelpText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding #HowToggle.IsChecked}" Margin="0,4,0,0" />
       </StackPanel>
-      <TextBlock Text="{Binding Status}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
   </Border>
   </StackPanel>

@@ -474,4 +474,122 @@ public sealed class AudioShareViewModelTests : IDisposable
         Assert.False(vm.IsSupported);
         Assert.Equal("Sharing audio needs Windows.", vm.UnavailableText);
     }
+
+    [AvaloniaTheory]
+    [InlineData("Speakers (Realtek)", "Icon.Sound")]
+    [InlineData("WH-1000XM5 Headphones", "Icon.Headphones")]
+    [InlineData("Galaxy Buds Pro", "Icon.Headphones")]
+    [InlineData("Jabra Headset", "Icon.Headphones")]
+    [InlineData("LG TV", "Icon.Desktop")]
+    [InlineData("Dell Monitor", "Icon.Desktop")]
+    [InlineData("HDMI Output", "Icon.Desktop")]
+    [InlineData("Something else", "Icon.Sound")]
+    public void IconKey_FromName(string name, string key)
+    {
+        var (vm, _, _) = Create([new("d", name, true), new("x", name, false)]);
+        Assert.Equal(key, vm.Rows[0].IconKey);
+        Assert.Equal(key, vm.DefaultIconKey);
+    }
+
+    [AvaloniaFact]
+    public void StateText_FollowsSharingAndDelay()
+    {
+        var (vm, _, _) = Create();
+        var row = vm.Rows[0];
+        var changed = new List<string?>();
+        row.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        Assert.Equal("Not sharing", row.StateText);
+        row.IsSharing = true;
+        Settle();
+        Assert.Equal("Sharing", row.StateText);
+        row.DelayMs = 120;
+        Assert.Equal("Sharing · 120 ms delay", row.StateText);
+        Assert.Contains(nameof(row.StateText), changed);
+        row.IsSharing = false;
+        Settle();
+        Assert.Equal("Not sharing", row.StateText);
+    }
+
+    [AvaloniaFact]
+    public void HasStatus_FollowsStatus()
+    {
+        var (vm, _, _) = Create();
+        var row = vm.Rows[0];
+        Assert.False(row.HasStatus);
+        row.Status = "Nope";
+        Assert.True(row.HasStatus);
+    }
+
+    [AvaloniaFact]
+    public void SharingSummary_CountsAndHidesAtZero()
+    {
+        var (vm, _, _) = Create();
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        Assert.Null(vm.SharingSummary);
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        Assert.Equal("1 of 3", vm.SharingSummary);
+        Assert.Contains(nameof(vm.SharingSummary), changed);
+        Assert.Contains(nameof(vm.IsLive), changed);
+        vm.Rows[0].IsSharing = false;
+        Settle();
+        Assert.Null(vm.SharingSummary);
+    }
+
+    [AvaloniaFact]
+    public void IsAtLimit_AtThree()
+    {
+        var (vm, _, _) = Create(Outs("spk", "a", "b", "c", "d"));
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        Assert.False(vm.IsAtLimit);
+        for (var i = 0; i < 3; i++)
+        {
+            vm.Rows[i].IsSharing = true;
+        }
+
+        Settle();
+        Assert.True(vm.IsAtLimit);
+        Assert.Contains(nameof(vm.IsAtLimit), changed);
+    }
+
+    [AvaloniaFact]
+    public void IsLive_WhenAnySharing()
+    {
+        var (vm, _, _) = Create();
+        Assert.False(vm.IsLive);
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        Assert.True(vm.IsLive);
+    }
+
+    [AvaloniaFact]
+    public void AccessibleLabels_IncludeName()
+    {
+        var (vm, _, _) = Create();
+        var row = vm.Rows[0];
+        Assert.Equal("Share to TV", row.ShareLabel);
+        Assert.Equal("Switch to TV", row.SwitchLabel);
+        Assert.Equal("Delay for TV", row.DelayLabel);
+    }
+
+    [AvaloniaFact]
+    public void DisabledReason_AtLimit_ExplainsWhy()
+    {
+        var (vm, _, _) = Create(Outs("spk", "a", "b", "c", "d"));
+        var changed = new List<string?>();
+        vm.Rows[3].PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        Assert.Null(vm.Rows[3].DisabledReason);
+        for (var i = 0; i < 3; i++)
+        {
+            vm.Rows[i].IsSharing = true;
+        }
+
+        Settle();
+        Assert.Equal("Up to 3 devices can be shared at once", vm.Rows[3].DisabledReason);
+        Assert.Null(vm.Rows[0].DisabledReason);
+        Assert.Contains(nameof(ShareTargetViewModel.DisabledReason), changed);
+        Assert.Contains(nameof(ShareTargetViewModel.CanToggle), changed);
+    }
 }
