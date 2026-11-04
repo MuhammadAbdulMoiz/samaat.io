@@ -1,6 +1,6 @@
 namespace Samaat.App.Tray;
 
-public sealed record TrayDevice(string Name, string SummaryText, bool Connected);
+public sealed record TrayDevice(string Name, string SummaryText, bool Connected, bool HasLink = false);
 
 public static class TraySummary
 {
@@ -16,4 +16,8 @@ public static class TraySummary
 
     public static string MenuLine(TrayDevice device) =>
         $"{device.Name} · {device.SummaryText} · {(device.Connected ? "Connected" : "Disconnected")}";
+
+    /// <summary>The one connect-or-disconnect menu item for a device; null when the device has no link feature.</summary>
+    public static string? LinkItem(TrayDevice device) =>
+        !device.HasLink ? null : device.Connected ? $"Disconnect {device.Name}" : $"Connect {device.Name}";
 }

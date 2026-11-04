@@ -185,6 +185,16 @@ public class MainWindowTests
                 }
             }
 
+            // A disconnected device shows the hero Connect button.
+            var lite = viewModel.Devices.Single(d => d.Name == "Simulated Buds Lite");
+            viewModel.SelectDeviceCommand.Execute(lite);
+            viewModel.NavigateCommand.Execute(AppSection.Overview);
+            ((Samaat.Simulator.SimulatedEarbudDevice)lite.Device).SetConnected(false);
+            Dispatcher.UIThread.RunJobs();
+            Capture("buds-lite-disconnected");
+            ((Samaat.Simulator.SimulatedEarbudDevice)lite.Device).SetConnected(true);
+            Dispatcher.UIThread.RunJobs();
+
             viewModel.NavigateCommand.Execute(AppSection.Settings);
             Capture("settings");
         }

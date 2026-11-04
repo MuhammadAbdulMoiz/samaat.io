@@ -262,6 +262,8 @@
                 <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
                 <TextBlock Classes="muted" Text="{Binding StatusLineText}" />
               </StackPanel>
+              <Button Classes="primary" Content="Connect" HorizontalAlignment="Center" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}"
+                      AutomationProperties.Name="{Binding LinkAccessibleName}" />
             </StackPanel>
           </c:SplitPanel>
 

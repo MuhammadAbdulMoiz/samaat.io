@@ -1,6 +1,6 @@
 # Module 3: Multipoint and connected devices
 
-Status: **implemented (v0.2)**. Tested end to end with the simulator. Real devices show only "this computer" until a vendor adapter exposes multipoint.
+Status: **implemented (v0.2), plus connect and disconnect for this computer (needs a hardware check)**. Tested end to end with the simulator. Real devices show only "this computer" until a vendor adapter exposes multipoint.
 
 ![Connections page](../images/buds-pro-connections.png)
 
@@ -24,6 +24,19 @@ Status: **implemented (v0.2)**. Tested end to end with the simulator. Real devic
 | View models | `src/Samaat.App/ViewModels/ConnectionsViewModel.cs` |
 | Page | `src/Samaat.App/Views/ConnectionsPage.axaml` |
 
+## Connect and disconnect
+
+The **This computer** row on the Links page has a **Connect** / **Disconnect** button. **Connect** also sits under the status line of a disconnected device, and the tray menu has one "Connect {name}" or "Disconnect {name}" item per device. All three use the same two commands on `DeviceViewModel`, which allow one link operation at a time and report failures on the toast list (and inline on the Links page).
+
+![A disconnected device](../images/buds-lite-disconnected.png)
+
+- **Windows** (`BluetoothAudioLink`): sends the one-shot `KSPROPSETID_BtAudio` property (reconnect 0, disconnect 1) that Windows Settings uses, to every Bluetooth audio filter (A2DP and hands-free) behind the device's audio endpoints. The endpoints are found by container id. Connect waits up to 15 s for the device to show as connected, disconnect up to 10 s. This is undocumented for apps; if it stops working the fallback is a link to `ms-settings:bluetooth`.
+- **No audio endpoint** (or a non-Windows source): no buttons; the row says "Use Windows Bluetooth settings to connect this device." with an **Open Bluetooth settings** button.
+- **Simulator**: every simulated device can be disconnected and connected again.
+- Samaat can lose its control channel while the device is disconnected, so battery and settings stay stale until it returns.
+
+Code: `Samaat.Core/Connections/PcLink.cs` (`IPcLinkFeature`, `AwaitStateAsync`, `SendToAll`), `Samaat.Platform.Windows/BluetoothAudioLink.cs`, `Samaat.Simulator/SimulatedPcLinkFeature.cs`. Tests: `PcLinkTests.cs` (Core) and `PcLinkViewModelTests.cs` (App).
+
 ## Tests
 
 `MultipointTests.cs` in Core.Tests (rules, capabilities, simulator) and `ConnectionsViewModelTests.cs` in App.Tests.
@@ -31,5 +44,5 @@ Status: **implemented (v0.2)**. Tested end to end with the simulator. Real devic
 ## Not yet
 
 - Any real device (needs a vendor adapter).
-- Host-side connect and disconnect for *this* computer. WinRT has no public API to start or drop a classic audio connection, so this stays with system settings for now.
+- Connect and disconnect from this computer is built but has not run on hardware yet; see the checklist in docs/plans/2026-11-04-pc-connect.md.
 - A companion app on other devices (a "later" idea in the plan, not a promise).

@@ -257,7 +257,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
-            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings);
+            var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings, ShowMessage);
             vm.Share = AudioShare;
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
@@ -289,12 +289,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         var level = alert.Level == BatteryAlertLevel.Critical ? "critically low" : "low";
 
         var text = $"{device.Name}: {part} {level} ({alert.Percent}%)";
-        Alerts.Insert(0, text);
         if (Settings.SystemNotifications)
         {
             _notifier.Show("Samaat", text);
         }
 
+        PushToast(text);
+    }
+
+    /// <summary>A short message from anywhere in the app (a failed connect, say), shown on the toast list.</summary>
+    public void ShowMessage(string text) => PushToast(text);
+
+    private void PushToast(string text)
+    {
+        Alerts.Insert(0, text);
         ITimer? timer = null;
         timer = _time.CreateTimer(_ => Dispatcher.UIThread.Post(() =>
         {

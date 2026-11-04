@@ -86,13 +86,18 @@ public sealed class TrayController : IDisposable
 
     private void Rebuild()
     {
-        var devices = _viewModel.Devices.Select(d => new TrayDevice(d.Name, d.SummaryText, d.IsConnected)).ToList();
+        var devices = _viewModel.Devices.Select(d => new TrayDevice(d.Name, d.SummaryText, d.IsConnected, d.HasPcLink)).ToList();
         _tray.ToolTipText = TraySummary.Text(devices);
 
         var menu = new NativeMenu();
-        foreach (var device in devices)
+        foreach (var (device, vm) in devices.Zip(_viewModel.Devices))
         {
             menu.Add(new NativeMenuItem(TraySummary.MenuLine(device)) { IsEnabled = false });
+            if (TraySummary.LinkItem(device) is { } link)
+            {
+                // The command ignores the click while a link operation is already running.
+                menu.Add(Item(link, () => (device.Connected ? vm.DisconnectCommand : vm.ConnectCommand).Execute(null)));
+            }
         }
 
         if (devices.Count > 0)

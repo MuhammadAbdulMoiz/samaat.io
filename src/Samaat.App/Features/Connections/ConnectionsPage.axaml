@@ -5,6 +5,34 @@
              xmlns:shared="using:Samaat.App.Shared"
              x:Class="Samaat.App.Features.Connections.ConnectionsPage"
              x:DataType="overview:DeviceViewModel">
+  <StackPanel Spacing="16">
+
+    <!-- This computer: its link state, and connect or disconnect it from here -->
+    <Border Classes="panel">
+      <StackPanel Spacing="8">
+        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsLinkBusy}" Margin="-16,-16,-16,0" />
+        <Grid ColumnDefinitions="*,Auto" MinHeight="40">
+          <StackPanel Spacing="4" VerticalAlignment="Center">
+            <TextBlock Text="This computer" Classes="panelTitle" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Connections.ThisComputerText}" />
+            </StackPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="12,0,0,0">
+            <Button Classes="ghost" Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}"
+                    AutomationProperties.Name="{Binding LinkAccessibleName}" />
+            <Button Classes="ghost" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}"
+                    AutomationProperties.Name="{Binding LinkAccessibleName}" />
+            <Button Classes="ghost" Content="Open Bluetooth settings" Command="{Binding OpenBluetoothSettingsCommand}"
+                    IsVisible="{Binding ShowSettingsFallback}" />
+          </StackPanel>
+        </Grid>
+        <TextBlock Text="{Binding SettingsFallbackText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowSettingsFallback}" />
+        <TextBlock Text="{Binding Connections.UnavailableText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding !Connections.HasMultipoint}" />
+      </StackPanel>
+    </Border>
+
   <StackPanel Spacing="16" DataContext="{Binding Connections}" x:DataType="conn:ConnectionsViewModel">
 
     <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
@@ -64,18 +92,6 @@
       </StackPanel>
     </Border>
 
-    <!-- Without a protocol that exposes multipoint, only this computer's link is known -->
-    <Border Classes="panel" IsVisible="{Binding !HasMultipoint}">
-      <StackPanel Spacing="8">
-        <TextBlock Text="This computer" Classes="panelTitle" />
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
-          <TextBlock Text="{Binding ThisComputerText}" />
-        </StackPanel>
-        <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" />
-      </StackPanel>
-    </Border>
-
     <!-- Limits we always state (docs/PLAN.md §8) -->
     <Border Classes="panel">
       <StackPanel Spacing="6">
@@ -85,8 +101,9 @@
         <TextBlock Classes="meta" TextWrapping="Wrap"
                    Text="To forget a device completely, remove the pairing in that device's Bluetooth settings." />
         <TextBlock Classes="meta" TextWrapping="Wrap"
-                   Text="To disconnect this computer, use your system's Bluetooth settings." />
+                   Text="While this computer is disconnected, Samaat may not be able to read or change the earbuds." />
       </StackPanel>
     </Border>
+  </StackPanel>
   </StackPanel>
 </UserControl>
