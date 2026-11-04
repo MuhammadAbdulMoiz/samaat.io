@@ -4,6 +4,7 @@ using Samaat.App.Features.Settings;
 using Samaat.App.Features.Sound;
 using Samaat.Core.Audio;
 using Samaat.Core.Battery;
+using Samaat.Core.Platform;
 using Samaat.Core.Settings;
 
 namespace Samaat.App.Tests;
@@ -37,6 +38,8 @@ internal sealed class FakeAudioShare : IAudioShare
 
     public int StopCalls { get; private set; }
 
+    public int DisposeCalls { get; private set; }
+
     public event EventHandler? Changed;
 
     public void Raise() => Changed?.Invoke(this, EventArgs.Empty);
@@ -68,12 +71,37 @@ internal sealed class FakeAudioShare : IAudioShare
         return Task.CompletedTask;
     }
 
-    public ValueTask DisposeAsync() => new(StopAsync());
+    public ValueTask DisposeAsync()
+    {
+        DisposeCalls++;
+        return new(StopAsync());
+    }
+}
+
+internal sealed class FakeSwitcher : IDefaultOutputSwitcher
+{
+    public bool IsSupported { get; set; } = true;
+
+    public Exception? FailWith { get; set; }
+
+    public List<string> Calls { get; } = [];
+
+    public void SetDefault(string outputId)
+    {
+        Calls.Add(outputId);
+        if (FailWith is not null)
+        {
+            throw FailWith;
+        }
+    }
 }
 
 public sealed class AudioShareViewModelTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"));
+    private readonly List<FakeAudioShare> _created = [];
+
+    private FakeAudioShare Lister => _created[0];
 
     public void Dispose()
     {
@@ -83,188 +111,245 @@ public sealed class AudioShareViewModelTests : IDisposable
         }
     }
 
-    private (AudioShareViewModel Vm, SettingsViewModel Settings, SettingsStore Store) Create(FakeAudioShare share, AppSettings? saved = null)
+    private static AudioOutput[] Outs(params string[] ids) =>
+        ids.Select((id, i) => new AudioOutput(id, id.ToUpperInvariant(), i == 0)).ToArray();
+
+    // The first share the factory makes is the lister; the rest belong to rows, in toggle order.
+    private (AudioShareViewModel Vm, FakeSwitcher Switcher, SettingsStore Store) Create(
+        IReadOnlyList<AudioOutput>? outputs = null, bool supported = true, Action<FakeAudioShare>? rowShare = null)
     {
         var store = new SettingsStore(Path.Combine(_dir, "settings.json"));
-        if (saved is not null)
-        {
-            store.Save(saved);
-        }
-
         var settings = new SettingsViewModel(store, new LowBatteryDetector(), new FakeStartup());
-        return (new AudioShareViewModel(share, settings), settings, store);
+        var switcher = new FakeSwitcher();
+        var vm = new AudioShareViewModel(() =>
+        {
+            var share = new FakeAudioShare { IsSupported = supported };
+            if (_created.Count == 0)
+            {
+                share.Outputs = outputs ?? Outs("spk", "tv", "hp");
+            }
+            else
+            {
+                rowShare?.Invoke(share);
+            }
+
+            _created.Add(share);
+            return share;
+        }, switcher, settings);
+        return (vm, switcher, store);
     }
 
     private static void Settle() => Dispatcher.UIThread.RunJobs();
 
     [AvaloniaFact]
-    public void Targets_ExcludeDefault()
+    public void Rows_ExcludeDefault()
     {
-        var (vm, _, _) = Create(new FakeAudioShare());
-        Assert.Equal(["tv", "hp"], vm.Targets.Select(t => t.Id));
-        Assert.True(vm.HasTargets);
-        Assert.Contains("Speakers", vm.HelpText);
+        var (vm, _, _) = Create();
+        Assert.Equal(["tv", "hp"], vm.Rows.Select(r => r.Id));
+        Assert.Equal("SPK", vm.DefaultName);
+        Assert.Contains("Bluetooth", vm.HelpText);
+        Assert.Single(_created);
     }
 
     [AvaloniaFact]
-    public void Toggle_On_StartsWithSelectedTarget()
+    public void Toggle_StartsThatRowsShare()
     {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
+        var (vm, _, _) = Create();
+        vm.Rows[1].IsSharing = true;
         Settle();
-        Assert.Equal("tv", share.TargetId);
-        Assert.True(vm.IsSharing);
-        Assert.Equal(0, share.StopCalls);
+        Assert.Equal(2, _created.Count);
+        Assert.Equal("hp", _created[1].TargetId);
+        Assert.True(vm.Rows[1].IsSharing);
+        Assert.Equal(1, vm.SharingCount);
     }
 
     [AvaloniaFact]
-    public void Start_Failure_ShowsStatus_AndTurnsToggleOff()
+    public void ThreeSharing_DisablesOtherToggles_ReenablesWhenOneStops()
     {
-        var share = new FakeAudioShare { FailWith = "Device busy" };
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
+        var (vm, _, _) = Create(Outs("spk", "a", "b", "c", "d"));
+        for (var i = 0; i < 3; i++)
+        {
+            vm.Rows[i].IsSharing = true;
+        }
+
         Settle();
-        Assert.False(vm.IsSharing);
-        Assert.Equal("Device busy", vm.Status);
-        Assert.Equal(0, share.StopCalls);
+        Assert.Equal(3, vm.SharingCount);
+        Assert.False(vm.Rows[3].CanToggle);
+        Assert.True(vm.Rows[0].CanToggle);
+        vm.Rows[0].IsSharing = false;
+        Settle();
+        Assert.Equal(2, vm.SharingCount);
+        Assert.True(vm.Rows[3].CanToggle);
     }
 
     [AvaloniaFact]
-    public void Share_StoppedByDevice_TurnsToggleOff()
+    public async Task FourQuickToggles_OnlyThreeShareFactoriesCreated()
     {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
+        var gate = new TaskCompletionSource();
+        var (vm, _, _) = Create(Outs("spk", "a", "b", "c", "d"), rowShare: s => s.StartGate = _ => gate.Task);
+        foreach (var row in vm.Rows)
+        {
+            row.IsSharing = true;
+        }
+
+        Assert.Equal(4, _created.Count);
+        Assert.False(vm.Rows[3].IsSharing);
+        gate.SetResult();
+        await Task.Delay(50);
         Settle();
-        share.State = AudioShareState.Stopped;
-        share.StatusText = "TV was unplugged";
-        share.Raise();
-        Settle();
-        Assert.False(vm.IsSharing);
-        Assert.Equal("TV was unplugged", vm.Status);
-        Assert.Equal(0, share.StopCalls);
+        Assert.Equal(3, vm.SharingCount);
     }
 
     [AvaloniaFact]
-    public void Delay_Change_PushedAndSaved()
+    public void StoppedRow_DisposesShare_RestartCreatesNew()
     {
-        var share = new FakeAudioShare();
-        var (vm, _, store) = Create(share);
-        vm.DelayMs = 120;
-        Assert.Equal(120, share.DelayMs);
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        var first = _created[1];
+        first.State = AudioShareState.Stopped;
+        first.StatusText = "TV was unplugged";
+        first.Raise();
+        Settle();
+        Assert.Equal(1, first.DisposeCalls);
+        Assert.False(vm.Rows[0].IsSharing);
+        Assert.Equal("TV was unplugged", vm.Rows[0].Status);
+        Assert.Equal(0, vm.SharingCount);
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        Assert.Equal(3, _created.Count);
+        Assert.Equal(1, vm.SharingCount);
+    }
+
+    [AvaloniaFact]
+    public void LateStoppedFromOldShare_AfterRestart_KeepsNewShareAndSlot()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        var old = _created[1];
+        vm.Rows[0].IsSharing = false;
+        Settle();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        old.State = AudioShareState.Stopped;
+        old.Raise();
+        Settle();
+        Assert.True(vm.Rows[0].IsSharing);
+        Assert.Equal(1, vm.SharingCount);
+        Assert.Equal(0, _created[2].DisposeCalls);
+    }
+
+    [AvaloniaFact]
+    public void SwitchHere_CallsSwitcher()
+    {
+        var (vm, switcher, _) = Create();
+        Assert.True(vm.CanSwitch);
+        vm.Rows[1].SwitchHereCommand.Execute(null);
+        Assert.Equal(["hp"], switcher.Calls);
+    }
+
+    [AvaloniaFact]
+    public void SwitchHere_Failure_ShowsStatus()
+    {
+        var (vm, switcher, _) = Create();
+        switcher.FailWith = new InvalidOperationException("nope");
+        vm.Rows[0].SwitchHereCommand.Execute(null);
+        Assert.Equal("Couldn't switch: nope", vm.Status);
+    }
+
+    [AvaloniaFact]
+    public void SharedRow_BecomesDefault_RowRemoved_ShareDisposed()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        Lister.Outputs = [new("spk", "SPK", false), new("tv", "TV", true), new("hp", "HP", false)];
+        Lister.Raise();
+        Settle();
+        Assert.Equal(["spk", "hp"], vm.Rows.Select(r => r.Id));
+        Assert.Equal("TV", vm.DefaultName);
+        Assert.Equal(1, _created[1].DisposeCalls);
+        Assert.Equal(0, vm.SharingCount);
+        Assert.Null(vm.Status);
+    }
+
+    [AvaloniaFact]
+    public void SharedDevice_Removed_ShowsDisconnectedStatus()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        Lister.Outputs = Outs("spk", "hp");
+        Lister.Raise();
+        Settle();
+        Assert.Equal(["hp"], vm.Rows.Select(r => r.Id));
+        Assert.Equal("Stopped sharing to TV: disconnected", vm.Status);
+        Assert.Equal(1, _created[1].DisposeCalls);
+        Assert.Equal(0, vm.SharingCount);
+    }
+
+    [AvaloniaFact]
+    public void Rows_SurviveRefresh()
+    {
+        var (vm, _, _) = Create();
+        var row = vm.Rows[0];
+        Lister.Outputs = Outs("spk", "tv", "hp", "new");
+        Lister.Raise();
+        Settle();
+        Assert.Same(row, vm.Rows[0]);
+        Assert.Equal(3, vm.Rows.Count);
+    }
+
+    [AvaloniaFact]
+    public void Delay_PerRow_SavedAndPushed()
+    {
+        var (vm, _, store) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        vm.Rows[0].DelayMs = 120;
+        Assert.Equal(120, _created[1].DelayMs);
         Assert.Equal(120, store.Load().ShareDelays["tv"]);
+        Assert.Equal("Delay · 120 ms", vm.Rows[0].DelayText);
+        Assert.Equal(0, vm.Rows[1].DelayMs);
     }
 
     [AvaloniaFact]
-    public void Delay_FollowsTheSelectedTarget()
+    public async Task RapidToggles_LastIntentWins()
     {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share, new AppSettings { ShareDelays = new Dictionary<string, int> { ["hp"] = 50 } });
-        Assert.Equal(0, vm.DelayMs);
-        vm.SelectedTarget = vm.Targets[1];
-        Assert.Equal(50, vm.DelayMs);
-        Assert.Equal(50, share.DelayMs);
-    }
-
-    [AvaloniaFact]
-    public void SelectedTarget_RememberedInMemory()
-    {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share);
-        vm.SelectedTarget = vm.Targets[1];
-        share.Raise();
+        var gate = new TaskCompletionSource();
+        var (vm, _, _) = Create(rowShare: s => s.StartGate = _ => gate.Task);
+        var row = vm.Rows[0];
+        row.IsSharing = true;
+        row.IsSharing = false;
+        row.IsSharing = true;
+        row.IsSharing = false;
+        gate.SetResult();
+        await Task.Delay(100);
         Settle();
-        Assert.Equal("hp", vm.SelectedTarget?.Id);
+        Assert.False(row.IsSharing);
+        Assert.Equal(0, vm.SharingCount);
+        Assert.Equal(1, _created[1].DisposeCalls);
+        Assert.Empty(_created[1].Started.Skip(1));
     }
 
     [AvaloniaFact]
-    public void SelectedTarget_Removed_Reselects()
+    public async Task Dispose_DisposesAllSharesAndLister()
     {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share);
-        vm.SelectedTarget = vm.Targets[1];
-        Assert.Equal("hp", vm.SelectedTarget?.Id);
-        share.Outputs = [new("spk", "Speakers", true), new("tv", "TV", false)];
-        share.Raise();
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        vm.Rows[1].IsSharing = true;
         Settle();
-        Assert.Equal("tv", vm.SelectedTarget?.Id);
+        await vm.DisposeAsync();
+        Assert.Equal(3, _created.Count);
+        Assert.All(_created, s => Assert.Equal(1, s.DisposeCalls));
     }
 
     [AvaloniaFact]
     public void Unsupported_ShowsWindowsOnlyText()
     {
-        var (vm, _, _) = Create(new FakeAudioShare { IsSupported = false, Outputs = [] });
+        var (vm, _, _) = Create([], supported: false);
         Assert.False(vm.IsSupported);
         Assert.Equal("Sharing audio needs Windows.", vm.UnavailableText);
-    }
-
-    [AvaloniaFact]
-    public void Toggle_On_WithoutTarget_DoesNotStop()
-    {
-        var share = new FakeAudioShare { Outputs = [new("spk", "Speakers", true)] };
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
-        Settle();
-        Assert.False(vm.IsSharing);
-        Assert.Equal(0, share.StopCalls);
-    }
-
-    [AvaloniaFact]
-    public void ChangeTarget_WhileSharing_RestartsOnNewTarget()
-    {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
-        Settle();
-        vm.SelectedTarget = vm.Targets[1];
-        Settle();
-        Assert.Equal(["tv", "hp"], share.Started);
-        Assert.True(vm.IsSharing);
-    }
-
-    [AvaloniaFact]
-    public void Start_Throws_ShowsMessage_AndTurnsToggleOff()
-    {
-        var share = new FakeAudioShare { ThrowOnStart = true };
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
-        Settle();
-        Assert.False(vm.IsSharing);
-        Assert.Equal("Boom", vm.Status);
-    }
-
-    [AvaloniaFact]
-    public async Task RapidTargetChanges_LastSelectionWins()
-    {
-        var gate = new TaskCompletionSource();
-        var share = new FakeAudioShare { StartGate = id => id == "tv" ? gate.Task : Task.CompletedTask };
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
-        vm.SelectedTarget = vm.Targets[1];
-        vm.SelectedTarget = vm.Targets[0];
-        vm.SelectedTarget = vm.Targets[1];
-        gate.SetResult();
-        for (var i = 0; i < 100 && share.Started.Count < 1; i++)
-        {
-            await Task.Delay(10);
-            Settle();
-        }
-
-        await Task.Delay(50);
-        Settle();
-        Assert.Equal("hp", share.Started[^1]);
-        Assert.Equal("hp", share.TargetId);
-    }
-
-    [AvaloniaFact]
-    public async Task Dispose_StopsSharing()
-    {
-        var share = new FakeAudioShare();
-        var (vm, _, _) = Create(share);
-        vm.IsSharing = true;
-        Settle();
-        await vm.DisposeAsync();
-        Assert.Equal(AudioShareState.Off, share.State);
     }
 }

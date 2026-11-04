@@ -1,205 +1,159 @@
+using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Samaat.App.Features.Settings;
 using Samaat.Core.Audio;
+using Samaat.Core.Platform;
 
 namespace Samaat.App.Features.Sound;
 
-/// <summary>The Share audio card: plays the default output on a second one. Choices are saved through the settings.</summary>
+/// <summary>The Share audio card: one row per other output, up to three shared to at once, and a way to make one the default.</summary>
 public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDisposable
 {
-    private readonly IAudioShare _share;
-    private readonly SettingsViewModel _settings;
-    private string? _savedTargetId;
-    private bool _syncing;
-    private readonly SemaphoreSlim _gate = new(1, 1);
-    private int _version;
+    public const int MaxShareTargets = 3;
 
-    public AudioShareViewModel(IAudioShare share, SettingsViewModel settings)
+    private readonly IAudioShare _lister;
+    private readonly Func<IAudioShare> _createShare;
+    private readonly IDefaultOutputSwitcher _switcher;
+    private readonly SettingsViewModel _settings;
+    private readonly HashSet<ShareTargetViewModel> _reserved = [];
+
+    public AudioShareViewModel(Func<IAudioShare> createShare, IDefaultOutputSwitcher switcher, SettingsViewModel settings)
     {
-        _share = share;
+        _createShare = createShare;
+        _switcher = switcher;
         _settings = settings;
-        Refresh();
-        _share.Changed += OnChanged;
+        _lister = createShare();
+        Rows.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasRows));
+            OnPropertyChanged(nameof(ShowNoRows));
+        };
+        Reconcile();
+        _lister.Changed += OnChanged;
     }
 
     public string UnavailableText => "Sharing audio needs Windows.";
 
-    public bool IsSupported => _share.IsSupported;
+    public bool IsSupported => _lister.IsSupported;
+
+    public bool CanSwitch => _switcher.IsSupported;
+
+    public ObservableCollection<ShareTargetViewModel> Rows { get; } = [];
+
+    public bool HasRows => Rows.Count > 0;
+
+    public bool ShowNoRows => IsSupported && !HasRows;
+
+    public int SharingCount => _reserved.Count;
 
     [ObservableProperty]
-    public partial IReadOnlyList<AudioOutput> Targets { get; set; } = [];
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasTargets), nameof(ShowNoTargets))]
-    public partial AudioOutput? SelectedTarget { get; set; }
-
-    public bool HasTargets => Targets.Count > 0;
-
-    public bool ShowNoTargets => IsSupported && !HasTargets;
-
-    [ObservableProperty]
-    public partial bool IsSharing { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DelayText))]
-    public partial int DelayMs { get; set; }
+    public partial string DefaultName { get; set; } = "the default output";
 
     [ObservableProperty]
     public partial string? Status { get; set; }
 
-    [ObservableProperty]
-    public partial string HelpText { get; set; } = "";
+    public string HelpText =>
+        $"Plays everything from {DefaultName} on other outputs too. " +
+        "If a copy is ahead, add delay. If it's behind, use Switch here to make that device the default and share from it. " +
+        "Most Bluetooth adapters can't play to more than two headsets at once.";
 
-    public string DelayText => $"Delay the copy · {DelayMs} ms";
-
-    partial void OnDelayMsChanged(int value)
+    // Slots are reserved on the UI thread before a start is queued, so a 4th toggle can never slip in.
+    internal bool TryReserveSlot(ShareTargetViewModel row)
     {
-        if (_syncing)
+        if (!_reserved.Contains(row) && _reserved.Count >= MaxShareTargets)
         {
-            return;
+            return false;
         }
 
-        _share.DelayMs = value;
-        if (SelectedTarget is { } target)
+        if (_reserved.Add(row))
         {
-            _settings.SetShareDelay(target.Id, value);
+            SlotsChanged();
+        }
+
+        return true;
+    }
+
+    internal void ReleaseSlot(ShareTargetViewModel row)
+    {
+        if (_reserved.Remove(row))
+        {
+            SlotsChanged();
         }
     }
 
-    partial void OnSelectedTargetChanged(AudioOutput? value)
-    {
-        if (_syncing || value is null)
-        {
-            return;
-        }
+    internal bool IsReserved(ShareTargetViewModel row) => _reserved.Contains(row);
 
-        _savedTargetId = value.Id;
-        LoadDelay(value.Id);
-        if (IsSharing)
+    private void SlotsChanged()
+    {
+        OnPropertyChanged(nameof(SharingCount));
+        foreach (var row in Rows)
         {
-            _ = StartAsync(value.Id);
+            row.RefreshCanToggle();
         }
     }
 
-    partial void OnIsSharingChanged(bool value)
-    {
-        if (_syncing)
-        {
-            return;
-        }
+    internal void SaveDelay(string id, int ms) => _settings.SetShareDelay(id, ms);
 
-        if (!value)
-        {
-            _ = StopAsync();
-        }
-        else if (SelectedTarget is { } target)
-        {
-            _ = StartAsync(target.Id);
-        }
-        else
-        {
-            _syncing = true;
-            IsSharing = false;
-            _syncing = false;
-        }
-    }
-
-    // Operations run one at a time and only the latest request survives, so the last choice always wins.
-    private async Task StopAsync()
+    internal void SwitchTo(string id)
     {
-        var version = ++_version;
-        await _gate.WaitAsync();
         try
         {
-            if (version != _version)
-            {
-                return;
-            }
-
-            await _share.StopAsync();
+            _switcher.SetDefault(id);
+            Status = null;
         }
         catch (Exception e)
         {
-            Status = e.Message;
-        }
-        finally
-        {
-            _gate.Release();
+            Status = $"Couldn't switch: {e.Message}";
         }
     }
 
-    private async Task StartAsync(string targetId)
+    private void OnChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(Reconcile);
+
+    // Keeps row instances by id so toggles and delays survive refreshes.
+    private void Reconcile()
     {
-        var version = ++_version;
-        await _gate.WaitAsync();
-        try
+        var outputs = _lister.Outputs;
+        var targets = outputs.Where(o => !o.IsDefault).ToList();
+        DefaultName = outputs.FirstOrDefault(o => o.IsDefault)?.Name ?? "the default output";
+        OnPropertyChanged(nameof(HelpText));
+
+        foreach (var row in Rows.Where(r => targets.All(t => t.Id != r.Id)).ToList())
         {
-            if (version != _version)
+            Rows.Remove(row);
+            var becameDefault = outputs.Any(o => o.IsDefault && o.Id == row.Id);
+            if (row.IsSharing && !becameDefault)
             {
-                return;
+                Status = $"Stopped sharing to {row.Name}: disconnected";
             }
 
-            await _share.StartAsync(targetId);
-        }
-        catch (Exception e)
-        {
-            Refresh();
-            Status = e.Message;
-            return;
-        }
-        finally
-        {
-            _gate.Release();
+            _ = row.DisposeAsync().AsTask().ContinueWith(_ => { }, TaskScheduler.Default);
         }
 
-        Refresh();
-    }
-
-    private void OnChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(Refresh);
-
-    private void Refresh()
-    {
-        _syncing = true;
-        try
+        for (var i = 0; i < targets.Count; i++)
         {
-            var outputs = _share.Outputs;
-            Targets = outputs.Where(o => !o.IsDefault).ToList();
-            SelectedTarget = Targets.FirstOrDefault(t => t.Id == _savedTargetId) ?? Targets.FirstOrDefault();
-            LoadDelay(SelectedTarget?.Id);
-            OnPropertyChanged(nameof(HasTargets));
-            OnPropertyChanged(nameof(ShowNoTargets));
-            HelpText = $"Plays everything from {outputs.FirstOrDefault(o => o.IsDefault)?.Name ?? "the default output"} on a second output too. " +
-                "If the copy is ahead, add delay. If it's behind, make the other device the default and share to this one.";
-            IsSharing = _share.State is AudioShareState.Sharing or AudioShareState.Starting;
-            Status = _share.StatusText;
-        }
-        finally
-        {
-            _syncing = false;
-        }
-    }
-
-    // Shows the delay saved for the target (0 when none) and pushes it to the share, without saving it again.
-    private void LoadDelay(string? targetId)
-    {
-        var wasSyncing = _syncing;
-        _syncing = true;
-        try
-        {
-            DelayMs = targetId is null ? 0 : _settings.GetShareDelay(targetId);
-        }
-        finally
-        {
-            _syncing = wasSyncing;
+            if (Rows.All(r => r.Id != targets[i].Id))
+            {
+                Rows.Insert(
+                    Math.Min(i, Rows.Count),
+                    new ShareTargetViewModel(this, targets[i].Id, targets[i].Name, _createShare, _settings.GetShareDelay(targets[i].Id)));
+            }
         }
 
-        _share.DelayMs = DelayMs;
+        foreach (var row in Rows)
+        {
+            row.RefreshCanToggle();
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
-        _share.Changed -= OnChanged;
-        await _share.DisposeAsync();
+        _lister.Changed -= OnChanged;
+        foreach (var row in Rows.ToList())
+        {
+            await row.DisposeAsync();
+        }
+
+        await _lister.DisposeAsync();
     }
 }

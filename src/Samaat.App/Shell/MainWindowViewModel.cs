@@ -70,7 +70,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         DeviceProfileDb? profiles = null,
         INotifier? notifier = null,
         IMotionPreference? motion = null,
-        IAudioShare? audioShare = null)
+        Func<IAudioShare>? audioShareFactory = null,
+        Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null)
     {
         _time = time ?? TimeProvider.System;
         _notifier = notifier ?? options.CreateNotifier();
@@ -78,7 +79,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         Settings = new SettingsViewModel(
             settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration(),
             motion ?? options.CreateMotionPreference());
-        AudioShare = new AudioShareViewModel(audioShare ?? options.CreateAudioShare(), Settings);
+        AudioShare = new AudioShareViewModel(audioShareFactory ?? options.CreateAudioShare, outputSwitcher ?? options.CreateDefaultOutputSwitcher(), Settings);
         _registry = new DeviceRegistry(options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>

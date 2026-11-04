@@ -158,29 +158,37 @@
   <Border Classes="panel" DataContext="{Binding Share}" x:DataType="sound:AudioShareViewModel">
     <StackPanel Spacing="12">
       <TextBlock Text="Share audio" Classes="panelTitle" />
+      <TextBlock Text="{Binding DefaultName, StringFormat='Playing on {0}'}" FontWeight="SemiBold" IsVisible="{Binding IsSupported}" />
 
       <StackPanel IsVisible="{Binding !IsSupported}">
         <TextBlock Text="{Binding UnavailableText}" Classes="meta" TextWrapping="Wrap" />
       </StackPanel>
 
-      <TextBlock Text="Connect a second audio device to share to it." Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowNoTargets}" />
+      <TextBlock Text="Connect another audio device to share to it or switch to it." Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowNoRows}" />
 
-      <StackPanel Spacing="12" IsVisible="{Binding HasTargets}">
-        <Grid ColumnDefinitions="*,Auto,Auto" MinHeight="40">
-          <TextBlock Text="Also play on" VerticalAlignment="Center" />
-          <ComboBox Grid.Column="1" ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}" Margin="0,0,12,0"
-                    AutomationProperties.Name="Second output">
-            <ComboBox.ItemTemplate>
-              <DataTemplate x:DataType="audio:AudioOutput"><TextBlock Text="{Binding Name}" /></DataTemplate>
-            </ComboBox.ItemTemplate>
-          </ComboBox>
-          <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsSharing}" AutomationProperties.Name="Also play on" />
-        </Grid>
-        <StackPanel Spacing="4">
-          <TextBlock Text="{Binding DelayText}" />
-          <Slider Minimum="0" Maximum="500" Value="{Binding DelayMs}" TickFrequency="10" IsSnapToTickEnabled="True"
-                  AutomationProperties.Name="Delay the copy" />
-        </StackPanel>
+      <StackPanel Spacing="12" IsVisible="{Binding HasRows}">
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="sound:ShareTargetViewModel">
+              <StackPanel Spacing="4" Margin="0,0,0,8">
+                <Grid ColumnDefinitions="*,Auto,Auto" MinHeight="40">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <Button Grid.Column="1" Content="Switch here" Command="{Binding SwitchHereCommand}" Margin="0,0,12,0"
+                          IsVisible="{Binding $parent[ItemsControl].((sound:AudioShareViewModel)DataContext).CanSwitch}" />
+                  <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsSharing}" IsEnabled="{Binding CanToggle}"
+                                OnContent="Share" OffContent="Share" AutomationProperties.Name="Share" />
+                </Grid>
+                <StackPanel Spacing="4" IsVisible="{Binding IsSharing}">
+                  <TextBlock Text="{Binding DelayText}" />
+                  <Slider Minimum="0" Maximum="500" Value="{Binding DelayMs}" TickFrequency="10" IsSnapToTickEnabled="True"
+                          AutomationProperties.Name="Delay" />
+                </StackPanel>
+                <TextBlock Text="{Binding Status}" Classes="meta" TextWrapping="Wrap"
+                           IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <TextBlock Text="{Binding HelpText}" Classes="meta" TextWrapping="Wrap" />
       </StackPanel>
       <TextBlock Text="{Binding Status}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
