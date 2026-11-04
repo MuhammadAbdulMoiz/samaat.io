@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -36,36 +37,71 @@ internal static class BluetoothAudioLink
     private static List<MMDevice> Endpoints(Guid containerId)
     {
         var found = new List<MMDevice>();
-        using var enumerator = new MMDeviceEnumerator();
-        foreach (var flow in new[] { DataFlow.Render, DataFlow.Capture })
+        try
         {
-            foreach (var endpoint in enumerator.EnumerateAudioEndPoints(flow, DeviceState.Active | DeviceState.Unplugged))
+            using var enumerator = new MMDeviceEnumerator();
+            foreach (var flow in new[] { DataFlow.Render, DataFlow.Capture })
             {
-                if (endpoint.Properties.Contains(ContainerIdKey) && endpoint.Properties[ContainerIdKey].Value is Guid id && id == containerId)
+                foreach (var endpoint in enumerator.EnumerateAudioEndPoints(flow, DeviceState.Active | DeviceState.Unplugged))
                 {
-                    found.Add(endpoint);
-                }
-                else
-                {
-                    endpoint.Dispose();
+                    var keep = false;
+                    try
+                    {
+                        keep = endpoint.Properties.Contains(ContainerIdKey) && endpoint.Properties[ContainerIdKey].Value is Guid id && id == containerId;
+                    }
+                    finally
+                    {
+                        if (keep)
+                        {
+                            found.Add(endpoint);
+                        }
+                        else
+                        {
+                            endpoint.Dispose();
+                        }
+                    }
                 }
             }
-        }
 
-        return found;
+            return found;
+        }
+        catch
+        {
+            found.ForEach(e => e.Dispose()); // don't leak what was collected before the failure
+            throw;
+        }
     }
 
+    /// <summary>Best effort: the link feature is optional, so any enumeration or COM failure means "no endpoints".</summary>
     public static Task<int> CountEndpointsAsync(Guid containerId) => Task.Run(() =>
     {
-        var endpoints = Endpoints(containerId);
-        endpoints.ForEach(e => e.Dispose());
-        return endpoints.Count;
+        try
+        {
+            var endpoints = Endpoints(containerId);
+            endpoints.ForEach(e => e.Dispose());
+            return endpoints.Count;
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceWarning($"PC link probe failed: {ex.Message}");
+            return 0;
+        }
     });
 
-    /// <summary>Sends the one-shot to every distinct filter behind the device's endpoints. COM failures count as failed targets, they don't throw.</summary>
+    /// <summary>Sends the one-shot to every distinct filter behind the device's endpoints. Failures, including enumeration, come back as a failed result; nothing throws.</summary>
     public static Task<PcLinkSendResult> SendAsync(Guid containerId, uint property) => Task.Run(() =>
     {
-        var endpoints = Endpoints(containerId);
+        List<MMDevice> endpoints;
+        try
+        {
+            endpoints = Endpoints(containerId);
+        }
+        catch (Exception ex)
+        {
+            var hr = Marshal.GetHRForException(ex);
+            return new PcLinkSendResult(false, 1, hr < 0 ? hr : EFail);
+        }
+
         try
         {
             var targets = new List<PcLinkTarget>();
@@ -237,14 +273,9 @@ internal sealed class WindowsPcLinkFeature(Guid containerId, TimeProvider time) 
     private async Task<CommandResult> RequestAsync(uint property, ConnectionState wanted, TimeSpan wait, CancellationToken ct)
     {
         var sent = await BluetoothAudioLink.SendAsync(containerId, property).WaitAsync(ct);
-        if (sent.Attempted == 0)
+        if (PcLink.ToResult(sent) is { } failure)
         {
-            return CommandResult.Unsupported("Windows has no audio endpoint for this device to connect through.");
-        }
-
-        if (!sent.Accepted)
-        {
-            return CommandResult.Rejected($"Windows refused the request (0x{(uint)(sent.FirstFailure ?? 0):X8}).");
+            return failure;
         }
 
         return await PcLink.AwaitStateAsync(Device!, wanted, wait, time, ct);

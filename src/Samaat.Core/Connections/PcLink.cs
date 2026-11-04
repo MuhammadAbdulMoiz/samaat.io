@@ -55,6 +55,12 @@ public static class PcLink
         }
     }
 
+    /// <summary>Null when the request was accepted; otherwise the failure to show.</summary>
+    public static CommandResult? ToResult(PcLinkSendResult sent) =>
+        sent.Accepted ? null
+        : sent.Attempted == 0 ? CommandResult.Unsupported("Windows has no audio endpoint for this device to connect through.")
+        : CommandResult.Rejected($"Windows refused the request (0x{(uint)(sent.FirstFailure ?? EFail):X8}).");
+
     /// <summary>Sends to every distinct filter (deduped by id). Accepted when at least one returned success.</summary>
     public static PcLinkSendResult SendToAll(IEnumerable<PcLinkTarget> targets)
     {

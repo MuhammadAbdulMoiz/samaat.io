@@ -160,6 +160,16 @@ public class PcLinkTests
         Assert.Null(result.FirstFailure);
     }
 
+
+    [Fact]
+    public void ToResult_MapsSendOutcomes()
+    {
+        Assert.Null(PcLink.ToResult(new PcLinkSendResult(true, 2, null)));
+        Assert.Equal(CommandStatus.Unsupported, PcLink.ToResult(new PcLinkSendResult(false, 0, null))!.Status);
+        var refused = PcLink.ToResult(new PcLinkSendResult(false, 1, unchecked((int)0x80070005)))!;
+        Assert.Equal(CommandStatus.Rejected, refused.Status);
+        Assert.Equal("Windows refused the request (0x80070005).", refused.Message);
+    }
     [Fact]
     public async Task SimulatedPcLink_Disconnect_ThenConnect_ChangesState()
     {
