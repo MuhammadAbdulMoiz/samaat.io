@@ -163,6 +163,8 @@ public class MainWindowTests
         foreach (var (variant, suffix) in new[] { (ThemeVariant.Dark, ""), (ThemeVariant.Light, "-light") })
         {
             Application.Current!.RequestedThemeVariant = variant;
+            // Through Settings too: any settings change (a layout switch, say) re-applies the saved theme.
+            viewModel.Settings.Theme = variant == ThemeVariant.Dark ? ThemeChoice.Dark : ThemeChoice.Light;
 
             void Capture(string name)
             {
@@ -199,7 +201,65 @@ public class MainWindowTests
 
             viewModel.NavigateCommand.Execute(AppSection.Settings);
             Capture("settings");
+
+            // The other layouts: Focus for each device (and one "More" page), then Glance.
+            viewModel.SetDashboardCommand.Execute(DashboardView.Focus);
+            foreach (var device in viewModel.Devices.ToList())
+            {
+                viewModel.SelectDeviceCommand.Execute(device);
+                viewModel.NavigateCommand.Execute(AppSection.Overview);
+                Capture($"focus-{FileName(device)}");
+            }
+
+            viewModel.SelectDeviceCommand.Execute(viewModel.Devices[0]);
+            viewModel.NavigateCommand.Execute(AppSection.Sound);
+            Capture("focus-buds-pro-sound");
+            viewModel.NavigateCommand.Execute(AppSection.Overview);
+
+            viewModel.SetDashboardCommand.Execute(DashboardView.Glance);
+            Capture("glance");
+            viewModel.SetDashboardCommand.Execute(DashboardView.Studio);
         }
+
+        // Glance in a small window, and the filter's empty state when nothing is connected.
+        Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        viewModel.SetDashboardCommand.Execute(DashboardView.Glance);
+        window.Width = 420;
+        SettleAnimations();
+        var small = window.CaptureRenderedFrame();
+        Assert.NotNull(small);
+        if (directory is not null)
+        {
+            small!.Save(Path.Combine(directory, "glance-narrow.png"));
+        }
+
+        window.Width = 1180;
+        viewModel.SetDashboardCommand.Execute(DashboardView.Studio);
+        foreach (var simulated in viewModel.Devices.Select(d => d.Device).OfType<Samaat.Simulator.SimulatedEarbudDevice>())
+        {
+            simulated.SetConnected(false);
+        }
+
+        SettleAnimations();
+        viewModel.SetDeviceFilterCommand.Execute(DeviceFilter.Paired);
+        viewModel.SetDeviceFilterCommand.Execute(DeviceFilter.Connected);
+        SettleAnimations();
+        Assert.True(viewModel.ShowFilterEmpty);
+        var none = window.CaptureRenderedFrame();
+        Assert.NotNull(none);
+        if (directory is not null)
+        {
+            none!.Save(Path.Combine(directory, "no-connected-devices.png"));
+        }
+
+        viewModel.SetDeviceFilterCommand.Execute(DeviceFilter.Paired);
+        foreach (var simulated in viewModel.Devices.Select(d => d.Device).OfType<Samaat.Simulator.SimulatedEarbudDevice>())
+        {
+            simulated.SetConnected(true);
+        }
+
+        SettleAnimations();
+        viewModel.SetDeviceFilterCommand.Execute(DeviceFilter.Connected);
 
         Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
         viewModel.SelectDeviceCommand.Execute(viewModel.Devices[0]);

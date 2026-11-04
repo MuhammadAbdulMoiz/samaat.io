@@ -273,4 +273,58 @@
       </ControlTemplate>
     </Setter>
   </Style>
+
+  <!-- Settings: layout cards with a small sketch of each layout, drawn with the theme's own brushes -->
+  <Style Selector="Button.layoutCard">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+  <Style Selector="Button.layoutCard /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.layoutCard:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="Button.layoutCard.selected /template/ ContentPresenter#PART_ContentPresenter, Button.layoutCard.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="Button.layoutCard TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
+  <Style Selector="Button.layoutCard TextBlock.meta">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
+  </Style>
+  <Style Selector="PathIcon.layoutCheck">
+    <Setter Property="Width" Value="12" />
+    <Setter Property="Height" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
+  <Style Selector="Border.layoutSketch">
+    <Setter Property="Height" Value="64" />
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Bg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Border.sk">
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Key}" />
+  </Style>
+  <Style Selector="Border.sk.card">
+    <Setter Property="Padding" Value="4" />
+  </Style>
+  <Style Selector="Border.sk.accent">
+    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
+  </Style>
 </Styles>

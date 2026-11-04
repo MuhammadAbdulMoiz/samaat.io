@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="using:Samaat.App.Shell"
+             xmlns:overview="using:Samaat.App.Features.Overview"
+             xmlns:c="using:Samaat.App.Shared.Controls"
+             x:Class="Samaat.App.Shell.Views.GlanceView"
+             x:DataType="shell:MainWindowViewModel"
+             AutomationProperties.Name="Glance layout">
+  <!-- Glance: one card per listed device with every battery reading; a second column once the window is wide -->
+  <StackPanel Spacing="16">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="2">
+        <TextBlock Classes="title" Text="{Binding DeviceListTitle}" />
+        <TextBlock Classes="muted" Text="Battery for every device at a glance" TextWrapping="Wrap" />
+      </StackPanel>
+    </Grid>
+
+    <ItemsControl x:Name="GlanceCards" ItemsSource="{Binding VisibleDevices}" AutomationProperties.Name="{Binding DeviceListTitle}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="320" MaxColumns="3" Spacing="12" /></ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="overview:DeviceViewModel">
+          <Border Classes="panel glanceCard" Classes.alerting="{Binding HasAlert}" AutomationProperties.Name="{Binding RowAccessibleText}">
+            <StackPanel Spacing="12">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DeviceThumb}" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center" Spacing="2">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+                    <TextBlock Classes="meta" Text="{Binding ConnectionText}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </StackPanel>
+                <Button Grid.Column="2" Classes="ghost" Content="Open" VerticalAlignment="Center"
+                        Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).OpenDeviceCommand}" CommandParameter="{Binding}"
+                        AutomationProperties.Name="{Binding Name, StringFormat='Open {0} with every control'}"
+                        ToolTip.Tip="Show every control for this device (Studio layout)" />
+              </Grid>
+
+              <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+                  <TextBlock Text="{Binding AlertText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <ItemsControl ItemsSource="{Binding ShownFigures}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="64" MaxColumns="4" Spacing="12" /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="overview:BatteryFigureViewModel">
+                    <StackPanel Classes="glanceFigure" Classes.unreported="{Binding !IsReported}" Spacing="2"
+                                AutomationProperties.Name="{Binding AccessibleText}" ToolTip.Tip="{Binding Meta}">
+                      <TextBlock Classes="meta" Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Classes="number" Text="{Binding Value}" FontSize="18" />
+                        <TextBlock Classes="meta" Text="{Binding Unit}" VerticalAlignment="Bottom" Margin="2,0,0,2" />
+                        <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="12" Height="12" Margin="4,0,0,0" VerticalAlignment="Center"
+                                  Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding IsCharging}" />
+                      </StackPanel>
+                      <ProgressBar Classes="level" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}"
+                                   Minimum="0" Maximum="100" Value="{Binding Percent}" IsVisible="{Binding HasLevel}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

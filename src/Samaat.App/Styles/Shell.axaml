@@ -1,6 +1,36 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:c="using:Samaat.App.Shared.Controls">
+        xmlns:c="using:Samaat.App.Shared.Controls"
+        xmlns:overview="using:Samaat.App.Features.Overview">
+  <Styles.Resources>
+    <!-- A device's own picture when there is one; otherwise a pair of buds, or headphones for a headset -->
+    <DataTemplate x:Key="DeviceThumb" x:DataType="overview:DeviceViewModel">
+      <Border Classes="deviceThumb">
+        <Panel>
+          <Image Source="{Binding ArtworkImage}" IsVisible="{Binding HasArtworkImage}" Width="28" Height="28"
+                 Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="HasBuds" />
+                <Binding Path="!HasArtworkImage" />
+              </MultiBinding>
+            </StackPanel.IsVisible>
+            <Viewbox Height="18"><Canvas Width="40" Height="56"><Path Classes="thumbGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas></Viewbox>
+            <Viewbox Height="18" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Classes="thumbGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas></Viewbox>
+          </StackPanel>
+          <PathIcon Classes="thumbGlyph" Data="{StaticResource Icon.Headphones}" Width="18" Height="18">
+            <PathIcon.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="!HasBuds" />
+                <Binding Path="!HasArtworkImage" />
+              </MultiBinding>
+            </PathIcon.IsVisible>
+          </PathIcon>
+        </Panel>
+      </Border>
+    </DataTemplate>
+  </Styles.Resources>
 
   <!-- Sidebar: labelled and 240 wide; the window collapses it to a 68 px icon rail (class "compact") -->
   <Style Selector="Border.sidebar">
@@ -164,5 +194,41 @@
     <Setter Property="CornerRadius" Value="10" />
     <Setter Property="Padding" Value="12,8,6,8" />
     <Setter Property="BoxShadow" Value="0 8 24 0 #40000000" />
+  </Style>
+
+  <!-- Device filter beside Refresh: on the right when labelled, under Refresh in the icon rail -->
+  <Style Selector="DockPanel.refreshRow Button.filterButton">
+    <Setter Property="DockPanel.Dock" Value="Right" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="MinWidth" Value="40" />
+    <Setter Property="Margin" Value="4,0,0,0" />
+  </Style>
+  <Style Selector="Border.sidebar.compact DockPanel.refreshRow Button.filterButton">
+    <Setter Property="DockPanel.Dock" Value="Bottom" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Margin" Value="0,4,0,0" />
+  </Style>
+  <Style Selector="Border.sidebar:not(.compact) Button#LayoutButton">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <!-- Focus: one centred column; More pages get a wider one -->
+  <Style Selector="StackPanel.focusColumn">
+    <Setter Property="MaxWidth" Value="640" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+  <Style Selector="StackPanel.focusColumn.wide">
+    <Setter Property="MaxWidth" Value="960" />
+  </Style>
+  <Style Selector="Viewbox.focusStage">
+    <Setter Property="MaxHeight" Value="320" />
+  </Style>
+  <Style Selector="Button.focusMore">
+    <Setter Property="Margin" Value="4" />
+  </Style>
+
+  <!-- Glance cards -->
+  <Style Selector="StackPanel.glanceFigure.unreported TextBlock.number">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
 </Styles>

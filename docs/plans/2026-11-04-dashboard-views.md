@@ -1,6 +1,10 @@
 # Plan: switchable dashboard views
 
-Status: **proposal, not started.** Branch for the plan: `claude/dashboard-views-plan`. The work itself builds on `feature/ui-redesign`, which another session is still changing (Overview, Details, Diagnostics, Settings, sidebar). Read this together with `docs/plans/2026-11-03-ui-redesign.md` and `docs/design/ui-audit.md`.
+Status: **implemented (2026-11-04), reduced to three layouts.** The user chose three layouts with the current one as the default: Studio, Focus and Glance. Table (§2.4) is not built. Mid-way the user also asked that the sidebar show only connected devices, with a dropdown beside Refresh for Recent or All paired; that is now part of this work.
+Differences from the plan as written:
+- The layouts are siblings in `MainWindow.axaml`, switched with `IsVisible` (`ShowStudio`, `ShowFocus`, `ShowGlance`), rather than `DashboardModel` records with DataTemplates. That keeps Studio's `PageHost` and its reduce-motion handling untouched. The device-page DataTemplates moved to `Window.DataTemplates`, so Focus's "More" pages reuse them.
+- Open questions, as decided: Q2, the minimum width drops to 400 px only in Glance, and the window is never resized automatically. Q3, "More" opens inside Focus. Q4, "Open" in Glance shows the device in Studio. Q5, Ctrl+Shift+1–3. Q6, the lenient enum reading covers every setting. Q7, only finished layouts are offered. Q8, the working names are kept.
+- Recent means connected now, or within 7 days (`DeviceFilters.RecentWindow`). The time is saved per device in `AppSettings.LastConnected` when a device connects, disconnects, or is seen connected.
 Stack: .NET 10, Avalonia 11.3, compiled bindings, CommunityToolkit.Mvvm, xUnit + Avalonia.Headless. TDD (docs/STATUS.md §4). Warnings are errors. No new NuGet packages.
 
 The `design:design-critique`, `design:design-system` and `design:ux-copy` skills were not available in this session. I applied their checklists by hand, using the repo's own rules: sentence case, numbers first, "–" for unreported values, honest unavailable text, 32 px targets, and the tokens in `Styles/Tokens.axaml`.

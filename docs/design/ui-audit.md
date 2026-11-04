@@ -122,3 +122,27 @@ Follow-up to the Links rework, using the same row anatomy throughout: a 32 px ic
 **Accessibility.** All new buttons are 32 px (icon buttons, swatches, copy). The burger, swatches and copy buttons have accessible names that match their tooltips. Battery tiles carry each component's accessible text. No new motion. Colours are tokens, except the fixed preset swatches, which have an outline so Mono stays visible on light backgrounds.
 
 ![Overview](../images/buds-pro.png) ![Collapsed sidebar](../images/buds-pro-sidebar-collapsed.png) ![Diagnostics](../images/buds-pro-info.png) ![Settings](../images/settings.png)
+
+## Dashboard layouts and the device filter (2026-11-04)
+
+Plan: `docs/plans/2026-11-04-dashboard-views.md`. There are three layouts, with Studio (the existing one) as the default. All three share the same view models, tokens and the shared `DeviceStage` and `BatteryFigures` parts. Original designs, no third-party templates.
+
+| Layout | What it is for | What it shows |
+|---|---|---|
+| **Studio** (default) | Every control, one device at a time | Unchanged: device rail plus the Overview · Sound · Links · Details · Diagnostics tab well |
+| **Focus** | One device, big and calm | A centred column with the name and status line, the artwork stage scaled up (it shrinks with the window), the battery tiles, and "Quick controls" (noise mode, Connect or Disconnect, Refresh). Sound, Links, Details and Diagnostics open in place under "More", with a short header and Back |
+| **Glance** | Every listed device's battery, in a small window | One card per device: thumbnail, name, connection, low-battery chip, and each reading with a level bar ("–" when unreported). The sidebar becomes the icon rail. Cards go up to 3 columns when wide, and the window can shrink to 400 px |
+
+| Before | After | Why |
+|---|---|---|
+| The sidebar listed every paired device, so a list of grey "Disconnected" rows hid the one in use | The list shows **connected devices** by default. A filter button beside Refresh offers Connected, Recent (connected in the last 7 days) and All paired. The heading names the filter ("Connected devices") | The common question is "what am I using now?". Paired-but-away devices are one click away, not gone |
+| — | A selected device that disconnects stays listed until you pick another device or change the filter | Pressing Disconnect shouldn't make the page vanish under the cursor |
+| — | When the filter hides everything, the page says so ("No earbuds are connected right now. 3 paired devices are hidden.") and offers "Show all paired devices" and Refresh | An empty list needs an empty state with a way out |
+| Settings › Appearance had no layout choice | "Layout" row with three cards. Each has a small sketch of the layout drawn in the theme's own brushes, a name and one line of description. A "Device list" segmented row repeats the filter | One place to discover the options. The sketches follow theme and accent |
+| — | A "Layout" button in the sidebar footer (current layout on the right) with a menu that lists the shortcuts. Ctrl+Shift+1, 2 and 3 switch from anywhere | Fast switching without leaving the page |
+
+**Accessibility.** A test walks every visible button in each layout, for every simulated device: each one is at least 32 × 32 px and has a name. This found that the toast's Dismiss button was 28 px wide, and it is now 32. The layout roots are named ("Studio layout", "Focus layout", "Glance layout"). Cards read as "<name>, <battery>, <connection>", and each reading has its own name ("Left bud 90 percent"). "Open" says what it does ("Open Simulated Buds Pro with every control"). The filter button names its state ("Show devices: Connected"). After a switch, keyboard focus moves into the new layout if the old focus was hidden, without drawing a focus ring after a mouse click. Switching layouts never animates. The existing reduce-motion handling still covers the Studio tab fade and the value transitions, and no decorative motion was added.
+
+**Settings.** `AppSettings` gains `Version` (2), `Dashboard`, `DeviceFilter` and `LastConnected`. Files without them load as Studio and Connected, and keep all their other values. Enums now read leniently: an unknown name, such as a newer build's layout or a typo in `theme`, falls back to that setting's default instead of setting the whole file aside as `settings.json.bad`.
+
+![Focus](../images/focus-buds-pro.png) ![Glance](../images/glance.png) ![Glance, small window](../images/glance-narrow.png) ![No connected devices](../images/no-connected-devices.png)

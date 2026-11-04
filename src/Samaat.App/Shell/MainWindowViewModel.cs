@@ -80,6 +80,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         Settings = new SettingsViewModel(
             settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration(),
             motion ?? options.CreateMotionPreference());
+        Settings.PropertyChanged += OnSettingsChanged;
         AudioShare = new AudioShareViewModel(audioShareFactory ?? options.CreateAudioShare, outputSwitcher ?? options.CreateDefaultOutputSwitcher(), Settings);
         _registry = new DeviceRegistry(sources ?? options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
@@ -116,7 +117,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public partial DeviceViewModel? SelectedDevice { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPage), nameof(DevicePage), nameof(ShowDevicePage))]
+    [NotifyPropertyChangedFor(nameof(HasPage), nameof(DevicePage), nameof(ShowDevicePage), nameof(ShowStudio), nameof(ShowFocus), nameof(ShowFocusHero), nameof(ShowFocusPage))]
     public partial PageModel? CurrentPage { get; set; }
 
     /// <summary>How many devices currently have a low or critical battery.</summary>
@@ -130,6 +131,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     partial void OnSelectedDeviceChanged(DeviceViewModel? value)
     {
+        if (_pinned is not null && !ReferenceEquals(value, _pinned))
+        {
+            _pinned = null;
+            UpdateVisibleDevices();
+        }
+
         UpdatePage();
         UpdateCurrent();
     }
@@ -166,6 +173,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         if (Devices.FirstOrDefault(d => d.HasAlert) is { } device)
         {
             SelectedDevice = device;
+            if (!VisibleDevices.Contains(device))
+            {
+                _pinned = device;
+                UpdateVisibleDevices();
+            }
+
             Section = AppSection.Overview;
         }
     }
@@ -177,6 +190,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         if (e.PropertyName == nameof(DeviceViewModel.HasAlert))
         {
             UpdateAlertCount();
+        }
+        else if (e.PropertyName == nameof(DeviceViewModel.IsConnected) && sender is DeviceViewModel device)
+        {
+            OnDeviceConnectionChanged(device);
         }
     }
 
@@ -208,8 +225,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         }
 
         _windowIsNarrow = narrow;
-        IsSidebarCompact = _sidebarChoice ?? narrow;
+        UpdateSidebar();
     }
+
+    // Glance lists every device itself, so the sidebar is the icon rail there unless the user expands it.
+    private void UpdateSidebar() => IsSidebarCompact = _sidebarChoice ?? (_windowIsNarrow || IsGlance);
 
     [RelayCommand]
     private void ToggleSidebar()
@@ -225,11 +245,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public partial string StatusText { get; set; } = "Looking for devices…";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowEmptyState))]
+    [NotifyPropertyChangedFor(nameof(ShowEmptyState), nameof(ShowFilterEmpty))]
     public partial bool IsEmpty { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsOverview), nameof(IsSound), nameof(IsConnections), nameof(IsInfo), nameof(IsDetails), nameof(IsSettings), nameof(ShowEmptyState))]
+    [NotifyPropertyChangedFor(nameof(IsOverview), nameof(IsSound), nameof(IsConnections), nameof(IsInfo), nameof(IsDetails), nameof(IsSettings), nameof(ShowEmptyState),
+        nameof(ShowFocusHero), nameof(ShowFocusPage), nameof(ShowGlance), nameof(ShowFilterEmpty))]
     public partial AppSection Section { get; set; }
 
     public bool IsOverview => Section == AppSection.Overview;
@@ -280,18 +301,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
             Devices.Remove(stale);
         }
 
+        var added = new List<DeviceViewModel>();
         foreach (var device in current.Where(d => Devices.All(vm => vm.Device != d)))
         {
             var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings, ShowMessage);
             vm.Share = AudioShare;
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
+            added.Add(vm);
         }
 
+        MarkConnectedNow(added);
         if (SelectedDevice is null || !Devices.Contains(SelectedDevice))
         {
-            SelectedDevice = Devices.FirstOrDefault(d => d.Device.Identity.Id == selectedId) ?? Devices.FirstOrDefault();
+            SelectedDevice = Devices.FirstOrDefault(d => d.Device.Identity.Id == selectedId && IsListed(d)) ?? Devices.FirstOrDefault(IsListed);
         }
+
+        UpdateVisibleDevices();
 
         UpdateAlertCount();
         UpdateCurrent();
@@ -346,6 +372,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     {
         await AudioShare.DisposeAsync();
         _ageTimer.Stop();
+        MarkConnectedNow(Devices);
         foreach (var timer in _toastTimers)
         {
             timer.Dispose();

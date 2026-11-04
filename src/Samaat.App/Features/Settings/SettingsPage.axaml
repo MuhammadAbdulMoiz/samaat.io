@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Samaat.App.Features.Settings"
              xmlns:set="using:Samaat.Core.Settings"
+             xmlns:c="using:Samaat.App.Shared.Controls"
              x:Class="Samaat.App.Features.Settings.SettingsPage"
              x:DataType="vm:SettingsViewModel">
   <!-- Settings: one panel per topic, every row an icon tile, a label with one line of meaning, and its control -->
@@ -95,6 +96,98 @@
     <TextBlock Text="Turns off fades and gliding values. Follows Windows until you change it." Classes="meta" TextWrapping="Wrap" />
   </StackPanel>
   <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding ReduceMotion}" AutomationProperties.Name="Reduce motion" />
+</Grid>
+</Border>
+<Border Classes="row">
+<StackPanel Spacing="12">
+<Grid ColumnDefinitions="Auto,*" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Layout}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Layout" />
+    <TextBlock Text="How the main window is arranged. Ctrl+Shift+1, 2 or 3 switches from anywhere." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+</Grid>
+<ItemsControl x:Name="LayoutCards"><ItemsControl.ItemsPanel><ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="150" MaxColumns="3" Spacing="8" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+    <Button Classes="layoutCard" Classes.selected="{Binding IsStudioView}" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static set:DashboardView.Studio}"
+            AutomationProperties.Name="Studio layout: Every control, one device at a time">
+      <StackPanel Spacing="8">
+        <Border Classes="layoutSketch">
+          <Grid ColumnDefinitions="10,22,*" ColumnSpacing="4">
+            <Border Classes="sk" />
+            <StackPanel Grid.Column="1" Spacing="4"><Border Classes="sk accent" Height="22" CornerRadius="11" /><Border Classes="sk" Height="6" /><Border Classes="sk" Height="6" /></StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4"><Border Classes="sk" Height="8" /><Border Classes="sk" Height="18" /><Border Classes="sk" Height="14" /></StackPanel>
+          </Grid>
+        </Border>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Studio" FontWeight="SemiBold" />
+          <PathIcon Grid.Column="1" Classes="layoutCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsStudioView}" />
+        </Grid>
+        <TextBlock Text="Every control, one device at a time" Classes="meta" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+    <Button Classes="layoutCard" Classes.selected="{Binding IsFocusView}" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static set:DashboardView.Focus}"
+            AutomationProperties.Name="Focus layout: One device, big and simple">
+      <StackPanel Spacing="8">
+        <Border Classes="layoutSketch">
+          <Grid ColumnDefinitions="10,*" ColumnSpacing="4">
+            <Border Classes="sk" />
+            <StackPanel Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
+              <Border Classes="sk accent" Width="28" Height="28" CornerRadius="14" HorizontalAlignment="Center" />
+              <StackPanel Orientation="Horizontal" Spacing="4"><Border Classes="sk" Width="14" Height="10" /><Border Classes="sk" Width="14" Height="10" /><Border Classes="sk" Width="14" Height="10" /></StackPanel>
+              <Border Classes="sk" Height="6" />
+            </StackPanel>
+          </Grid>
+        </Border>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Focus" FontWeight="SemiBold" />
+          <PathIcon Grid.Column="1" Classes="layoutCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsFocusView}" />
+        </Grid>
+        <TextBlock Text="One device, big and simple" Classes="meta" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+    <Button Classes="layoutCard" Classes.selected="{Binding IsGlanceView}" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static set:DashboardView.Glance}"
+            AutomationProperties.Name="Glance layout: Every device's battery, in a small window">
+      <StackPanel Spacing="8">
+        <Border Classes="layoutSketch">
+          <Grid ColumnDefinitions="6,*,*" RowDefinitions="*,*" ColumnSpacing="4" RowSpacing="4">
+            <Border Grid.RowSpan="2" Classes="sk" />
+            <Border Grid.Column="1" Classes="sk card"><Border Classes="sk accent" Height="3" VerticalAlignment="Bottom" Margin="0,0,8,0" /></Border>
+            <Border Grid.Column="2" Classes="sk card"><Border Classes="sk accent" Height="3" VerticalAlignment="Bottom" Margin="0,0,4,0" /></Border>
+            <Border Grid.Row="1" Grid.Column="1" Classes="sk card"><Border Classes="sk accent" Height="3" VerticalAlignment="Bottom" Margin="0,0,14,0" /></Border>
+            <Border Grid.Row="1" Grid.Column="2" Classes="sk card"><Border Classes="sk accent" Height="3" VerticalAlignment="Bottom" Margin="0,0,10,0" /></Border>
+          </Grid>
+        </Border>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Glance" FontWeight="SemiBold" />
+          <PathIcon Grid.Column="1" Classes="layoutCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsGlanceView}" />
+        </Grid>
+        <TextBlock Text="Every device's battery, in a small window" Classes="meta" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+</ItemsControl>
+</StackPanel>
+</Border>
+<Border Classes="row">
+<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+  <Border Classes="optionIcon" VerticalAlignment="Center">
+    <PathIcon Data="{StaticResource Icon.Filter}" Width="16" Height="16" />
+  </Border>
+  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+    <TextBlock Text="Device list" />
+    <TextBlock Text="Which devices the sidebar shows. Recent means connected in the last 7 days." Classes="meta" TextWrapping="Wrap" />
+  </StackPanel>
+  <Border Grid.Column="2" Classes="tabWell" VerticalAlignment="Center">
+    <StackPanel Orientation="Horizontal" Spacing="2">
+      <Button Classes="tab" Classes.selected="{Binding IsConnectedFilter}" Content="Connected"
+              Command="{Binding SetDeviceFilterCommand}" CommandParameter="{x:Static set:DeviceFilter.Connected}" />
+      <Button Classes="tab" Classes.selected="{Binding IsRecentFilter}" Content="Recent"
+              Command="{Binding SetDeviceFilterCommand}" CommandParameter="{x:Static set:DeviceFilter.Recent}" />
+      <Button Classes="tab" Classes.selected="{Binding IsPairedFilter}" Content="All paired"
+              Command="{Binding SetDeviceFilterCommand}" CommandParameter="{x:Static set:DeviceFilter.Paired}" />
+    </StackPanel>
+  </Border>
 </Grid>
 </Border>
 </StackPanel>

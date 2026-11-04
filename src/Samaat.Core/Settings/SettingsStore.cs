@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Samaat.Core.Settings;
 
@@ -10,7 +9,7 @@ public sealed class SettingsStore(string path)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        Converters = { new LenientEnumConverterFactory() },
     };
 
     public static string DefaultPath { get; } = System.IO.Path.Combine(
@@ -37,8 +36,16 @@ public sealed class SettingsStore(string path)
 
         try
         {
-            var loaded = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(Path), Json)
+            var text = File.ReadAllText(Path);
+            var loaded = JsonSerializer.Deserialize<AppSettings>(text, Json)
                 ?? throw new JsonException("empty settings");
+            // Files written before the schema had a version are version 1.
+            using var document = JsonDocument.Parse(text);
+            if (!document.RootElement.TryGetProperty("version", out _))
+            {
+                loaded = loaded with { Version = 1 };
+            }
+
             return loaded.Normalize();
         }
         catch (JsonException)

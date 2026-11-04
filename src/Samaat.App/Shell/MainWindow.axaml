@@ -8,10 +8,29 @@
         xmlns:info="using:Samaat.App.Features.Info"
         xmlns:details="using:Samaat.App.Features.Details"
         xmlns:settings="using:Samaat.App.Features.Settings"
+        xmlns:parts="using:Samaat.App.Shared.Parts"
+        xmlns:views="using:Samaat.App.Shell.Views"
+        xmlns:core="using:Samaat.Core.Settings"
         x:Class="Samaat.App.Shell.MainWindow"
         x:DataType="shell:MainWindowViewModel"
         Title="Samaat"
         Width="1180" Height="780" MinWidth="640" MinHeight="520">
+  <!-- Layouts: Ctrl+Shift+1 Studio, 2 Focus, 3 Glance -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+Shift+D1" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static core:DashboardView.Studio}" />
+    <KeyBinding Gesture="Ctrl+Shift+D2" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static core:DashboardView.Focus}" />
+    <KeyBinding Gesture="Ctrl+Shift+D3" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static core:DashboardView.Glance}" />
+  </Window.KeyBindings>
+
+  <!-- Device pages, for Studio's tab host and Focus's "More" pages alike -->
+  <Window.DataTemplates>
+    <DataTemplate DataType="shell:OverviewPageModel"><overview:OverviewPage DataContext="{Binding Device}" /></DataTemplate>
+    <DataTemplate DataType="shell:SoundPageModel"><sound:SoundPage DataContext="{Binding Device}" /></DataTemplate>
+    <DataTemplate DataType="shell:ConnectionsPageModel"><conn:ConnectionsPage DataContext="{Binding Device}" /></DataTemplate>
+    <DataTemplate DataType="shell:InfoPageModel"><info:InfoPage DataContext="{Binding Device}" /></DataTemplate>
+    <DataTemplate DataType="shell:DetailsPageModel"><details:BluetoothDetailsPage DataContext="{Binding Device}" /></DataTemplate>
+  </Window.DataTemplates>
+
   <Window.Resources>
     <!-- Same S as the app icon (docs/logo/samaat-icon.svg), on an accent key inside a soft accent halo -->
     <Border x:Key="BrandMark" x:Shared="False" Classes="brandHalo" ToolTip.Tip="Samaat">
@@ -25,33 +44,6 @@
       </Border>
     </Border>
 
-    <!-- A device's own picture when there is one; otherwise a pair of buds, or headphones for a headset -->
-    <DataTemplate x:Key="DeviceThumb" x:DataType="overview:DeviceViewModel">
-      <Border Classes="deviceThumb">
-        <Panel>
-          <Image Source="{Binding ArtworkImage}" IsVisible="{Binding HasArtworkImage}" Width="28" Height="28"
-                 Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
-          <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <StackPanel.IsVisible>
-              <MultiBinding Converter="{x:Static BoolConverters.And}">
-                <Binding Path="HasBuds" />
-                <Binding Path="!HasArtworkImage" />
-              </MultiBinding>
-            </StackPanel.IsVisible>
-            <Viewbox Height="18"><Canvas Width="40" Height="56"><Path Classes="thumbGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas></Viewbox>
-            <Viewbox Height="18" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Classes="thumbGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas></Viewbox>
-          </StackPanel>
-          <PathIcon Classes="thumbGlyph" Data="{StaticResource Icon.Headphones}" Width="18" Height="18">
-            <PathIcon.IsVisible>
-              <MultiBinding Converter="{x:Static BoolConverters.And}">
-                <Binding Path="!HasBuds" />
-                <Binding Path="!HasArtworkImage" />
-              </MultiBinding>
-            </PathIcon.IsVisible>
-          </PathIcon>
-        </Panel>
-      </Border>
-    </DataTemplate>
   </Window.Resources>
 
   <Grid ColumnDefinitions="Auto,*">
@@ -97,11 +89,61 @@
               <TextBlock Classes="compactOnly" Text="{Binding AlertingDeviceCount}" />
             </StackPanel>
           </Button>
-          <Button Classes="nav" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh devices" AutomationProperties.Name="Refresh devices">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <PathIcon Data="{StaticResource Icon.Refresh}" />
-              <TextBlock Classes="full" Text="Refresh devices" />
-            </StackPanel>
+          <!-- Refresh, with the device filter beside it: Connected (default), Recent or All paired -->
+          <DockPanel Classes="refreshRow">
+            <Button x:Name="DeviceFilterButton" Classes="nav filterButton" ToolTip.Tip="{Binding DeviceFilterButtonName}"
+                    AutomationProperties.Name="{Binding DeviceFilterButtonName}">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <PathIcon Data="{StaticResource Icon.Filter}" />
+                <PathIcon Classes="full" Data="{StaticResource Icon.Chevron}" Width="10" Height="10" />
+              </StackPanel>
+              <Button.Flyout>
+                <MenuFlyout Placement="TopEdgeAlignedRight">
+                  <MenuItem Header="Connected" Command="{Binding SetDeviceFilterCommand}" CommandParameter="{x:Static core:DeviceFilter.Connected}"
+                            AutomationProperties.Name="Show connected devices">
+                    <MenuItem.Icon><PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding Settings.IsConnectedFilter}" /></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="Recent" Command="{Binding SetDeviceFilterCommand}" CommandParameter="{x:Static core:DeviceFilter.Recent}"
+                            AutomationProperties.Name="Show devices connected in the last 7 days">
+                    <MenuItem.Icon><PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding Settings.IsRecentFilter}" /></MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="All paired" Command="{Binding SetDeviceFilterCommand}" CommandParameter="{x:Static core:DeviceFilter.Paired}"
+                            AutomationProperties.Name="Show all paired devices">
+                    <MenuItem.Icon><PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding Settings.IsPairedFilter}" /></MenuItem.Icon>
+                  </MenuItem>
+                </MenuFlyout>
+              </Button.Flyout>
+            </Button>
+            <Button Classes="nav" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh devices" AutomationProperties.Name="Refresh devices">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <PathIcon Data="{StaticResource Icon.Refresh}" />
+                <TextBlock Classes="full" Text="Refresh devices" />
+              </StackPanel>
+            </Button>
+          </DockPanel>
+          <!-- Layout: Studio (default), Focus or Glance -->
+          <Button x:Name="LayoutButton" Classes="nav" ToolTip.Tip="{Binding LayoutButtonName}" AutomationProperties.Name="{Binding LayoutButtonName}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <PathIcon Data="{StaticResource Icon.Layout}" />
+              <TextBlock Grid.Column="1" Classes="full" Text="Layout" Margin="10,0,0,0" />
+              <TextBlock Grid.Column="2" Classes="full meta" Text="{Binding Settings.DashboardName}" Margin="8,0,0,0" VerticalAlignment="Center" />
+            </Grid>
+            <Button.Flyout>
+              <MenuFlyout Placement="RightEdgeAlignedBottom">
+                <MenuItem Header="Studio" InputGesture="Ctrl+Shift+1" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static core:DashboardView.Studio}"
+                          AutomationProperties.Name="Studio layout: every control, one device at a time">
+                  <MenuItem.Icon><PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding Settings.IsStudioView}" /></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Focus" InputGesture="Ctrl+Shift+2" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static core:DashboardView.Focus}"
+                          AutomationProperties.Name="Focus layout: one device, big and simple">
+                  <MenuItem.Icon><PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding Settings.IsFocusView}" /></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Glance" InputGesture="Ctrl+Shift+3" Command="{Binding SetDashboardCommand}" CommandParameter="{x:Static core:DashboardView.Glance}"
+                          AutomationProperties.Name="Glance layout: every device's battery, in a small window">
+                  <MenuItem.Icon><PathIcon Data="{StaticResource Icon.Check}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding Settings.IsGlanceView}" /></MenuItem.Icon>
+                </MenuItem>
+              </MenuFlyout>
+            </Button.Flyout>
           </Button>
           <Button Classes="nav" Classes.current="{Binding IsSettings}" ToolTip.Tip="Settings" AutomationProperties.Name="Settings"
                   Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Settings}">
@@ -114,9 +156,12 @@
 
         <!-- A Grid, not a StackPanel, so the list gets a finite height and scrolls instead of covering Settings. -->
         <Grid RowDefinitions="Auto,*" RowSpacing="8">
-          <TextBlock Classes="full meta" Text="Your devices" Margin="10,0,0,0" />
+          <StackPanel Classes="full" Spacing="4" Margin="10,0,0,0">
+            <TextBlock Classes="meta" Text="{Binding DeviceListTitle}" />
+            <TextBlock Classes="meta" Text="None right now" IsVisible="{Binding !HasVisibleDevices}" />
+          </StackPanel>
           <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding Devices}" AutomationProperties.Name="Your devices">
+            <ItemsControl ItemsSource="{Binding VisibleDevices}" AutomationProperties.Name="{Binding DeviceListTitle}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate><StackPanel Spacing="4" /></ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
@@ -164,7 +209,7 @@
           </StackPanel>
 
           <!-- Device page: rail on the left (above the workspace when narrow), tabs and panels on the right -->
-          <c:SplitPanel x:Name="DeviceLayout" IsVisible="{Binding ShowDevicePage}" SecondaryFirst="True" MinPrimaryWidth="484" Spacing="16">
+          <c:SplitPanel x:Name="DeviceLayout" IsVisible="{Binding ShowStudio}" AutomationProperties.Name="Studio layout" SecondaryFirst="True" MinPrimaryWidth="484" Spacing="16">
             <StackPanel Spacing="16">
               <Border Classes="tabWell">
                 <StackPanel Orientation="Horizontal" Spacing="2">
@@ -184,13 +229,6 @@
                 <TransitioningContentControl.PageTransition>
                   <CrossFade Duration="0:0:0.18" />
                 </TransitioningContentControl.PageTransition>
-                <TransitioningContentControl.DataTemplates>
-                  <DataTemplate DataType="shell:OverviewPageModel"><overview:OverviewPage DataContext="{Binding Device}" /></DataTemplate>
-                  <DataTemplate DataType="shell:SoundPageModel"><sound:SoundPage DataContext="{Binding Device}" /></DataTemplate>
-                  <DataTemplate DataType="shell:ConnectionsPageModel"><conn:ConnectionsPage DataContext="{Binding Device}" /></DataTemplate>
-                  <DataTemplate DataType="shell:InfoPageModel"><info:InfoPage DataContext="{Binding Device}" /></DataTemplate>
-                  <DataTemplate DataType="shell:DetailsPageModel"><details:BluetoothDetailsPage DataContext="{Binding Device}" /></DataTemplate>
-                </TransitioningContentControl.DataTemplates>
               </TransitioningContentControl>
             </StackPanel>
 
@@ -201,91 +239,7 @@
               </StackPanel>
 
               <!-- The artwork sits on the canvas: no card -->
-              <Border Classes="stage" Height="216">
-                <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
-                  <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
-                  <!-- Split photo: each bud and the case with its own level, buds above the case as in the product photo -->
-                  <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <ItemsControl.ItemsPanel>
-                      <ItemsPanelTemplate><Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6" /></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="overview:ArtworkPartViewModel">
-                        <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figure.HasLevel}" Spacing="2"
-                                    AutomationProperties.Name="{Binding Figure.AccessibleText}" ToolTip.Tip="{Binding Figure.AccessibleText}">
-                          <Image Source="{Binding Image}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
-                          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
-                            <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" IsVisible="{Binding Figure.IsCharging}"
-                                      Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Center" />
-                            <TextBlock Classes="number" Classes.charging="{Binding Figure.IsCharging}" Text="{Binding Figure.Value}" />
-                            <TextBlock Classes="meta" Text="{Binding Figure.Unit}" VerticalAlignment="Bottom" />
-                          </StackPanel>
-                        </StackPanel>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                  <!-- Unknown look, separate pieces: faint left bud, right bud and case, same layout as the split photo -->
-                  <Grid Classes="unknownPieces" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6"
-                        HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownPieces}">
-                    <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figures[1].HasLevel}" Spacing="2"
-                                AutomationProperties.Name="{Binding Figures[1].AccessibleText}" ToolTip.Tip="{Binding Figures[1].AccessibleText}">
-                      <Panel Height="64" HorizontalAlignment="Center">
-                        <Viewbox Height="64"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
-                        <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
-                      </Panel>
-                      <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
-                        <TextBlock Classes="number" Text="{Binding Figures[1].Value}" />
-                        <TextBlock Classes="meta" Text="{Binding Figures[1].Unit}" VerticalAlignment="Bottom" />
-                      </StackPanel>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Classes="artworkPart" Classes.missing="{Binding !Figures[2].HasLevel}" Spacing="2"
-                                AutomationProperties.Name="{Binding Figures[2].AccessibleText}" ToolTip.Tip="{Binding Figures[2].AccessibleText}">
-                      <Panel Height="64" HorizontalAlignment="Center">
-                        <Viewbox Height="64" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
-                        <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
-                      </Panel>
-                      <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
-                        <TextBlock Classes="number" Text="{Binding Figures[2].Value}" />
-                        <TextBlock Classes="meta" Text="{Binding Figures[2].Unit}" VerticalAlignment="Bottom" />
-                      </StackPanel>
-                    </StackPanel>
-                    <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="artworkPart" Classes.missing="{Binding !Figures[3].HasLevel}" Spacing="2"
-                                AutomationProperties.Name="{Binding Figures[3].AccessibleText}" ToolTip.Tip="{Binding Figures[3].AccessibleText}">
-                      <Panel Height="50" HorizontalAlignment="Center">
-                        <Viewbox Height="50"><Canvas Width="64" Height="48"><Path Data="{StaticResource Glyph.Case}" Classes="unknownShape" /></Canvas></Viewbox>
-                        <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
-                      </Panel>
-                      <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
-                        <TextBlock Classes="number" Text="{Binding Figures[3].Value}" />
-                        <TextBlock Classes="meta" Text="{Binding Figures[3].Unit}" VerticalAlignment="Bottom" />
-                      </StackPanel>
-                    </StackPanel>
-                  </Grid>
-                  <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Panel.IsVisible>
-                      <MultiBinding Converter="{x:Static BoolConverters.And}">
-                        <Binding Path="!ShowArtworkParts" />
-                        <Binding Path="!ShowUnknownPieces" />
-                      </MultiBinding>
-                    </Panel.IsVisible>
-                    <c:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
-                                   Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
-                    <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
-                           Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
-                    <!-- Unknown look, single: one faint silhouette with a "?" badge -->
-                    <Panel Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownSingle}">
-                      <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasBuds}">
-                        <Viewbox Width="40"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
-                        <Viewbox Width="40" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
-                      </StackPanel>
-                      <PathIcon Data="{StaticResource Icon.Headphones}" Width="84" Height="84" Foreground="{DynamicResource Samaat.Faint}" Opacity="0.55"
-                                IsVisible="{Binding !HasBuds}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                      <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
-                    </Panel>
-                  </Panel>
-                </Panel>
-              </Border>
+              <parts:DeviceStage />
               <Button Classes="ghost" Content="Change look" HorizontalAlignment="Center" Margin="0,-10,0,0" FontSize="12" Foreground="{DynamicResource Samaat.Muted}"
                       AutomationProperties.Name="Change look" ToolTip.Tip="Change the artwork for this device">
                 <Button.Flyout>
@@ -324,6 +278,21 @@
             </StackPanel>
           </c:SplitPanel>
 
+          <views:FocusView x:Name="FocusLayout" IsVisible="{Binding ShowFocus}" />
+          <views:GlanceView x:Name="GlanceLayout" IsVisible="{Binding ShowGlance}" />
+
+          <!-- Devices exist but the filter hides them all -->
+          <StackPanel x:Name="FilterEmptyState" IsVisible="{Binding ShowFilterEmpty}" HorizontalAlignment="Center" Margin="0,80,0,0" Spacing="12" MaxWidth="420">
+            <PathIcon Data="{StaticResource Icon.Bluetooth}" Width="48" Height="48" Foreground="{DynamicResource Samaat.Faint}" />
+            <TextBlock Text="{Binding FilterEmptyTitle}" Classes="title" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding FilterEmptyDetail}" Classes="muted" TextWrapping="Wrap" TextAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,4,0,0">
+              <Button Classes="primary" Content="Show all paired devices" Command="{Binding SetDeviceFilterCommand}"
+                      CommandParameter="{x:Static core:DeviceFilter.Paired}" AutomationProperties.Name="Show all paired devices" />
+              <Button Classes="subtle" Content="Refresh" Command="{Binding RefreshDevicesCommand}" AutomationProperties.Name="Refresh devices" />
+            </StackPanel>
+          </StackPanel>
+
           <Panel IsVisible="{Binding IsSettings}"><settings:SettingsPage DataContext="{Binding Settings}" /></Panel>
         </Panel>
       </ScrollViewer>
@@ -337,7 +306,7 @@
               <Grid ColumnDefinitions="Auto,*,Auto">
                 <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Classes="ghost" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
+                <Button Grid.Column="2" Classes="ghost" MinWidth="32" MinHeight="32" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
                         Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).DismissAlertCommand}"
                         CommandParameter="{Binding}">
                   <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
