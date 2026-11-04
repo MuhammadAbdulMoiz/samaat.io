@@ -1,50 +1,122 @@
-# Samaat
+<h1 align="center">Samaat</h1>
 
-One app to monitor and control Bluetooth earbuds from any brand. Samaat identifies the connected device, works out what it can do, and shows only the controls that actually work. Everything else is greyed out with the reason.
+<p align="center">
+  <b>One app for Bluetooth earbuds from any brand.</b><br />
+  Battery for each bud, noise control, EQ, connections and shared audio, on Windows.
+</p>
 
-![Samaat dashboard](docs/images/buds-pro.png)
+<p align="center">
+  <a href="docs/STATUS.md">Status</a> &nbsp;·&nbsp;
+  <a href="#run-it">Run it</a> &nbsp;·&nbsp;
+  <a href="#supported-earbuds">Supported earbuds</a> &nbsp;·&nbsp;
+  <a href="docs/ARCHITECTURE.md">Architecture</a> &nbsp;·&nbsp;
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
 
-- **Status, remaining work and how to start the app: [docs/STATUS.md](docs/STATUS.md)**
-- Plan: [docs/PLAN.md](docs/PLAN.md) · Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Device catalog](devices/README.md)
-- UI audit and design direction: [docs/design/ui-audit.md](docs/design/ui-audit.md)
-- Modules: [battery](docs/modules/battery.md) · [noise control](docs/modules/noise-control.md) · [connections](docs/modules/connections.md)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/buds-pro.png" />
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/buds-pro-light.png" />
+  <img src="docs/images/buds-pro.png" width="100%" alt="Samaat showing a pair of earbuds with separate left, right and case battery levels" />
+</picture>
 
-## Status
+Every earbud brand ships its own app, and most only run on a phone. Samaat works out which earbuds are connected, what they can actually do, and shows only the controls that work. Anything it can't do is greyed out with the reason, never just missing.
 
-| Module | State |
-|---|---|
-| Capability model, device registry, command layer | ✅ |
-| 1. Battery monitoring | ✅ simulator, BLE Battery Service, Windows-reported level (Windows not yet run on hardware) |
-| 2. Noise control (ANC / transparency / adaptive, levels, extras) | ✅ simulator; real devices need a vendor adapter |
-| 3. Multipoint and connected devices | ✅ simulator; real devices need a vendor adapter |
-| Driver registry, device catalog, RFCOMM transport, Info/diagnostics page | ✅ (RFCOMM unverified on hardware) |
-| First vendor adapter | waiting on the choice of target earbuds |
+## What it does
 
-## Build
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Battery for each piece</b><br />
+      <sub>Left bud, right bud and case, read from the earbuds' own protocol. When a model only reports one number, you get the Windows level, labelled as such.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <b>Noise control and EQ</b><br />
+      <sub>Noise cancelling, transparency and the earbuds' EQ presets, on models whose protocol Samaat speaks. Every change is confirmed by reading it back.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Connect and disconnect</b><br />
+      <sub>Connect or disconnect your earbuds from the app or the tray, the same way Windows Settings does.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <b>Share audio and Switch here</b><br />
+      <sub>Play what Windows is playing on up to three more outputs at once, each with its own delay, or move all audio to another output in one click.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Works with unknown earbuds</b><br />
+      <sub>Earbuds are matched by the protocol they speak (Google Fast Pair, Jieli RCSP), not by name. Unknown models get a neutral look you can swap for any known model's photo.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <b>Stays out of the way</b><br />
+      <sub>Tray icon with battery levels, low-battery notifications, start with Windows, dark and light themes, and reduced motion.</sub>
+    </td>
+  </tr>
+</table>
 
-Requires the .NET 10 SDK.
+<p>
+  <img src="docs/images/buds-pro-sound-share.png" width="49%" alt="Share audio card: one source, a sharing row with its delay slider, and idle rows with Switch here" />
+  <img src="docs/images/buds-pro-connections.png" width="49%" alt="Links page: connect or disconnect this computer and see the earbuds' other devices" />
+</p>
+
+## Supported earbuds
+
+| Earbuds | How Samaat talks to them | What works |
+|---|---|---|
+| **Audionic ParadoX-E** | Jieli RCSP over BLE | Battery per bud, noise control, EQ presets |
+| **realme Buds T200 Lite** | Google Fast Pair message stream | Battery per bud (case when it reports one), firmware version |
+| **Any Fast Pair earbuds** | Google Fast Pair message stream | Battery, when the earbuds report it |
+| **Any Jieli earbuds** | Jieli RCSP over BLE | What the earbuds list when asked |
+| **Zero Lifestyle Quantum Zbuds** | Windows only (no vendor protocol found) | Overall battery, connect, share audio |
+| **Microsoft Modern Wireless Headset** | Windows only | Overall battery, connect, share audio |
+| **Anything else paired** | Windows | Overall battery, connect, share audio |
+
+Each model's evidence lives in [`docs/hardware-tests`](docs/hardware-tests) and its protocol notes in [`docs/protocols`](docs/protocols). Adding a model is a JSON file in [`devices/`](devices/README.md).
+
+## Run it
+
+Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+
+```bash
+dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0
+```
+
+That's the Windows app with real Bluetooth. Two more ways to run it:
+
+```bash
+dotnet run --project src/Samaat.App -f net10.0                          # simulated earbuds, any OS
+dotnet run --project src/Samaat.Cli -f net10.0-windows10.0.19041.0      # print what Samaat detects
+```
+
+Build and test everything:
 
 ```bash
 dotnet build Samaat.slnx
 dotnet test Samaat.slnx
-
-dotnet run --project src/Samaat.App -f net10.0                          # simulator, any OS
-dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0      # real Bluetooth, Windows
-dotnet run --project src/Samaat.Cli -f net10.0 -- --simulate --watch    # CLI
 ```
 
-The Windows-specific projects also *build* on Linux and macOS (`EnableWindowsTargeting`), but only run on Windows.
+The tests also render every page as dark and light screenshots ([`docs/images`](docs/images)).
 
-## Layout
+## How it's built
 
 ```
 src/
-  Samaat.Core/                 capability model, battery model, low-battery alerts, device registry
-  Samaat.Transport/            GATT abstractions (RFCOMM to come with the first vendor adapter)
+  Samaat.Core/                 capability model, battery, noise control, EQ, audio sharing, drivers
+  Samaat.Transport/            GATT and RFCOMM abstractions
   Samaat.Protocols.Standard/   BLE Battery Service
-  Samaat.Platform.Windows/     WinRT device discovery, OS battery, GATT client
-  Samaat.Simulator/            fake devices for UI work and tests
+  Samaat.Protocols.Jieli/      Jieli RCSP driver
+  Samaat.Protocols.FastPair/   Google Fast Pair message stream driver
+  Samaat.Platform.Windows/     WinRT Bluetooth, WASAPI audio sharing, connect and disconnect
+  Samaat.Simulator/            simulated earbuds for UI work and tests
   Samaat.App/                  Avalonia desktop app
   Samaat.Cli/                  console tool for checking real hardware
-tests/                         xUnit; App tests render headless screenshots
+tests/                         xUnit, including headless UI screenshots
 ```
+
+Every feature is described as *what the earbuds support × what Samaat supports × whether it's available right now*, so every disabled control can say why. More in [ARCHITECTURE.md](docs/ARCHITECTURE.md), the [design notes](docs/design/ui-audit.md), and the module pages: [battery](docs/modules/battery.md), [noise control](docs/modules/noise-control.md), [connections](docs/modules/connections.md), [audio sharing](docs/modules/audio-share.md).
+
+## Contributing
+
+Bug reports with the Diagnostics tab's **Copy report** are the most useful thing you can send. To add earbuds, read [CONTRIBUTING.md](CONTRIBUTING.md): a model is only marked verified with hardware evidence.
