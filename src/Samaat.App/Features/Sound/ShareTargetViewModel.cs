@@ -16,6 +16,7 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
     private bool _disposed;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private int _version;
+    private Task? _disposing;
 
     internal ShareTargetViewModel(AudioShareViewModel parent, string id, string name, Func<IAudioShare> createShare, int delayMs)
     {
@@ -149,6 +150,7 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
             if (share.State == AudioShareState.Stopped)
             {
                 Status = share.StatusText;
+                StoppedByDevice = share.StatusText is not null;
                 await TearDownAsync(share, version);
             }
         }
@@ -235,9 +237,12 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
             SetSharing(false);
         }
 
+        // Kept so a later DisposeAsync of the row can wait for this disposal.
+        var dispose = share.DisposeAsync().AsTask();
+        _disposing = dispose;
         try
         {
-            await share.DisposeAsync();
+            await dispose;
         }
         catch (Exception e)
         {
@@ -257,6 +262,15 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         if (share is not null)
         {
             await share.DisposeAsync();
+        }
+
+        try
+        {
+            await (_disposing ?? Task.CompletedTask);
+        }
+        catch
+        {
+            // Already reported on the row.
         }
     }
 }
