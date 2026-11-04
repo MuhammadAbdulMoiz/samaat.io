@@ -31,18 +31,16 @@ internal sealed class FakeDevice(
     ConnectionState connection = ConnectionState.Connected,
     IEnumerable<IFeature>? extraFeatures = null) : IEarbudDevice
 {
-    public DeviceIdentity Identity { get; } = new("fake", "Fake Buds");
+    public DeviceIdentity Identity { get; set; } = new("fake", "Fake Buds");
 
-    public ConnectionState Connection { get; } = connection;
+    public ConnectionState Connection { get; set; } = connection;
 
     public IReadOnlyCollection<IFeature> Features { get; } =
         (battery is null ? Enumerable.Empty<IFeature>() : [battery]).Concat(extraFeatures ?? []).ToList();
 
-    public event EventHandler? ConnectionChanged
-    {
-        add { }
-        remove { }
-    }
+    public event EventHandler? ConnectionChanged;
+
+    public void RaiseConnectionChanged() => ConnectionChanged?.Invoke(this, EventArgs.Empty);
 }
 
 internal sealed class FakeAudioPipe(FakeAudioBackend owner) : IAudioPipe
