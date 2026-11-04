@@ -41,6 +41,12 @@ Every state-changing SASS message (`0x12`, `0x30`, `0x31`, `0x40`-`0x43`) needs 
 
 So even on buds that implement SASS, a PC without an account key can read: capability and multipoint on/off (`0x11`), whether this PC is the active source (`0x34` octet 4), and switch events with the other host's name (`0x32`). It cannot switch, toggle multipoint or list hosts.
 
+## What Samaat sends
+
+Only two frames, ever: `07 10 00 00` (get capability), sent as soon as the channel is open (its 1 s timeout runs while Samaat waits for the battery greeting) and again after every channel refresh, and `07 33 00 00` (get connection status), sent only when `0x11` reports multipoint on. Both are no-data, no-MAC requests. Samaat never ACKs or NAKs, never answers a provider-initiated `0x10`, and never sends a message that needs a MAC. A write-allowlist check in the tests enforces this.
+
+The resulting multipoint feature (`FastPairMultipointFeature`) is read-only and **unverified on hardware**: the replies are decoded from the spec, because the realme T200 Lite doesn't implement SASS (below).
+
 ## Tested on the realme Buds T200 Lite (firmware 1.0.0)
 
 2026-11-03, buds connected to the PC and the user's phone at once, Samaat stopped so the probe held the channel. With the user's OK the probe sent only the three no-data, no-MAC "get" requests:

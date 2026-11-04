@@ -1,3 +1,4 @@
+using Samaat.Protocols.FastPair;
 using Samaat.Transport;
 
 namespace Samaat.Protocols.Tests;
@@ -15,7 +16,17 @@ internal static class FastPairCaptured
     public static readonly byte[] Battery50_40 = Convert.FromHexString("030300033228FF");
 }
 
-/// <summary>An RFCOMM channel that records every write (the driver must make none) and honours the replay contract.</summary>
+/// <summary>The write allowlist: Samaat may only ever send the two SASS get requests.</summary>
+internal static class FastPairWrites
+{
+    public static void AssertAllowed(params FakeRfcommChannel[] channels) =>
+        Assert.All(channels.SelectMany(c => c.Written), frame =>
+            Assert.True(
+                frame.SequenceEqual(FastPairMessages.SassGetCapability) || frame.SequenceEqual(FastPairMessages.SassGetConnectionStatus),
+                Convert.ToHexString(frame)));
+}
+
+/// <summary>An RFCOMM channel that records every write (only the two SASS get requests are allowed) and honours the replay contract.</summary>
 internal sealed class FakeRfcommChannel : IRfcommChannel
 {
     private readonly RfcommReceiveBuffer _received;
@@ -28,7 +39,14 @@ internal sealed class FakeRfcommChannel : IRfcommChannel
 
     public Guid ServiceUuid { get; } = Guid.Parse("df21fe2c-2515-4fdb-8886-f12c4d67927c");
 
-    public int Writes { get; private set; }
+    public List<byte[]> Written { get; } = [];
+
+    public int Writes => Written.Count;
+
+    /// <summary>Called on every write; the chunks it returns are emitted as the device's reply.</summary>
+    public Func<byte[], byte[][]>? Respond { get; set; }
+
+    public Exception? WriteFails { get; set; }
 
     public bool Disposed { get; private set; }
 
@@ -60,7 +78,18 @@ internal sealed class FakeRfcommChannel : IRfcommChannel
 
     public Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
-        Writes++;
+        if (WriteFails is not null)
+        {
+            throw WriteFails;
+        }
+
+        var frame = data.ToArray();
+        Written.Add(frame);
+        if (Respond?.Invoke(frame) is { } reply)
+        {
+            Emit(reply);
+        }
+
         return Task.CompletedTask;
     }
 
