@@ -17,6 +17,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
     private readonly IDefaultOutputSwitcher _switcher;
     private readonly SettingsViewModel _settings;
     private readonly HashSet<ShareTargetViewModel> _reserved = [];
+    private bool _disposed;
 
     public AudioShareViewModel(Func<IAudioShare> createShare, IDefaultOutputSwitcher switcher, SettingsViewModel settings)
     {
@@ -108,7 +109,13 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         }
     }
 
-    private void OnChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(Reconcile);
+    private void OnChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(() =>
+    {
+        if (!_disposed)
+        {
+            Reconcile();
+        }
+    });
 
     // Keeps row instances by id so toggles and delays survive refreshes.
     private void Reconcile()
@@ -148,6 +155,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         _lister.Changed -= OnChanged;
         foreach (var row in Rows.ToList())
         {

@@ -85,16 +85,6 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         }
 
         Status = null;
-        if (_share is null)
-        {
-            var share = _createShare();
-            share.DelayMs = DelayMs;
-            void Handler(object? s, EventArgs e) => Dispatcher.UIThread.Post(() => _ = OnShareChangedAsync(share));
-            share.Changed += Handler;
-            _detach = () => share.Changed -= Handler;
-            _share = share;
-        }
-
         _ = StartAsync(++_version);
     }
 
@@ -117,11 +107,30 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         await _gate.WaitAsync();
         try
         {
-            if (version != _version || _share is not { } share)
+            if (version != _version)
             {
                 return;
             }
 
+            // A stop or device-driven teardown may have released the slot or the toggle since this start was queued.
+            if (!_parent.TryReserveSlot(this))
+            {
+                SetSharing(false);
+                return;
+            }
+
+            SetSharing(true);
+            if (_share is null)
+            {
+                var created = _createShare();
+                created.DelayMs = DelayMs;
+                void Handler(object? s, EventArgs e) => Dispatcher.UIThread.Post(() => _ = OnShareChangedAsync(created));
+                created.Changed += Handler;
+                _detach = () => created.Changed -= Handler;
+                _share = created;
+            }
+
+            var share = _share;
             try
             {
                 await share.StartAsync(Id);
@@ -129,14 +138,14 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
             catch (Exception e)
             {
                 Status = e.Message;
-                await TearDownAsync(share);
+                await TearDownAsync(share, version);
                 return;
             }
 
             if (share.State == AudioShareState.Stopped)
             {
                 Status = share.StatusText;
-                await TearDownAsync(share);
+                await TearDownAsync(share, version);
             }
         }
         finally
@@ -166,7 +175,7 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
                     Status = e.Message;
                 }
 
-                await TearDownAsync(share);
+                await TearDownAsync(share, version);
             }
             else
             {
@@ -190,13 +199,13 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         await _gate.WaitAsync();
         try
         {
-            if (share != _share)
+            if (share != _share || share.State is AudioShareState.Sharing or AudioShareState.Starting)
             {
                 return;
             }
 
             Status = share.StatusText;
-            await TearDownAsync(share);
+            await TearDownAsync(share, _version);
         }
         finally
         {
@@ -204,8 +213,8 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         }
     }
 
-    // Callers hold the gate. Frees the share and the slot; the next toggle-on makes a fresh share.
-    private async Task TearDownAsync(IAudioShare share)
+    // Callers hold the gate. Frees the share; the slot and toggle go too unless a newer start (version moved on) wants them.
+    private async Task TearDownAsync(IAudioShare share, int version)
     {
         if (share != _share)
         {
@@ -215,8 +224,12 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         _detach?.Invoke();
         _detach = null;
         _share = null;
-        _parent.ReleaseSlot(this);
-        SetSharing(false);
+        if (version == _version)
+        {
+            _parent.ReleaseSlot(this);
+            SetSharing(false);
+        }
+
         try
         {
             await share.DisposeAsync();

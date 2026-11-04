@@ -34,6 +34,8 @@ internal sealed class FakeAudioShare : IAudioShare
 
     public Func<string, Task>? StartGate { get; set; }
 
+    public Task? StopGate { get; set; }
+
     public List<string> Started { get; } = [];
 
     public int StopCalls { get; private set; }
@@ -63,12 +65,16 @@ internal sealed class FakeAudioShare : IAudioShare
         Raise();
     }
 
-    public Task StopAsync()
+    public async Task StopAsync()
     {
         StopCalls++;
+        if (StopGate is not null)
+        {
+            await StopGate;
+        }
+
         State = AudioShareState.Off;
         Raise();
-        return Task.CompletedTask;
     }
 
     public ValueTask DisposeAsync()
@@ -222,22 +228,48 @@ public sealed class AudioShareViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void LateStoppedFromOldShare_AfterRestart_KeepsNewShareAndSlot()
+    public async Task LateStoppedFromOldShare_AfterRestart_KeepsNewShareAndSlot()
     {
         var (vm, _, _) = Create();
         vm.Rows[0].IsSharing = true;
         Settle();
         var old = _created[1];
+        var gate = new TaskCompletionSource();
+        old.StopGate = gate.Task;
         vm.Rows[0].IsSharing = false;
-        Settle();
-        vm.Rows[0].IsSharing = true;
-        Settle();
+        // The old share is still attached while its stop is pending, so this Changed reaches the row.
         old.State = AudioShareState.Stopped;
         old.Raise();
         Settle();
+        vm.Rows[0].IsSharing = true;
+        gate.SetResult();
+        await Task.Delay(100);
+        Settle();
         Assert.True(vm.Rows[0].IsSharing);
         Assert.Equal(1, vm.SharingCount);
+        Assert.Equal(3, _created.Count);
         Assert.Equal(0, _created[2].DisposeCalls);
+        Assert.Equal(["tv"], _created[2].Started);
+    }
+
+    [AvaloniaFact]
+    public async Task ToggleOffThenOn_DuringPendingStop_EndsSharing()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        var gate = new TaskCompletionSource();
+        _created[1].StopGate = gate.Task;
+        vm.Rows[0].IsSharing = false;
+        vm.Rows[0].IsSharing = true;
+        gate.SetResult();
+        await Task.Delay(100);
+        Settle();
+        Assert.True(vm.Rows[0].IsSharing);
+        Assert.Equal(1, vm.SharingCount);
+        Assert.Equal(3, _created.Count);
+        Assert.Equal(["tv"], _created[2].Started);
+        Assert.Equal(1, _created[1].DisposeCalls);
     }
 
     [AvaloniaFact]
