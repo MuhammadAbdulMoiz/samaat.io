@@ -17,6 +17,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
     private readonly IDefaultOutputSwitcher _switcher;
     private readonly SettingsViewModel _settings;
     private readonly HashSet<ShareTargetViewModel> _reserved = [];
+    private readonly List<Task> _removals = [];
     private bool _disposed;
 
     public AudioShareViewModel(Func<IAudioShare> createShare, IDefaultOutputSwitcher switcher, SettingsViewModel settings)
@@ -129,12 +130,13 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         {
             Rows.Remove(row);
             var becameDefault = outputs.Any(o => o.IsDefault && o.Id == row.Id);
-            if (row.IsSharing && !becameDefault)
+            if ((row.IsSharing || row.StoppedByDevice) && !becameDefault)
             {
                 Status = $"Stopped sharing to {row.Name}: disconnected";
             }
 
-            _ = row.DisposeAsync().AsTask().ContinueWith(_ => { }, TaskScheduler.Default);
+            _removals.RemoveAll(t => t.IsCompleted);
+            _removals.Add(DisposeQuietlyAsync(row));
         }
 
         for (var i = 0; i < targets.Count; i++)
@@ -153,6 +155,18 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         }
     }
 
+    private static async Task DisposeQuietlyAsync(ShareTargetViewModel row)
+    {
+        try
+        {
+            await row.DisposeAsync();
+        }
+        catch
+        {
+            // Nothing useful to show for a row that is already gone.
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
@@ -162,6 +176,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
             await row.DisposeAsync();
         }
 
+        await Task.WhenAll(_removals);
         await _lister.DisposeAsync();
     }
 }

@@ -65,6 +65,18 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(expected, new AppSettings { ShareDelays = new Dictionary<string, int> { ["tv"] = delay } }.Normalize().ShareDelays["tv"]);
 
     [Fact]
+    public void Settings_NullShareDelays_LoadsAsEmpty()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(InDir(), "{\"lowThreshold\":30,\"shareDelays\":null}");
+
+        var loaded = new SettingsStore(InDir()).Load();
+
+        Assert.Equal(30, loaded.LowThreshold);
+        Assert.Empty(loaded.ShareDelays);
+    }
+
+    [Fact]
     public void Settings_ShareDelays_RoundTrip()
     {
         var store = new SettingsStore(InDir());

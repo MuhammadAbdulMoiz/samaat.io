@@ -50,7 +50,7 @@ public sealed record AppSettings
         {
             LowThreshold = low,
             CriticalThreshold = Math.Clamp(CriticalThreshold, 1, low - 1),
-            ShareDelays = ShareDelays.ToDictionary(p => p.Key, p => Math.Clamp(p.Value, 0, 500)),
+            ShareDelays = (ShareDelays ?? FrozenDictionary<string, int>.Empty).ToDictionary(p => p.Key, p => Math.Clamp(p.Value, 0, 500)),
         };
     }
 }

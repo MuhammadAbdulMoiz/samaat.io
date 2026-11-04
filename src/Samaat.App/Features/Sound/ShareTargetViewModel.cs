@@ -45,6 +45,9 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
     [ObservableProperty]
     public partial string? Status { get; set; }
 
+    /// <summary>The share ended by itself while the row was meant to be sharing; lets the card report a disconnect if the row then goes away.</summary>
+    internal bool StoppedByDevice { get; private set; }
+
     public string DelayText => $"Delay · {DelayMs} ms";
 
     public bool CanToggle => _parent.IsReserved(this) || _parent.SharingCount < AudioShareViewModel.MaxShareTargets;
@@ -85,6 +88,7 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
         }
 
         Status = null;
+        StoppedByDevice = false;
         _ = StartAsync(++_version);
     }
 
@@ -205,6 +209,7 @@ public sealed partial class ShareTargetViewModel : ObservableObject, IAsyncDispo
             }
 
             Status = share.StatusText;
+            StoppedByDevice = true;
             await TearDownAsync(share, _version);
         }
         finally

@@ -322,6 +322,43 @@ public sealed class AudioShareViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void RowStoppedBeforeRemoval_StillShowsDisconnectedStatus()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        _created[1].State = AudioShareState.Stopped;
+        _created[1].StatusText = "TV was unplugged";
+        _created[1].Raise();
+        Settle();
+        Assert.False(vm.Rows[0].IsSharing);
+        Lister.Outputs = Outs("spk", "hp");
+        Lister.Raise();
+        Settle();
+        Assert.Equal("Stopped sharing to TV: disconnected", vm.Status);
+    }
+
+    [AvaloniaFact]
+    public async Task Dispose_AwaitsRemovedRowDisposal()
+    {
+        var (vm, _, _) = Create();
+        vm.Rows[0].IsSharing = true;
+        Settle();
+        var gate = new TaskCompletionSource();
+        _created[1].StopGate = gate.Task;
+        Lister.Outputs = Outs("spk", "hp");
+        Lister.Raise();
+        Settle();
+        var dispose = vm.DisposeAsync().AsTask();
+        await Task.Delay(50);
+        Assert.False(dispose.IsCompleted);
+        gate.SetResult();
+        await dispose;
+        Assert.Equal(1, _created[1].DisposeCalls);
+        Assert.Equal(AudioShareState.Off, _created[1].State);
+    }
+
+    [AvaloniaFact]
     public void Rows_SurviveRefresh()
     {
         var (vm, _, _) = Create();
