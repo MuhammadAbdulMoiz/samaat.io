@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app mark: a lime "S" tile, as on the desktop sidebar. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+  <path android:fillColor="#C8F169" android:pathData="M30,22h48a8,8 0,0 1,8 8v48a8,8 0,0 1,-8 8h-48a8,8 0,0 1,-8 -8v-48a8,8 0,0 1,8 -8z" />
+  <path android:fillColor="#0B0D10"
+      android:pathData="M66,40c-2,-4 -6,-6 -12,-6c-7,0 -12,4 -12,10c0,6 5,8 11,9.5c5,1.2 7,2.3 7,5c0,3 -3,5 -7,5c-4.5,0 -7.5,-2 -9,-5.5l-5.5,3c2.3,5 7.5,8.5 14.5,8.5c8,0 13.5,-4.3 13.5,-11c0,-6.5 -5,-8.7 -11.5,-10.2c-4.6,-1.1 -6.5,-2 -6.5,-4.6c0,-2.5 2.4,-4.2 5.8,-4.2c3.4,0 5.8,1.5 7,4z" />
+</vector>

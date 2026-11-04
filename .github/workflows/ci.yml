@@ -26,3 +26,25 @@ jobs:
         with:
           name: screenshots
           path: artifacts/screenshots
+
+  android:
+    # The phone app. Not in Samaat.slnx because it needs the Android workload and SDK (preinstalled on GitHub's Ubuntu runners).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '17'
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet workload install android
+      - name: Install the Android platform the app targets
+        run: dotnet build src/Samaat.Android/Samaat.Android.csproj -t:InstallAndroidDependencies -p:AndroidSdkDirectory="$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=True
+      - name: Build the APK
+        run: dotnet publish src/Samaat.Android/Samaat.Android.csproj -c Release -p:AndroidSdkDirectory="$ANDROID_HOME" -o artifacts/apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: samaat-android-apk
+          path: artifacts/apk/*-Signed.apk

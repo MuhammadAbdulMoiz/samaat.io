@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Avalonia's activity is an AppCompat activity, so the theme must be AppCompat. Ink background like the app. -->
+  <style name="Samaat.Theme" parent="@style/Theme.AppCompat.NoActionBar">
+    <item name="android:windowBackground">@color/samaat_bg</item>
+    <item name="android:statusBarColor">@color/samaat_bg</item>
+    <item name="android:navigationBarColor">@color/samaat_rail</item>
+    <item name="colorAccent">@color/samaat_accent</item>
+  </style>
+</resources>
