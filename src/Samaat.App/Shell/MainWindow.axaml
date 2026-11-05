@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="using:Samaat.App.Shell"
         xmlns:c="using:Samaat.App.Shared.Controls"
+        xmlns:uilogo="using:Samaat.UI"
         xmlns:overview="using:Samaat.App.Features.Overview"
         xmlns:sound="using:Samaat.App.Features.Sound"
         xmlns:conn="using:Samaat.App.Features.Connections"
@@ -32,17 +33,9 @@
   </Window.DataTemplates>
 
   <Window.Resources>
-    <!-- Same S as the app icon (docs/logo/samaat-icon.svg), on an accent key inside a soft accent halo -->
-    <Border x:Key="BrandMark" x:Shared="False" Classes="brandHalo" ToolTip.Tip="Samaat">
-      <Border Classes="brandKey">
-        <Viewbox Width="30" Height="30">
-          <Canvas Width="100" Height="100">
-            <Path Data="M69,33 H44 A8.5,8.5 0 0 0 44,50 H56 A8.5,8.5 0 0 1 56,67 H31"
-                  Stroke="{DynamicResource Samaat.OnAccent}" StrokeThickness="14" StrokeLineCap="Round" />
-          </Canvas>
-        </Viewbox>
-      </Border>
-    </Border>
+    <!-- The fixed logo (Samaat.UI.Logo, the app icon): it doesn't change with the accent preset -->
+    <Image x:Key="BrandMark" x:Shared="False" Source="{x:Static uilogo:Logo.Image}" Width="40" Height="40"
+           ToolTip.Tip="Samaat" AutomationProperties.Name="Samaat" />
 
   </Window.Resources>
 

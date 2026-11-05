@@ -48,18 +48,6 @@
   <Style Selector="Border.sidebar.compact StackPanel.chipRow">
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
-  <!-- Brand mark: accent key inside a soft accent halo -->
-  <Style Selector="Border.brandHalo">
-    <Setter Property="Width" Value="40" />
-    <Setter Property="Height" Value="40" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="Padding" Value="3" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
-  </Style>
-  <Style Selector="Border.brandKey">
-    <Setter Property="CornerRadius" Value="9" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
   <Style Selector="Button.sidebarToggle PathIcon">
     <Setter Property="Width" Value="16" />
     <Setter Property="Height" Value="16" />

@@ -52,6 +52,22 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Sidebar_ShowsTheFixedLogo_NotAnAccentBox()
+    {
+        var (window, viewModel) = await ShowAsync();
+        viewModel.Settings.SetAccentCommand.Execute(AccentChoice.Ice);
+
+        // The sidebar carries the mark twice: full and compact layouts.
+        var logos = window.GetVisualDescendants().OfType<Image>().Where(i => AutomationProperties.GetName(i) == "Samaat").ToList();
+        Assert.NotEmpty(logos);
+        Assert.All(logos, logo => Assert.Same(Samaat.UI.Logo.Image, logo.Source));
+
+        viewModel.Settings.SetAccentCommand.Execute(AccentChoice.Lime);
+        window.Close();
+        await viewModel.DisposeAsync();
+    }
+
+    [AvaloniaFact]
     public async Task LowBudRaisesAlert()
     {
         var (window, viewModel) = await ShowAsync();

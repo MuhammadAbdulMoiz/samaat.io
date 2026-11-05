@@ -1,7 +1,5 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Data.Converters;
 using Avalonia.Media;
+using Avalonia.Data.Converters;
 
 namespace Samaat.App.Shared;
 
@@ -15,7 +13,5 @@ public static class Converters
         new FuncValueConverter<bool, ITransform?>(mirror => mirror ? new ScaleTransform(-1, 1) : null);
 
     /// <summary>Looks up an icon geometry by resource key, e.g. "Icon.Phone".</summary>
-    public static readonly IValueConverter IconByKey =
-        new FuncValueConverter<string?, Geometry?>(key =>
-            key is not null && Application.Current?.TryFindResource(key, out var value) == true ? value as Geometry : null);
+    public static readonly IValueConverter IconByKey = Samaat.UI.UiConverters.IconByKey;
 }

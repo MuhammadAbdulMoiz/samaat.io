@@ -1,12 +1,13 @@
 # Samaat: status, remaining work and getting started
 
-Last updated: 2026-11-03
+Last updated: 2026-11-04
 
 ## TL;DR
 
 - **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. The **first vendor adapter** (Jieli RCSP over BLE) reads per-bud battery and switches noise control (off, noise cancelling, transparency) and EQ presets on the Audionic ParadoX-E ([test notes](hardware-tests/2026-11-03-audionic-paradox-e.md), [protocol](protocols/jieli-rcsp.md)). Everything else runs against **simulated devices**.
+- **New: move earbuds between this computer and a phone, and the Android app** ([details](modules/phone-handoff.md)). Works with single-connection earbuds: the computer checks the phone, disconnects here, the phone connects, and the computer reconnects if the phone doesn't. Pairing by a 6-digit code, encrypted link over the local network. The Android app (Avalonia, sharing Core and the drivers) has battery, noise control, EQ and the move card. **Not run on a phone yet**; CI builds the APK.
 - **Not done:** multipoint and custom EQ bands on real earbuds, and any real device other than the ParadoX-E. The Quantum Zbuds have no usable vendor protocol.
-- **Tests:** 616 automated tests (Protocols 177, Core 229, App 210). CI runs them on Linux and Windows. The UI tests render dark and light screenshots of every page.
+- **Tests:** 732 automated tests here (Core 230, Protocols 177, App 226, Handoff 99), plus 18 phone tests in [samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile). CI runs them on Linux and Windows; samaat-mobile's CI builds the Android APK. The UI tests render dark and light screenshots of every page.
 
 | Overview | Sound | Links |
 |---|---|---|
@@ -60,6 +61,12 @@ The **Details** page shows vendor and product ID, address, advertised services, 
 ### Share audio and Switch here ([details](modules/audio-share.md))
 On the Sound page, the default output can be played on up to 3 other outputs at once, each with its own delay. Switch here makes any output the Windows default. Windows only (WASAPI loopback through NAudio; `IPolicyConfig` for switching). Checked on hardware with the Quantum and the laptop speakers.
 
+### Move earbuds to and from a phone, and the Android app ([details](modules/phone-handoff.md))
+- **Any earbuds:** the computer coordinates each move (check the phone → disconnect here → phone connects → reconnect here if it doesn't), so single-connection earbuds work. Moves start from either side; progress shows on both.
+- **Pairing:** ECDH P-256 with a commitment and a 6-digit comparison code; sessions are AES-256-GCM over TCP, found by a UDP beacon. Secrets are DPAPI-encrypted on Windows. The computer listens only while a phone is paired or pairing is open.
+- **Desktop:** Settings → Phone (pair, paired phones, forget) and the Links page's **Your phone** card.
+- **Android app:** in its own repo, [samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile) (`Samaat.Mobile` shared UI, `Samaat.Platform.Android`, `Samaat.Android`, and a phone preview for laptops), building this repo's shared projects from a submodule. Connecting on Android tries the hidden profile methods, then asks the user for one tap. Not run on a phone yet.
+
 ### Tray and notifications ([details](modules/tray.md))
 Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windows notifications for low battery (verified on one PC only).
 
@@ -72,7 +79,7 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 
 ### Blocking: needs a decision from you
 1. **Which earbuds to target first** (PLAN §13 Q1). Every real ANC, multipoint and L/R/case battery feature depends on it. The Quantum Zbuds were tested and have no usable vendor protocol; pick a model with a companion app or a BLE side.
-2. **Windows-first or Android-first** (§13 Q2). The core and the UI are portable; the platform layer isn't.
+2. **Windows-first or Android-first** (§13 Q2). The core and the UI are portable; the platform layer isn't. An Android app now exists (for moving earbuds between phone and computer), so this is about which platform gets hardware attention first.
 3. **License / open source** (§13 Q4). This affects which references we can learn from (§11).
 
 ### Next engineering steps
@@ -84,6 +91,7 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 | 3b | **Fast Pair Message Stream** | **Battery and firmware done** for the realme Buds T200 Lite (`Samaat.Protocols.FastPair`, `devices/realme/buds-t200-lite.json`): L/R (case when reported) and firmware over RFCOMM `df21fe2c-...`, read-only, verified on one unit ([test notes](hardware-tests/2026-11-03-realme-buds-t200-lite.md)). Next: the case byte, ANC. |
 | 4 | **First catalog entries** | Matching and loading are done; add real entries from hardware reports (Info → Copy report). |
 | 5 | **Reconnect handling** | Re-handshake after the earbuds drop and return. |
+| 5b | **Phone handoff on hardware** | Install the CI APK on an Android phone, pair, and run the checklist in [the plan](plans/2026-11-04-phone-handoff.md#hardware-check-not-doable-in-ci). Record which connect strategy each phone needs. |
 | 6 | **Unify the device databases** | Fold `DeviceProfileDb` into `DeviceCatalog` so one `devices/**/*.json` schema and loader serves driver resolution and the Details page. |
 
 ### Later modules (on the nav rail as "soon")
@@ -98,6 +106,7 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 - Connect / Disconnect for this computer (Links page, overview, tray) uses the same Bluetooth audio KS property as Windows Settings. Built and checked against the real filters read-only; **not yet run on hardware** (undocumented API, fallback is `ms-settings:bluetooth`).
 - A device that starts reporting battery after launch appears on the next **Refresh**.
 - System notifications are verified on one PC only.
+- Moving earbuds to a phone needs both on the same network, and Android usually needs one tap from the user to connect. Not run on a phone yet.
 
 ---
 
@@ -165,6 +174,7 @@ SAMAAT_SCREENSHOTS=artifacts/screenshots dotnet test tests/Samaat.App.Tests   # 
 | `Samaat.Core.Tests` | Capability rules, models, commands, simulator behaviour. Pure and fast; uses `FakeTimeProvider` instead of real time. |
 | `Samaat.Protocols.Tests` | Byte parsing and protocol features against fake transports. Future vendor adapters add recorded traces here. |
 | `Samaat.App.Tests` | View models (with a synchronous dispatcher) and headless UI tests that render the real window. |
+| `Samaat.Handoff.Tests` | The phone link: crypto, framing, pairing, sessions, the move coordinator, and loopback end-to-end runs. |
 
 Conventions:
 - New device capabilities go in as a feature interface in Core first (`IXxxFeature`), then the simulator, then the UI. That keeps a vendor adapter "just another implementation".
@@ -180,8 +190,10 @@ src/
   Samaat.Protocols.Standard/   BLE Battery Service
   Samaat.Platform.Windows/     WinRT discovery, Windows-reported battery, GATT client
   Samaat.Simulator/            simulated devices for development and tests
-  Samaat.App/                  Avalonia desktop app (Shell/, Features/, Shared/, Styles/, Assets/)
+  Samaat.Handoff/              phone link: pairing, encrypted sessions, moving earbuds with rollback
+  Samaat.UI/                   the shared design system: tokens, icons, fonts, battery ring, sound waves
+  Samaat.App/                  Avalonia desktop app (Shell/, Features/, Shared/, Styles/)
   Samaat.Cli/                  hardware check tool
-tests/                         Core, Protocols and App test projects
+tests/                         Core, Protocols, App and Handoff test projects (the phone app and its tests: samaat-mobile repo)
 docs/                          PLAN, STATUS (this file), design audit, per-module docs, screenshots
 ```

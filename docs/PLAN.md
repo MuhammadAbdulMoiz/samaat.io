@@ -229,7 +229,7 @@ Navigation: **Dashboard · Sound · Controls · Connections · Info · Settings*
 
 ## 8. Multipoint, gestures and EQ: limits we commit to stating in the UI
 
-- **Multipoint:** Samaat can connect and disconnect *this* host. It can list or switch *other* hosts only when the vendor protocol exposes it. A cross-device companion is a "later" idea, not a promise.
+- **Multipoint:** Samaat can connect and disconnect *this* host. It can list or switch *other* hosts only when the vendor protocol exposes it. With Samaat on an Android phone too, the earbuds can be moved between the two on any earbuds ([phone-handoff](modules/phone-handoff.md)); Android usually needs one tap from the user to connect.
 - **Gestures:** remapping needs the vendor protocol. Standard AVRCP only *receives* the result of a gesture.
 - **EQ:** "Device EQ" (stored on the buds, applies everywhere) and "Samaat EQ" (applies only to this PC's audio) are separate controls with separate labels.
 

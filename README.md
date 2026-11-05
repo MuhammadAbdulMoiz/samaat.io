@@ -1,8 +1,10 @@
+<p align="center"><img src="docs/images/logo.png" width="72" alt="Samaat logo" /></p>
+
 <h1 align="center">Samaat</h1>
 
 <p align="center">
   <b>One app for Bluetooth earbuds from any brand.</b><br />
-  Battery for each bud, noise control, EQ, connections and shared audio, on Windows.
+  Battery for each bud, noise control, EQ, connections and shared audio, on Windows, plus an Android app to move your earbuds between phone and computer.
 </p>
 
 <p align="center">
@@ -46,6 +48,16 @@ Every earbud brand ships its own app, and most only run on a phone. Samaat works
   </tr>
   <tr>
     <td width="50%" valign="top">
+      <b>Move to your phone and back</b><br />
+      <sub>With Samaat on your Android phone, move the earbuds between the phone and the computer from either one, even earbuds that connect to one device at a time. If the other side can't connect them, they go back where they were.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <b>Paired by a code</b><br />
+      <sub>Pair the phone and the computer once by comparing a 6-digit code. They talk over your Wi-Fi with an encrypted link: no account, no server.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <b>Works with unknown earbuds</b><br />
       <sub>Earbuds are matched by the protocol they speak (Google Fast Pair, Jieli RCSP), not by name. Unknown models get a neutral look you can swap for any known model's photo.</sub>
     </td>
@@ -83,7 +95,7 @@ Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0
 ```
 
-That's the Windows app with real Bluetooth. Two more ways to run it:
+That's the Windows app with real Bluetooth. The phone app lives in its own repo, **[samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile)**: it runs on Android, or in a window on your laptop, and pairs with this app ([try it](docs/TRY-IT.md)). Two more ways to run the desktop app:
 
 ```bash
 dotnet run --project src/Samaat.App -f net10.0                          # simulated earbuds, any OS
@@ -109,13 +121,15 @@ src/
   Samaat.Protocols.Jieli/      Jieli RCSP driver
   Samaat.Protocols.FastPair/   Google Fast Pair message stream driver
   Samaat.Platform.Windows/     WinRT Bluetooth, WASAPI audio sharing, connect and disconnect
+  Samaat.Handoff/              phone link: pairing, encrypted sessions, moving earbuds with rollback
   Samaat.Simulator/            simulated earbuds for UI work and tests
+  Samaat.UI/                   shared design system: tokens, icons, fonts, battery ring
   Samaat.App/                  Avalonia desktop app
   Samaat.Cli/                  console tool for checking real hardware
-tests/                         xUnit, including headless UI screenshots
+tests/                         xUnit, including headless UI screenshots (desktop and phone)
 ```
 
-Every feature is described as *what the earbuds support × what Samaat supports × whether it's available right now*, so every disabled control can say why. More in [ARCHITECTURE.md](docs/ARCHITECTURE.md), the [design notes](docs/design/ui-audit.md), and the module pages: [battery](docs/modules/battery.md), [noise control](docs/modules/noise-control.md), [connections](docs/modules/connections.md), [audio sharing](docs/modules/audio-share.md).
+Every feature is described as *what the earbuds support × what Samaat supports × whether it's available right now*, so every disabled control can say why. More in [ARCHITECTURE.md](docs/ARCHITECTURE.md), the [design notes](docs/design/ui-audit.md), and the module pages: [battery](docs/modules/battery.md), [noise control](docs/modules/noise-control.md), [connections](docs/modules/connections.md), [audio sharing](docs/modules/audio-share.md), [phone handoff](docs/modules/phone-handoff.md).
 
 ## Contributing
 

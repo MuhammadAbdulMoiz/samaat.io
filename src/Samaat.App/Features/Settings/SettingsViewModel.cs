@@ -86,6 +86,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool ReduceMotion { get; set; }
 
+    /// <summary>The Phone section; set by the shell.</summary>
+    public Phone.PhoneLinkViewModel? PhoneLink { get; set; }
+
     // Doubles because Avalonia's Slider binds to double; values are always whole numbers.
     [ObservableProperty]
     public partial double LowThreshold { get; set; }

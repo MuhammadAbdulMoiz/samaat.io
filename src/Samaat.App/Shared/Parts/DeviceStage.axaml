@@ -1,14 +1,14 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:overview="using:Samaat.App.Features.Overview"
-             xmlns:c="using:Samaat.App.Shared.Controls"
+             xmlns:ui="using:Samaat.UI.Controls"
              x:Class="Samaat.App.Shared.Parts.DeviceStage"
              x:DataType="overview:DeviceViewModel">
   <!-- The device's artwork on the canvas inside its level ring. Studio's rail and Focus's hero both use it,
        so the two can't drift apart; Focus scales it up with a Viewbox. -->
   <Border Classes="stage" Height="216">
     <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
-      <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
+      <ui:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
       <!-- Split photo: each bud and the case with its own level, buds above the case as in the product photo -->
       <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -74,7 +74,7 @@
             <Binding Path="!ShowUnknownPieces" />
           </MultiBinding>
         </Panel.IsVisible>
-        <c:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
+        <ui:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
                        Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
         <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
                Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />

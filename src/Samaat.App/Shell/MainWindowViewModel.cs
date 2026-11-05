@@ -1,4 +1,5 @@
 using Samaat.App.Features.Overview;
+using Samaat.App.Features.Phone;
 using Samaat.App.Features.Settings;
 using Samaat.App.Features.Sound;
 using Samaat.Core.Audio;
@@ -72,16 +73,22 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         IMotionPreference? motion = null,
         Func<IAudioShare>? audioShareFactory = null,
         Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null,
-        IReadOnlyList<IDeviceSource>? sources = null)
+        IReadOnlyList<IDeviceSource>? sources = null,
+        Func<Func<IReadOnlyList<IEarbudDevice>>, Samaat.Handoff.PhoneLinkHost>? phoneLinkFactory = null)
     {
         _time = time ?? TimeProvider.System;
         _notifier = notifier ?? options.CreateNotifier();
+        settings ??= new SettingsStore(SettingsStore.DefaultPath);
         _profiles = profiles ?? DeviceProfileDb.Load(Path.Combine(AppContext.BaseDirectory, "devices"));
         Settings = new SettingsViewModel(
-            settings ?? new SettingsStore(SettingsStore.DefaultPath), _alerts, startup ?? options.CreateStartupRegistration(),
+            settings, _alerts, startup ?? options.CreateStartupRegistration(),
             motion ?? options.CreateMotionPreference());
         Settings.PropertyChanged += OnSettingsChanged;
         AudioShare = new AudioShareViewModel(audioShareFactory ?? options.CreateAudioShare, outputSwitcher ?? options.CreateDefaultOutputSwitcher(), Settings);
+        // Paired phones live next to the settings, so tests with a temp settings file never see real pairings.
+        var phoneStore = Path.Combine(Path.GetDirectoryName(settings.Path) ?? ".", "phones.json");
+        PhoneLink = new PhoneLinkViewModel(phoneLinkFactory ?? (devices => options.CreatePhoneLinkHost(phoneStore, devices)), onMessage: ShowMessage);
+        Settings.PhoneLink = PhoneLink;
         _registry = new DeviceRegistry(sources ?? options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
@@ -107,6 +114,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     public SettingsViewModel Settings { get; }
 
     public AudioShareViewModel AudioShare { get; }
+
+    /// <summary>Pairing with phones and moving earbuds to them.</summary>
+    public PhoneLinkViewModel PhoneLink { get; }
 
     public ObservableCollection<DeviceViewModel> Devices { get; } = [];
 
@@ -306,6 +316,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         {
             var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings, ShowMessage);
             vm.Share = AudioShare;
+            vm.PhoneMove = PhoneLink.CreateMove(device, () => Section = AppSection.Settings);
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
             added.Add(vm);
@@ -318,6 +329,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         }
 
         UpdateVisibleDevices();
+        PhoneLink.SetDevices(current);
 
         UpdateAlertCount();
         UpdateCurrent();
@@ -384,6 +396,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
             device.Dispose();
         }
 
+        await PhoneLink.DisposeAsync();
         await _registry.DisposeAsync();
     }
 }
