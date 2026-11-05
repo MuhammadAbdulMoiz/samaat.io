@@ -92,7 +92,8 @@ public sealed partial class BatteryTileViewModel(BatteryComponent component) : O
     {
         IsAvailable = capability.UiState == CapabilityUiState.Enabled;
         IsReported = capability.Device == DeviceSupport.Supported;
-        _updatedAt = reading?.UpdatedAt;
+        // Only a reading with a level counts as an update; "no level" carries no age.
+        _updatedAt = reading?.Percent is null ? null : reading.UpdatedAt;
 
         if (capability.UiState is CapabilityUiState.Unsupported or CapabilityUiState.Undetected
             || (capability.UiState == CapabilityUiState.Disabled && reading?.Percent is null))

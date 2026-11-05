@@ -189,7 +189,17 @@ The logo keeps its glow: it is the shipped brand mark. `DesignSystemTests` now a
 
 **Worst-case data.** The simulator gained data sets besides its three tidy demo devices (`SimulatorScenario`). `--simulate=worst` serves four devices built from realistic worst cases, one failure each: an owner-named model ("Aleksandra Wiśniewska-Kowalczyk's Galaxy Buds2 Pro", with every field filled, one bud at 100 %, the other at 1 %, a case it never reports, seven linked hosts with long names and seven EQ presets); a two-letter "Jo" with no model or firmware, one bud flat at 0 % and the other unreported; an Urdu, right-to-left name; and a disconnected Japanese name with an emoji and no reading at all. `--simulate=empty` serves none. `WorstCaseRenderTests` renders every page with both sets, in both themes, at 1180 px and at the 640 px minimum, plus Focus and Glance (420 px), so a crash or binding failure on unusual data fails the build. Set `SAMAAT_STRESS_SCREENSHOTS` to a folder to keep the 87 frames.
 
-What held up: the sidebar truncates long names and shows them in a tooltip; "2 low batteries" pluralises; 0 % and 100 % render with tabular figures; unreported readings show "–" with a reason; Urdu shapes and runs right to left; the emoji renders; seven hosts list with truncated names and tooltips; Glance keeps "Open" reachable at 420 px; the empty state explains itself and offers a way out. What broke is listed in the pull request for this change and waits on design decisions before fixing.
+What held up: the sidebar truncates long names and shows them in a tooltip; "2 low batteries" pluralises; 0 % and 100 % render with tabular figures; unreported readings show "–" with a reason; Urdu shapes and runs right to left; the emoji renders; seven hosts list with truncated names and tooltips; Glance keeps "Open" reachable at 420 px; the empty state explains itself and offers a way out. What broke, and the fix:
+
+| What broke | Fix |
+|---|---|
+| Two or three low-battery toasts stacked over the page and hid row buttons (Links' Connect) for 8 s | One toast at a time with "+2 more" under it, and room below the last panel to scroll it clear of the toast |
+| A device that never reported a level said "Updated 5s ago" next to "Waiting for a reading", and "– from simulator" | No update time and no source until a level arrives; the rail says "waiting for a reading" or "not reported" |
+| "Jo" had no right-bud level, but the caption only mentioned the case | The caption names every piece without a level: "No level from the right bud yet, and the case isn't reported by this device" |
+| Truncated names in Focus and audio-output names on Sound had no way to read them in full | Tooltips with the full name |
+| A long name wraps to three lines in the device rail | Kept wrapping, with a tooltip: capping it at two lines made Avalonia drop the rest without an ellipsis, so a cut name looked complete |
+
+"Overall" shows the lowest bud (1 % next to a bud at 100 %). That's left as is for now; labelling it "lowest bud" is an open decision.
 
 **Component drawings.** [`drawings/list-row-tile-option.html`](drawings/list-row-tile-option.html) ([preview](drawings/list-row-tile-option.png)) is a dimensional drawing of the device row, the figure tile and the option row, measured from the rendered visual tree: every padding, gap, size and radius as a variable, with the formulas that derive the row heights. It records three facts the styles don't show at a glance: rows are taller than their minimum heights because the border and padding add up (54 against 52, and 50 against 48); the device thumbnail's corners (8) are rounder than its row's (6); and tiles flex from 128 px in one to four columns.
 

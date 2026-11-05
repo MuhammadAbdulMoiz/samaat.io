@@ -89,6 +89,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         var phoneStore = Path.Combine(Path.GetDirectoryName(settings.Path) ?? ".", "phones.json");
         PhoneLink = new PhoneLinkViewModel(phoneLinkFactory ?? (devices => options.CreatePhoneLinkHost(phoneStore, devices)), onMessage: ShowMessage);
         Settings.PhoneLink = PhoneLink;
+        Alerts.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(CurrentAlert));
+            OnPropertyChanged(nameof(MoreAlertsText));
+        };
         _registry = new DeviceRegistry(sources ?? options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
@@ -120,7 +125,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public ObservableCollection<DeviceViewModel> Devices { get; } = [];
 
+    /// <summary>Queued toasts, newest first. Only the newest shows, so stacked toasts never cover the page's own buttons.</summary>
     public ObservableCollection<string> Alerts { get; } = [];
+
+    /// <summary>The toast on screen, or null when there is none.</summary>
+    public string? CurrentAlert => Alerts.Count > 0 ? Alerts[0] : null;
+
+    /// <summary>"+2 more" under the toast when others are queued behind it.</summary>
+    public string? MoreAlertsText => Alerts.Count > 1 ? $"+{Alerts.Count - 1} more" : null;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]

@@ -414,6 +414,10 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string LastUpdatedText { get; set; } = "–";
 
+    /// <summary>False until some piece has reported a level, so "Updated …" never shows next to "Waiting for a reading".</summary>
+    [ObservableProperty]
+    public partial bool HasLastUpdate { get; set; }
+
     /// <summary>The most urgent battery problem on this device right now, if any.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAlert))]
@@ -444,7 +448,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             tile.UpdateAge(now);
         }
 
-        LastUpdatedText = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "") ?? "–";
+        var updated = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "");
+        LastUpdatedText = updated ?? "–";
+        HasLastUpdate = updated is not null;
     }
 
     private BatteryTileViewModel Tile(BatteryComponent component) => Tiles.Single(t => t.Component == component);
@@ -498,11 +504,19 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         var missing = Figures.Skip(1).Where(f => !f.IsReported).Select(f => f.Label.ToLowerInvariant()).ToList();
+        var noLevel = Figures.Skip(1).Where(f => f.IsReported && !f.HasLevel).Select(f => f.Label.ToLowerInvariant()).ToList();
+        var notReported = missing.Count > 0 ? $"the {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device" : null;
+        var waiting = noLevel.Count > 0 ? $"No level from the {string.Join(" and ", noLevel)} yet" : null;
         BatteryReasonText = !HasSummary && !components
             ? IsConnected ? "This device reports no battery level" : "Connect the device to read its battery"
-            : components
-                ? missing.Count > 0 ? $"The {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device" : "Each level is reported by the earbuds"
-                : "Left, right and case aren't reported for this device";
+            : !components ? "Left, right and case aren't reported for this device"
+            : (waiting, notReported) switch
+            {
+                ({ } w, { } n) => $"{w}, and {n}",
+                ({ } w, null) => w,
+                (null, { } n) => char.ToUpperInvariant(n[0]) + n[1..],
+                _ => "Each level is reported by the earbuds",
+            };
     }
 
     private void Update()
@@ -559,7 +573,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         SummaryFigure = summary is { } figure ? figure.ToString() : "–";
         SummaryUnit = HasSummary ? "%" : "";
         SummaryShort = HasSummary ? $"{summary}%" : "–";
-        BatterySourceMeta = _battery?.Source switch
+        BatterySourceMeta = !HasSummary ? (IsConnected ? "not reported" : "waiting for a reading") : _battery?.Source switch
         {
             CapabilitySource.OperatingSystem => "from Windows",
             CapabilitySource.StandardService => "from Bluetooth Battery Service",

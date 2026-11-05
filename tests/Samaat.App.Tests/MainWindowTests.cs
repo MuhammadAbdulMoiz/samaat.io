@@ -19,11 +19,12 @@ namespace Samaat.App.Tests;
 public class MainWindowTests
 {
     private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync(
-        DeviceProfileDb? profiles = null, Func<Samaat.Core.Audio.IAudioShare>? audioShareFactory = null, Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null)
+        DeviceProfileDb? profiles = null, Func<Samaat.Core.Audio.IAudioShare>? audioShareFactory = null, Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null,
+        TimeProvider? time = null)
     {
         // A temp-directory store, so tests never read or write the real %APPDATA% settings.
         var settings = new SettingsStore(Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"), "settings.json"));
-        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), settings: settings, profiles: profiles,
+        var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), time: time, settings: settings, profiles: profiles,
             audioShareFactory: audioShareFactory, outputSwitcher: outputSwitcher);
         var window = new MainWindow { DataContext = viewModel };
         window.Show();
@@ -136,7 +137,8 @@ public class MainWindowTests
             { "id": "sim.pro", "displayName": "Pro", "match": { "namePattern": "^Simulated Buds Pro$" }, "image": "left.png",
               "images": { "left": "left.png", "right": "right.png", "case": "case.png" } }
             """);
-        var (window, viewModel) = await ShowAsync(DeviceProfileDb.Load(dir));
+        // A fake clock, so the simulator's 2 s battery tick can't change the levels before they're read.
+        var (window, viewModel) = await ShowAsync(DeviceProfileDb.Load(dir), time: new Microsoft.Extensions.Time.Testing.FakeTimeProvider());
 
         List<string> VisibleNames() => window.GetVisualDescendants().OfType<Control>()
             // The Overview battery tiles carry the same names; this test is about the rail.
