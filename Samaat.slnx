@@ -5,6 +5,7 @@
     <Project Path="src/Samaat.Core/Samaat.Core.csproj" />
     <Project Path="src/Samaat.Handoff/Samaat.Handoff.csproj" />
     <Project Path="src/Samaat.Mobile/Samaat.Mobile.csproj" />
+    <Project Path="src/Samaat.Mobile.Preview/Samaat.Mobile.Preview.csproj" />
     <Project Path="src/Samaat.Platform.Windows/Samaat.Platform.Windows.csproj" />
     <Project Path="src/Samaat.Protocols.FastPair/Samaat.Protocols.FastPair.csproj" />
     <Project Path="src/Samaat.Protocols.Jieli/Samaat.Protocols.Jieli.csproj" />

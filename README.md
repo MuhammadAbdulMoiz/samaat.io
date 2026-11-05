@@ -95,6 +95,8 @@ Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0
 ```
 
+To try the phone side on your laptop, or install it on an Android phone, follow [Try it](docs/TRY-IT.md).
+
 That's the Windows app with real Bluetooth. The Android app builds with the Android workload ([how](docs/modules/phone-handoff.md#building-the-android-app)); CI uploads an APK. Two more ways to run the desktop app:
 
 ```bash

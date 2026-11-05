@@ -68,6 +68,10 @@ Full protocol: [docs/plans/2026-11-04-phone-handoff.md](../plans/2026-11-04-phon
 - `Samaat.Mobile.Tests` (18): the phone UI against a real computer host, accessibility checks (44 px targets, names, colour pairs, low battery in words), plus phone-sized screenshots.
 - Android: compile and package in CI (`android` job). Hardware: the checklist in the plan.
 
+## Trying it
+
+[docs/TRY-IT.md](../TRY-IT.md): the desktop app, the phone app on a laptop (`src/Samaat.Mobile.Preview`, pairs with the desktop over the real network), and installing the APK on an Android phone.
+
 ## Building the Android app
 
 ```bash
