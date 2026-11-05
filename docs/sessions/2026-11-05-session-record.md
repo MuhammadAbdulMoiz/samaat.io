@@ -172,7 +172,7 @@ The full reasoning is in each `docs/decisions/` file. The key ones:
 1. Merge #5, then #2, then #4 (§1).
 2. Delete the 5 merged branches, and change the repository settings (§1).
 3. **Licence:** choose one and add it.
-4. **Phone handoff in the first release?** Recommended: a feature flag that keeps it off for releases until it has run on a real phone. This resolves the `master`/dev drift instead of editing screens per branch.
+4. **Phone handoff in the first release?** Recommended: a feature flag that keeps it off for releases until it has run on a real phone. This resolves the `master`/dev drift instead of editing screens per branch. *(Flag added in the audit fixes; confirm its default.)*
 5. **`.claude/` cleanup:** which skills and plugins stay. Personal ones belong in the user folder.
 6. **"Overall" battery label:** it shows the lowest bud, e.g. 1 % beside a bud at 100 %. Rename it to "lowest bud"?
 
@@ -238,6 +238,27 @@ Start **after** #5, #2 and #4 are merged into `feature/ui-redesign`. Use one bra
 5. **Motion review:** the user types `/review-animations`. Check that the shared `BatteryRing` fix (no glide between devices) holds on the phone.
 6. **Backend cleanup:** split `DeviceItemViewModel` (696 lines) along its responsibilities, test-first.
 7. **Docs:** README, TRY-IT, a decision record, and update the phone section of the desktop's ARCHITECTURE.md if anything changes.
+
+---
+
+## Audit fixes (issues 2 to 10)
+
+Done on `claude/audit-fixes` (from `feature/ui-redesign` after #5, #2 and #4 merged), one pull request into `feature/ui-redesign`. Full reasoning: [docs/decisions/2026-11-05-audit-fixes.md](../decisions/2026-11-05-audit-fixes.md). Tests: 1,008 → 1,063, 0 warnings.
+
+**Done:**
+- **3, drift:** the phone-handoff flag (`AppOptions.PhoneHandoff`, off in the Store build), then `master` merged in; `master` has nothing dev lacks.
+- **4, Windows tests:** `tests/Samaat.Platform.Windows.Tests` (25 tests) on the Windows CI job.
+- **5, silent failures:** `SamaatLog` in Core, a 256 KB rolling log file, the log tail in Copy report, the six `async void` handlers guarded, 46 handled failures logged.
+- **6, phone link:** pairing re-checked after the handshake, at most 4 pending handshakes, beacon only while pairing, `phones.json` 0600 outside Windows, PRIVACY.md updated.
+- **7, docs:** STATUS, TRY-IT, CONTRIBUTING (recorded bytes), PLAN, ARCHITECTURE.
+- **9, release:** version 1.0.0, release workflow on `v*` tags, Dependabot, coverage in CI.
+- **10, screenshots:** a fixed clock; regenerated once, and reruns change nothing.
+
+**Left for the owner:**
+- **2, licence:** choose one (options in the PR and the decision record).
+- **3, flag default:** confirm "off in the Store build".
+- **8, `.claude/`:** choose the keep-list in `.claude/README.md`.
+- The first release tag; the Windows hardware checklist; the phone handoff on a real phone.
 
 ---
 
