@@ -29,4 +29,4 @@ Every field given in `match` must agree. The highest score wins: vendor + produc
 
 A device with both the Jieli vendor ID and the Fast Pair stream gets the Fast Pair driver: an advertised service outranks a chip vendor's ID.
 
-Models: `audionic/paradox-e.json`, `realme/buds-t200-lite.json`, `zero-lifestyle/quantum-zbuds.json`, `microsoft/modern-wireless-headset.json`.
+Models: `audionic/paradox-e.json`, `realme/buds-t200-lite.json`, `zero-lifestyle/quantum-zbuds.json`, `microsoft/modern-wireless-headset.json`, `bose/qc-headphones.json`.

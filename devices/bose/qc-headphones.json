@@ -1,0 +1,23 @@
+{
+  // Read by both DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details); keep it valid for each.
+  "id": "bose.qc-headphones",
+  "displayName": "Bose QC Headphones",
+  "manufacturer": "Bose",
+  // Known model with no driver of its own; battery comes from Windows (HFP), shown while connected.
+  "driver": "none",
+  "match": {
+    // Observed on the paired headset: DeviceID VID 0x009E (Bose), PID 0x4075, name "Bose QC Headphones".
+    "deviceId": { "vid": "0x009E", "pid": "0x4075" },
+    "vendorId": "0x009E",
+    "productId": "0x4075",
+    "sdpUuids": [],
+    "namePattern": "^Bose QC Headphones$"
+  },
+  "adapter": null,
+  "verified": false,
+  "features": [],
+  "verifiedFirmware": [],
+  // Product photo (user-supplied), background removed; shown in the device rail.
+  "image": "qc-headphones.png",
+  "notes": "Basic tier: one combined battery level from Windows (HFP battery indicator on the Hands-Free AG node), only while connected."
+}
