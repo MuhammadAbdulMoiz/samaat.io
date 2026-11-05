@@ -22,6 +22,7 @@ var driverRegistry = new Samaat.Core.Drivers.DriverRegistry(
     Samaat.Core.Drivers.DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
 driverRegistry.Register(new Samaat.Protocols.Jieli.JieliDriver());
 driverRegistry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
+driverRegistry.Register(new Samaat.Protocols.Bose.BoseBmapDriver());
 sources.Add(new Samaat.Platform.Windows.WindowsDeviceSource(includeNonAudio: includeNonAudio, registry: driverRegistry));
 #else
 if (!simulate)

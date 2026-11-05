@@ -1,7 +1,9 @@
 # Bose BMAP: what the QC Headphones answer
 
-Status: **BMAP answers read requests with no handshake** on raw RFCOMM channels 8 and 9. No Samaat driver yet; the
-headset stays on the Windows HFP battery level. Raw captures are in
+Status: **BMAP answers read requests with no handshake** on raw RFCOMM channels 8 and 9. Samaat's `bose-bmap`
+driver (`src/Samaat.Protocols.Bose`) reads the current mode there and shows it read-only (Quiet as noise cancelling,
+Aware as transparency); it writes only `1F 03 01 00` and never switches modes. Battery stays on the Windows HFP level.
+The driver itself hasn't run against the headset yet (`verified: false`). Raw captures are in
 [the hardware note](../hardware-tests/2026-11-05-bose-qc-headphones.md).
 
 ## Sources

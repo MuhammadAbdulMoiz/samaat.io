@@ -30,6 +30,9 @@ public interface IDeviceTransports
     /// <summary>Returns null when the device doesn't expose that service or it can't be opened.</summary>
     Task<IRfcommChannel?> OpenRfcommAsync(Guid serviceUuid, CancellationToken cancellationToken = default);
 
+    /// <summary>Opens RFCOMM by channel number, for services with no SDP record the platform lists. Null when the platform can't or the channel won't open.</summary>
+    Task<IRfcommChannel?> OpenRfcommChannelAsync(byte channel, CancellationToken cancellationToken = default) => Task.FromResult<IRfcommChannel?>(null);
+
     /// <summary>The BLE side of the same physical device, if there is one.</summary>
     IGattClient? Gatt { get; }
 }

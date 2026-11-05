@@ -34,6 +34,7 @@ public sealed class ShippedDeviceTests
         var registry = new DriverRegistry(DeviceCatalog.FromDirectory(Devices));
         registry.Register(new JieliDriver());
         registry.Register(new FastPairDriver());
+        registry.Register(new Samaat.Protocols.Bose.BoseBmapDriver());
         return registry;
     }
 

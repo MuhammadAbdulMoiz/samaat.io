@@ -48,5 +48,10 @@ Mode switching (START `[31.3]`) wasn't sent.
 
 ## Next
 
-- Send one mode switch and confirm it by read-back, to observe the START reply on this firmware.
-- Then build the `bose-bmap` driver (needs a by-channel RFCOMM open in `Samaat.Transport` and the Windows platform).
+Done since: the read-only `bose-bmap` driver (by-channel RFCOMM open via Winsock, noise mode read from channel 8/9),
+tested only against the frames above. The headset went back to its owner before the driver could run on it.
+
+- With the headset again: run `samaat-cli` and check `noise.anc` / `noise.transparency` show as available with the
+  right mode.
+- Send one mode switch and confirm it by read-back, to observe the START reply on this firmware; only then enable
+  switching.

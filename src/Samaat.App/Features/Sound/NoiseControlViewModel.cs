@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Samaat.Core.Capabilities;
 using Samaat.Core.Commands;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
@@ -220,7 +221,8 @@ public sealed partial class NoiseControlViewModel : ObservableObject, IDisposabl
                 ConversationAwareness = state.ConversationAwareness ?? false;
             }
 
-            CanControl = _device.Connection == ConnectionState.Connected && Layout != NoiseControlLayout.None;
+            CanControl = _device.Connection == ConnectionState.Connected && Layout != NoiseControlLayout.None
+                && _feature?.Access != CapabilityAccess.ReadOnly;
         });
         UpdateStatus();
     }
@@ -247,6 +249,7 @@ public sealed partial class NoiseControlViewModel : ObservableObject, IDisposabl
             : _device.Connection != ConnectionState.Connected ? "Connect your earbuds to change noise control."
             : IsBusy ? "Applying…"
             : SelectedMode == NoiseMode.Off ? "Noise control is off"
+            : _feature?.Access == CapabilityAccess.ReadOnly ? $"{SelectedModeLabel} is on. Change it on your headphones."
             : $"{SelectedModeLabel} is on";
     }
 
