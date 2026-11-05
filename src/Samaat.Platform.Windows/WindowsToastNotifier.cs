@@ -30,10 +30,7 @@ public sealed class WindowsToastNotifier(Func<byte[]?>? iconPng = null) : INotif
             }
 
             var xml = new XmlDocument();
-            xml.LoadXml(
-                "<toast><visual><binding template=\"ToastGeneric\">" +
-                $"<text>{SecurityElement.Escape(title)}</text><text>{SecurityElement.Escape(body)}</text>" +
-                "</binding></visual></toast>");
+            xml.LoadXml(ToastXml(title, body));
             (packaged ? ToastNotificationManager.CreateToastNotifier() : ToastNotificationManager.CreateToastNotifier(Aumid)).Show(new ToastNotification(xml));
         }
         catch (Exception e)
@@ -41,6 +38,12 @@ public sealed class WindowsToastNotifier(Func<byte[]?>? iconPng = null) : INotif
             Trace.WriteLine($"Samaat toast failed: {e}");
         }
     }
+
+    /// <summary>A generic two-line toast; both lines are escaped, since device names can contain any character.</summary>
+    internal static string ToastXml(string title, string body) =>
+        "<toast><visual><binding template=\"ToastGeneric\">" +
+        $"<text>{SecurityElement.Escape(title)}</text><text>{SecurityElement.Escape(body)}</text>" +
+        "</binding></visual></toast>";
 
     private void EnsureRegistered()
     {

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Windows platform's pure logic (selectors, signal mapping, KS requests, toast text). Builds everywhere, so the
+       solution still builds on Linux; it only runs on Windows, where CI's windows-latest job runs it. -->
+  <PropertyGroup>
+    <TargetFramework>$(SamaatWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject Condition="!$([MSBuild]::IsOSPlatform('Windows'))">false</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Samaat.Platform.Windows\Samaat.Platform.Windows.csproj" />
+  </ItemGroup>
+</Project>

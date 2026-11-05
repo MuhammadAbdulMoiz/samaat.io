@@ -15,10 +15,10 @@ namespace Samaat.Platform.Windows;
 /// </summary>
 public sealed class WindowsDeviceSource : IDeviceSource
 {
-    private const string ContainerIdProperty = "System.Devices.Aep.ContainerId";
-    private const string ManufacturerProperty = "System.Devices.Aep.Manufacturer";
-    private const string ModelNameProperty = "System.Devices.Aep.ModelName";
-    private const string HardwareIdsProperty = "System.Devices.HardwareIds";
+    private const string ContainerIdProperty = WindowsSelectors.ContainerIdProperty;
+    private const string ManufacturerProperty = WindowsSelectors.ManufacturerProperty;
+    private const string ModelNameProperty = WindowsSelectors.ModelNameProperty;
+    private const string HardwareIdsProperty = WindowsSelectors.HardwareIdsProperty;
 
     // One budget for the by-address BLE connection plus the driver session (auth and first push).
     private static readonly TimeSpan DriverBudget = TimeSpan.FromSeconds(8);
@@ -125,17 +125,12 @@ public sealed class WindowsDeviceSource : IDeviceSource
             return null;
         }
 
-        var containerId = info.Properties.TryGetValue(ContainerIdProperty, out var value) && value is Guid id ? id : (Guid?)null;
+        var containerId = WindowsSelectors.TryReadContainerId(info.Properties);
 
         var ids = await ReadVidPidAsync(containerId, cancellationToken);
-        var name = string.IsNullOrWhiteSpace(info.Name) ? bluetooth.Name : info.Name;
-        var signals = new DeviceSignals(
-            name,
-            bluetooth.ClassOfDevice.RawValue,
-            (ushort?)ids?.Vid,
-            (ushort?)ids?.Pid,
-            await ReadServiceUuidsAsync(bluetooth, cancellationToken),
-            info.Properties.TryGetValue(ManufacturerProperty, out var manufacturer) ? manufacturer as string : null);
+        var signals = WindowsSignals.Create(
+            info.Name, bluetooth.Name, bluetooth.ClassOfDevice.RawValue, ids, await ReadServiceUuidsAsync(bluetooth, cancellationToken), info.Properties);
+        var name = signals.Name;
         var resolution = _registry.Resolve(signals);
 
         // For a driver-resolved device one deadline covers all BLE work: the standard battery probe,
@@ -256,7 +251,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
         try
         {
             var nodes = await DeviceInformation.FindAllAsync(
-                $"System.Devices.ContainerId:=\"{{{container}}}\"", [HardwareIdsProperty], DeviceInformationKind.Device)
+                WindowsSelectors.ContainerId(container), [HardwareIdsProperty], DeviceInformationKind.Device)
                 .AsTask(cancellationToken);
             return HardwareIds.TryParseVidPid(nodes
                 .SelectMany(n => n.Properties.TryGetValue(HardwareIdsProperty, out var v) && v is string[] s ? s : []));

@@ -22,6 +22,8 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet build Samaat.slnx -c Release
+      # tests/Samaat.Platform.Windows.Tests is a test project on Windows only (IsTestProject), so it runs on windows-latest
+      # and is built, not run, on ubuntu-latest.
       - run: dotnet test Samaat.slnx -c Release --no-build
         env:
           SAMAAT_SCREENSHOTS: ${{ github.workspace }}/artifacts/screenshots
