@@ -390,8 +390,12 @@ public class RedesignShellTests
         var ring = All<BatteryRing>(window).First();
 
         Assert.Contains("reduce-motion", window.Classes);
-        Assert.Equal(TimeSpan.Zero, Assert.IsType<CrossFade>(host.PageTransition).Duration);
+        Assert.Null(host.PageTransition);
         Assert.True(ring.Transitions is null or { Count: 0 });
+        // The level bars too: this rule was silently overridden while Gauges.axaml loaded before Controls.axaml.
+        var levels = All<ProgressBar>(window).Where(p => p.Classes.Contains("level")).ToList();
+        Assert.NotEmpty(levels);
+        Assert.All(levels, p => Assert.True(p.Transitions is null or { Count: 0 }));
         vm.NavigateCommand.Execute(AppSection.Sound);
         Pump();
 
@@ -399,8 +403,53 @@ public class RedesignShellTests
         Pump();
 
         Assert.DoesNotContain("reduce-motion", window.Classes);
-        Assert.True(Assert.IsType<CrossFade>(host.PageTransition).Duration > TimeSpan.Zero);
+        Assert.Null(host.PageTransition);
         Assert.NotEmpty(ring.Transitions!);
+        await CloseAsync(window, vm);
+    }
+
+    // review-animations: tabs are switched dozens of times a session, and a cross-fade overlapped two pages for 180 ms.
+    [AvaloniaFact]
+    public async Task PageTabs_SwitchWithoutAFade()
+    {
+        var (window, vm) = await ShowAsync(systemReduceMotion: false);
+
+        Assert.Null(window.FindControl<TransitioningContentControl>("PageHost")!.PageTransition);
+        await CloseAsync(window, vm);
+    }
+
+    // review-animations: the ring used to glide from the old device's level to the new one, which reads as a drain.
+    [AvaloniaFact]
+    public async Task BatteryRing_JumpsToTheNewDevicesLevel_AndStillGlidesForTheSameDevice()
+    {
+        var (window, vm) = await ShowAsync(systemReduceMotion: false);
+        var ring = All<BatteryRing>(window).First();
+        var lite = vm.Devices.Single(d => d.Name == "Simulated Buds Lite");
+
+        Pump();
+        vm.SelectDeviceCommand.Execute(lite);
+        Pump(2); // two frames into a 260 ms glide the ring would still be far from the new level
+
+        Assert.Equal(lite.SummaryPercent, ring.Value);
+        Assert.NotEmpty(ring.Transitions!);
+        await CloseAsync(window, vm);
+    }
+
+    // review-animations: reduced motion removes movement; the busy bar's sweep was the only movement left.
+    [AvaloniaFact]
+    public async Task ReduceMotion_StopsTheBusyBarSweep()
+    {
+        var (window, vm) = await ShowAsync(systemReduceMotion: true);
+        vm.NavigateCommand.Execute(AppSection.Sound);
+        Pump();
+        var busy = All<ProgressBar>(window).Where(p => p.Classes.Contains("busy")).ToList();
+
+        Assert.NotEmpty(busy);
+        Assert.All(busy, b => Assert.False(b.IsIndeterminate));
+
+        vm.Settings.ReduceMotion = false;
+        Pump();
+        Assert.All(busy, b => Assert.True(b.IsIndeterminate));
         await CloseAsync(window, vm);
     }
 
@@ -411,7 +460,9 @@ public class RedesignShellTests
         var host = window.FindControl<TransitioningContentControl>("PageHost")!;
 
         Assert.DoesNotContain("reduce-motion", window.Classes);
-        Assert.True(Assert.IsType<CrossFade>(host.PageTransition).Duration > TimeSpan.Zero);
+        Assert.Null(host.PageTransition); // tabs never fade; see PageTabs_SwitchWithoutAFade
+        Assert.NotEmpty(All<BatteryRing>(window).First().Transitions!);
+        Assert.All(All<ProgressBar>(window).Where(p => p.Classes.Contains("level")), p => Assert.NotEmpty(p.Transitions!));
         await CloseAsync(window, vm);
     }
 }

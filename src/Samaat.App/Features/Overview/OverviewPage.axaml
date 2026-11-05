@@ -20,7 +20,7 @@
             <TextBlock Text="Battery" Classes="panelTitle" />
             <TextBlock Text="{Binding BatteryReasonText}" Classes="meta" TextWrapping="Wrap" />
           </StackPanel>
-          <TextBlock Grid.Column="1" Classes="meta" Text="{Binding LastUpdatedText, StringFormat='Updated {0}'}" VerticalAlignment="Center" Margin="12,0,8,0" />
+          <TextBlock Grid.Column="1" Classes="meta" Text="{Binding LastUpdatedText, StringFormat='Updated {0}'}" IsVisible="{Binding HasLastUpdate}" VerticalAlignment="Center" Margin="12,0,8,0" />
           <Button Grid.Column="2" Classes="icon" Command="{Binding RefreshCommand}" VerticalAlignment="Center"
                   ToolTip.Tip="Ask the device for fresh battery levels" AutomationProperties.Name="Refresh battery">
             <PathIcon Data="{StaticResource Icon.Refresh}" />
@@ -86,7 +86,7 @@
             </Border>
           </WrapPanel>
         </StackPanel>
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
       </Panel>
     </Border>
 

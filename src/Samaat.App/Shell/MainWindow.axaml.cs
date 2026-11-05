@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using Avalonia;
-using Avalonia.Animation;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -20,7 +19,6 @@ public partial class MainWindow : Window
 
     public const double GlanceMinWidth = 400;
 
-    private static readonly TimeSpan FadeDuration = TimeSpan.FromMilliseconds(180);
 
     private SettingsViewModel? _settings;
 
@@ -74,13 +72,8 @@ public partial class MainWindow : Window
         }
     }
 
-    // The window class turns off value transitions in the styles; the page fade lives on the control.
-    private void ApplyMotion()
-    {
-        var reduce = _settings?.ReduceMotion == true;
-        Classes.Set("reduce-motion", reduce);
-        PageHost.PageTransition = new CrossFade(reduce ? TimeSpan.Zero : FadeDuration);
-    }
+    // The window class turns off value glides, press feedback and the busy-bar sweep in the styles (Gauges.axaml).
+    private void ApplyMotion() => Classes.Set("reduce-motion", _settings?.ReduceMotion == true);
 
     private void ApplyLayout() =>
         MinWidth = _settings?.Dashboard == DashboardView.Glance ? GlanceMinWidth : StandardMinWidth;

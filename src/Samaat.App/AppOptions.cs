@@ -7,13 +7,28 @@ using Samaat.Simulator;
 
 namespace Samaat.App;
 
-public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimized = false, bool TestNotification = false)
+public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimized = false, bool TestNotification = false,
+    SimulatorScenario Scenario = SimulatorScenario.Demo)
 {
-    public static AppOptions Parse(string[] args) => new(
-        Simulate: args.Contains("--simulate"),
-        IncludeNonAudio: args.Contains("--all-devices"),
-        Minimized: args.Contains("--minimized"),
-        TestNotification: args.Contains("--test-notification"));
+    public static AppOptions Parse(string[] args)
+    {
+        // --simulate, or --simulate=worst / --simulate=empty for the stress-test data sets (dev only).
+        var simulate = args.FirstOrDefault(a => a == "--simulate" || a.StartsWith("--simulate=", StringComparison.Ordinal));
+        var scenario = simulate?.Split('=', 2) is [_, var name] ? ParseScenario(name) : SimulatorScenario.Demo;
+        return new(
+            Simulate: simulate is not null,
+            IncludeNonAudio: args.Contains("--all-devices"),
+            Minimized: args.Contains("--minimized"),
+            TestNotification: args.Contains("--test-notification"),
+            Scenario: scenario);
+    }
+
+    private static SimulatorScenario ParseScenario(string name) => name switch
+    {
+        "worst" => SimulatorScenario.WorstCase,
+        "empty" => SimulatorScenario.Empty,
+        _ => SimulatorScenario.Demo,
+    };
 
 #if SAMAAT_WINDOWS
     public bool HasRealBluetooth => true;
@@ -36,7 +51,7 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
 #endif
         if (UsesSimulator)
         {
-            sources.Add(new SimulatorDeviceSource(TimeSpan.FromSeconds(2), time));
+            sources.Add(new SimulatorDeviceSource(TimeSpan.FromSeconds(2), time, scenario: Scenario));
         }
 
         return sources;

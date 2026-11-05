@@ -36,13 +36,16 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
     private ConnectionState _connection = ConnectionState.Connected;
 
     private readonly IReadOnlyList<IFeature> _features;
+    private readonly IReadOnlySet<BatteryComponent> _unreported;
 
     public SimulatedEarbudDevice(
         DeviceIdentity identity,
         SimulatedBatteryLayout layout,
         TimeProvider? time = null,
         IEnumerable<IFeature>? extraFeatures = null,
-        TimeSpan? commandLatency = null)
+        TimeSpan? commandLatency = null,
+        IReadOnlyDictionary<BatteryComponent, int>? levels = null,
+        IReadOnlySet<BatteryComponent>? unreported = null)
     {
         Identity = identity;
         Layout = layout;
@@ -62,6 +65,16 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
             },
             _ => new() { [BatteryComponent.Combined] = new(55, BudStatus.Unknown) },
         };
+        foreach (var (component, percent) in levels ?? new Dictionary<BatteryComponent, int>())
+        {
+            if (_cells.TryGetValue(component, out var cell))
+            {
+                cell.Percent = Math.Clamp(percent, 0, 100);
+            }
+        }
+
+        // A component the device lists but never reports a level for, as some earbuds do for the case.
+        _unreported = unreported ?? new HashSet<BatteryComponent>();
         _battery = new SimulatedBatteryFeature(_cells.Keys.ToHashSet());
         _features = [_battery, new SimulatedPcLinkFeature(this, commandLatency ?? TimeSpan.Zero, _time), .. extraFeatures ?? []];
         _battery.Publish(Snapshot());
@@ -186,7 +199,7 @@ public sealed class SimulatedEarbudDevice : IEarbudDevice
         var now = _time.GetUtcNow();
         return BatteryState.Empty.With(_cells.Select(kv => new BatteryReading(
             kv.Key,
-            kv.Value.Percent,
+            _unreported.Contains(kv.Key) ? null : kv.Value.Percent,
             now,
             kv.Value.Charging,
             kv.Key is BatteryComponent.Left or BatteryComponent.Right ? kv.Value.Status : BudStatus.Unknown)));

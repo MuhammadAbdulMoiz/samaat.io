@@ -75,7 +75,9 @@
   <Style Selector="ui|BatteryRing">
     <Setter Property="Transitions">
       <Transitions>
-        <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
+        <DoubleTransition Property="Value" Duration="0:0:0.26">
+          <DoubleTransition.Easing><SplineEasing X1="0.23" Y1="1" X2="0.32" Y2="1" /></DoubleTransition.Easing>
+        </DoubleTransition>
       </Transitions>
     </Setter>
   </Style>

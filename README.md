@@ -100,6 +100,8 @@ dotnet run --project src/Samaat.App -f net10.0
 | Option | What it does |
 |---|---|
 | `--simulate` | Add the simulated earbuds next to the real ones (Windows) |
+| `--simulate=worst` | Simulate worst-case earbuds instead: long, short, right-to-left and emoji names, missing fields, 0 % and 100 %, unreported readings, seven linked devices |
+| `--simulate=empty` | Simulate no earbuds at all, to see the empty states |
 | `--all-devices` | List every paired Bluetooth device, not only audio devices |
 | `--minimized` | Start in the tray |
 

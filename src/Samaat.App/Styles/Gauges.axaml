@@ -9,6 +9,15 @@
       <Transitions />
     </Setter>
   </Style>
+  <!-- Reduced motion keeps comprehension and drops movement: the busy bar holds still, presses don't shrink -->
+  <Style Selector="Window.reduce-motion ProgressBar.busy">
+    <Setter Property="IsIndeterminate" Value="False" />
+    <Setter Property="Value" Value="100" />
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="Window.reduce-motion Button:pressed">
+    <Setter Property="RenderTransform" Value="none" />
+  </Style>
   <Style Selector="Window.reduce-motion ProgressBar.level">
     <Setter Property="Transitions">
       <Transitions />

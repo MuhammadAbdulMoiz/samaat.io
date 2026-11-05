@@ -192,7 +192,8 @@
 
     <Grid Grid.Column="1">
       <ScrollViewer>
-        <Panel Margin="24">
+        <!-- Bottom margin leaves room to scroll the last panel clear of a toast -->
+        <Panel Margin="24,24,24,96">
 
           <!-- Empty state -->
           <StackPanel IsVisible="{Binding ShowEmptyState}" HorizontalAlignment="Center" Margin="0,80,0,0" Spacing="12" MaxWidth="420">
@@ -218,15 +219,13 @@
                           Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Info}" />
                 </StackPanel>
               </Border>
-              <TransitioningContentControl x:Name="PageHost" Content="{Binding DevicePage}">
-                <TransitioningContentControl.PageTransition>
-                  <CrossFade Duration="0:0:0.18" />
-                </TransitioningContentControl.PageTransition>
-              </TransitioningContentControl>
+              <!-- Tabs switch instantly: they're used dozens of times a session, and a fade overlapped two pages -->
+              <TransitioningContentControl x:Name="PageHost" Content="{Binding DevicePage}" PageTransition="{x:Null}" />
             </StackPanel>
 
             <StackPanel Width="260" Spacing="16" DataContext="{Binding SelectedDevice}" x:DataType="overview:DeviceViewModel">
               <StackPanel Spacing="4">
+                <!-- Wraps in full: with MaxLines, Avalonia drops the overflow without an ellipsis, so a cut name would look complete -->
                 <TextBlock Text="{Binding Name}" Classes="title" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding Subtitle}" Classes="muted" TextWrapping="Wrap" />
               </StackPanel>
@@ -290,25 +289,22 @@
         </Panel>
       </ScrollViewer>
 
-      <!-- Toasts: battery alerts from any device -->
-      <ItemsControl ItemsSource="{Binding Alerts}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    Margin="0,0,24,24" Width="340">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="x:String">
-            <Border Classes="toast" Margin="0,8,0,0">
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Classes="ghost" MinWidth="32" MinHeight="32" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
-                        Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).DismissAlertCommand}"
-                        CommandParameter="{Binding}">
-                  <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
-                </Button>
-              </Grid>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
+      <!-- Toast: the newest battery alert or message; older ones wait behind it ("+2 more") -->
+      <Border Classes="toast" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,24" Width="340"
+              IsVisible="{Binding CurrentAlert, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding CurrentAlert}" TextWrapping="Wrap" />
+            <TextBlock Classes="meta" Text="{Binding MoreAlertsText}"
+                       IsVisible="{Binding MoreAlertsText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </StackPanel>
+          <Button Grid.Column="2" Classes="ghost" MinWidth="32" MinHeight="32" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
+                  Command="{Binding DismissAlertCommand}" CommandParameter="{Binding CurrentAlert}">
+            <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
+          </Button>
+        </Grid>
+      </Border>
     </Grid>
   </Grid>
 </Window>

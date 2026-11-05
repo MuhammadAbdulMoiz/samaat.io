@@ -17,7 +17,8 @@
     <StyleInclude Source="avares://Samaat.UI/Styles/Artwork.axaml" />
     <StyleInclude Source="avares://Samaat/Styles/Base.axaml" />
     <StyleInclude Source="avares://Samaat/Styles/Shell.axaml" />
-    <StyleInclude Source="avares://Samaat/Styles/Gauges.axaml" />
     <StyleInclude Source="avares://Samaat/Styles/Controls.axaml" />
+    <!-- Last, so its reduce-motion rules override the motion the other styles set -->
+    <StyleInclude Source="avares://Samaat/Styles/Gauges.axaml" />
   </Application.Styles>
 </Application>
