@@ -20,6 +20,7 @@
   <a href="#how-its-built">How it's built</a> &nbsp;·&nbsp;
   <a href="#development">Development</a> &nbsp;·&nbsp;
   <a href="docs/STATUS.md">Status</a> &nbsp;·&nbsp;
+  <a href="docs/FEATURE-IDEAS.md">Ideas</a> &nbsp;·&nbsp;
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
