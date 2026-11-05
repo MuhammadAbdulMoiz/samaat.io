@@ -6,6 +6,8 @@ using Samaat.Core.Commands;
 using Samaat.Core.Devices;
 using Samaat.Core.Equalizer;
 using Samaat.Core.NoiseControl;
+using Samaat.Core.Profiles;
+using Avalonia.Media.Imaging;
 using Samaat.Handoff;
 using Samaat.Handoff.Protocol;
 using Samaat.Mobile.Runtime;
@@ -24,6 +26,10 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
     private readonly IBatteryFeature? _battery;
     private readonly INoiseControlFeature? _noise;
     private readonly IEqualizerFeature? _eq;
+    private readonly DeviceProfile? _profile;
+    private string? _lookChoice;
+    private ResolvedLook? _look;
+    private IReadOnlyList<Bitmap> _partBitmaps = [];
 
     public DeviceItemViewModel(IEarbudDevice device, MobileRuntime runtime, Action<Action> post, Action<string> onMessage, Action openComputer)
     {
@@ -36,6 +42,8 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
         _battery = device.GetFeature<IBatteryFeature>();
         _noise = device.GetFeature<INoiseControlFeature>();
         _eq = device.GetFeature<IEqualizerFeature>();
+        _profile = runtime.Profiles.Match(device.Identity);
+        _lookChoice = runtime.Looks.Get(device.Identity.Id);
 
         device.ConnectionChanged += OnChanged;
         _runtime.Computer.Changed += OnChanged;
@@ -156,11 +164,127 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string BatteryReasonText { get; set; } = "";
 
-    /// <summary>Whether this device draws two buds (true) or a headset (false) in the hero.</summary>
+    // Artwork: the desktop's looks (docs/design/ui-audit.md), from the same devices/ photos and ArtworkLook.Resolve.
+
+    /// <summary>Whether this device draws two buds (true) or a headset (false) in the "?" look.</summary>
     public bool HasBuds => _battery?.Components.Contains(BatteryComponent.Left) == true
-        || Name.Contains("bud", StringComparison.OrdinalIgnoreCase) || Name.Contains("pods", StringComparison.OrdinalIgnoreCase);
+        || new[] { "bud", "pods", "earphone", "tws" }.Any(k => Name.Contains(k, StringComparison.OrdinalIgnoreCase));
 
     public string ArtworkLabel => $"{Name} {(HasBuds ? "earbuds" : "headset")}";
+
+    /// <summary>The model photo inside the ring; null for the "?" looks.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasArtworkImage))]
+    public partial Bitmap? ArtworkImage { get; set; }
+
+    public bool HasArtworkImage => ArtworkImage is not null;
+
+    /// <summary>Left bud, right bud and case photos, each with its own figure (the split look).</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<ArtworkPartViewModel> ArtworkParts { get; set; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRing))]
+    public partial bool ShowArtworkParts { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowUnknownSingle { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRing))]
+    public partial bool ShowUnknownPieces { get; set; }
+
+    /// <summary>The ring (with a photo or the single "?" drawing) shows unless the look is in separate pieces.</summary>
+    public bool ShowRing => !ShowArtworkParts && !ShowUnknownPieces;
+
+    /// <summary>Left bud, right bud and case figures for the pieces looks; "–" when not reported.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<PieceFigureViewModel> Pieces { get; set; } = [];
+
+    /// <summary>"Change look": Automatic, the two "?" looks, then every model with a photo.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<LookOptionViewModel> LookOptions { get; set; } = [];
+
+    private void ChangeLook(string key)
+    {
+        _lookChoice = key == ArtworkLook.Automatic ? null : key;
+        _runtime.Looks.Set(Device.Identity.Id, _lookChoice);
+        ApplyLook();
+    }
+
+    private bool ReportsBuds => _battery?.Current is { } state
+        && (state.Get(BatteryComponent.Left) is not null || state.Get(BatteryComponent.Right) is not null);
+
+    private void ApplyLook()
+    {
+        var profiles = _runtime.Profiles.Profiles;
+        var look = ArtworkLook.Resolve(_lookChoice, _profile, profiles, ReportsBuds);
+        if (!Equals(look, _look))
+        {
+            _look = look;
+            var oldImage = ArtworkImage;
+            var oldParts = _partBitmaps;
+            ArtworkImage = Load(look.Profile?.Image);
+            if (look.Profile is not null && ArtworkImage is null)
+            {
+                look = _look = new ResolvedLook(ReportsBuds ? LookKind.UnknownPieces : LookKind.UnknownSingle); // no photo to show
+            }
+
+            _partBitmaps = [];
+            if (look.Kind == LookKind.PartsPhoto && look.Profile!.PartImages is { } parts)
+            {
+                var bitmaps = new[] { parts.Left, parts.Right, parts.Case }.Select(Load).ToList();
+                if (bitmaps.All(b => b is not null))
+                {
+                    _partBitmaps = bitmaps!;
+                }
+                else
+                {
+                    bitmaps.ForEach(b => b?.Dispose());
+                    look = _look = new ResolvedLook(LookKind.Photo, look.Profile); // a broken part photo keeps the whole photo
+                }
+            }
+
+            ShowArtworkParts = look.Kind == LookKind.PartsPhoto;
+            ShowUnknownSingle = look.Kind == LookKind.UnknownSingle;
+            ShowUnknownPieces = look.Kind == LookKind.UnknownPieces;
+            oldImage?.Dispose();
+            foreach (var bitmap in oldParts)
+            {
+                bitmap.Dispose();
+            }
+        }
+
+        ArtworkParts = _partBitmaps.Count == 3 && Pieces.Count == 3
+            ? [.. _partBitmaps.Zip(Pieces, (bitmap, figure) => new ArtworkPartViewModel(figure, bitmap))]
+            : [];
+
+        var key = ArtworkLook.MenuKey(_lookChoice, profiles);
+        if (LookOptions.Count == 0 || LookOptions.Single(o => o.IsSelected).Key != key)
+        {
+            LookOptionViewModel Option(string k, string label) => new(k, label, k == key, new RelayCommand(() => ChangeLook(k)));
+            LookOptions =
+            [
+                Option(ArtworkLook.Automatic, "Automatic"),
+                Option(ArtworkLook.UnknownSingle, "Unknown · single"),
+                Option(ArtworkLook.UnknownPieces, "Unknown · separate pieces"),
+                .. profiles.Where(p => p.Image is not null).OrderBy(p => p.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                    .Select(p => Option(p.Id, p.DisplayName)),
+            ];
+        }
+    }
+
+    private static Bitmap? Load(string? path)
+    {
+        try
+        {
+            return path is null ? null : new Bitmap(path);
+        }
+        catch (Exception)
+        {
+            return null; // a broken image file falls back to the drawn artwork
+        }
+    }
 
     // Noise control
 
@@ -341,6 +465,10 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
             }
         }
 
+        Pieces = [.. new[] { BatteryComponent.Left, BatteryComponent.Right, BatteryComponent.Case }
+            .Select(c => new PieceFigureViewModel(c, state.Get(c)))];
+        ApplyLook();
+
         var summary = state.SummaryPercent;
         SummaryText = summary is { } p ? $"{p}%" : "–";
         SummaryValue = summary?.ToString() ?? "–";
@@ -358,7 +486,7 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
         BatteryReasonText = _battery is null ? "This device reports no battery level."
             : Battery.Count == 0 ? IsConnected ? "Waiting for a reading." : "Connect the earbuds to read their battery."
             : Battery.Any(c => c.Component is BatteryComponent.Left or BatteryComponent.Right) ? "Each level is reported by the earbuds."
-            : "Reported by Android for the whole device.";
+            : "Left, right and case aren't reported for this device.";
         OnPropertyChanged(nameof(HasBattery));
     }
 
@@ -423,6 +551,12 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        ArtworkImage?.Dispose();
+        foreach (var bitmap in _partBitmaps)
+        {
+            bitmap.Dispose();
+        }
+
         Device.ConnectionChanged -= OnChanged;
         _runtime.Computer.Changed -= OnChanged;
         _runtime.Computer.Progress -= OnProgress;
@@ -504,6 +638,43 @@ public sealed class BatteryCellViewModel
     public string Meta { get; }
 
     public string AccessibleText { get; }
+}
+
+/// <summary>One piece of the device in the artwork (left bud, right bud, case) with its level, as on the desktop rail.</summary>
+public sealed class PieceFigureViewModel
+{
+    public PieceFigureViewModel(BatteryComponent component, BatteryReading? reading)
+    {
+        var label = component switch
+        {
+            BatteryComponent.Left => "Left bud",
+            BatteryComponent.Right => "Right bud",
+            _ => "Case",
+        };
+        HasLevel = reading?.Percent is not null;
+        Value = reading?.Percent?.ToString() ?? "–";
+        Unit = HasLevel ? "%" : "";
+        IsCharging = reading?.IsCharging == true;
+        AccessibleText = HasLevel ? $"{label}, {Value} percent{(IsCharging ? ", charging" : "")}" : $"{label}, not reported";
+    }
+
+    public string Value { get; }
+
+    public string Unit { get; }
+
+    public bool HasLevel { get; }
+
+    public bool IsCharging { get; }
+
+    public string AccessibleText { get; }
+}
+
+public sealed record ArtworkPartViewModel(PieceFigureViewModel Figure, Bitmap Image);
+
+/// <summary>One entry of the "Change look" menu; <see cref="Key"/> is "auto", "unknown.single", "unknown.pieces" or a profile id.</summary>
+public sealed record LookOptionViewModel(string Key, string Label, bool IsSelected, System.Windows.Input.ICommand Select)
+{
+    public string AccessibleName => IsSelected ? $"{Label}, current look" : Label;
 }
 
 /// <summary>A selectable choice: a noise mode (with its icon) or an EQ preset.</summary>

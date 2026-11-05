@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Samaat.Mobile.ViewModels"
              xmlns:views="using:Samaat.Mobile.Views"
+             xmlns:uilogo="using:Samaat.UI"
              x:Class="Samaat.Mobile.Views.MainView"
              x:DataType="vm:MainViewModel"
              Classes="shell">
@@ -14,10 +15,7 @@
         <PathIcon Data="{StaticResource Icon.Chevron}" RenderTransform="rotate(90deg)" />
       </Button>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="4,0,0,0">
-        <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Samaat.Accent}" IsVisible="{Binding ShowBrand}">
-          <TextBlock Text="S" Classes="display" FontSize="18" Foreground="{DynamicResource Samaat.OnAccent}"
-                     HorizontalAlignment="Center" VerticalAlignment="Center" />
-        </Border>
+        <Image Source="{x:Static uilogo:Logo.Image}" Width="32" Height="32" IsVisible="{Binding ShowBrand}" AutomationProperties.Name="Samaat" />
         <TextBlock Text="{Binding Title}" Classes="title" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
       </StackPanel>
       <Button Grid.Column="2" Classes="icon" Command="{Binding RefreshCommand}" IsVisible="{Binding IsEarbuds}"

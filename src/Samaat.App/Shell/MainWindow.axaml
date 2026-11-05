@@ -3,6 +3,7 @@
         xmlns:shell="using:Samaat.App.Shell"
         xmlns:c="using:Samaat.App.Shared.Controls"
         xmlns:ui="using:Samaat.UI.Controls"
+        xmlns:uilogo="using:Samaat.UI"
         xmlns:overview="using:Samaat.App.Features.Overview"
         xmlns:sound="using:Samaat.App.Features.Sound"
         xmlns:conn="using:Samaat.App.Features.Connections"
@@ -19,10 +20,8 @@
     <Border x:Name="Sidebar" Classes="sidebar" Classes.compact="{Binding IsSidebarCompact}">
       <DockPanel Margin="12">
         <StackPanel DockPanel.Dock="Top" Classes="brand" Orientation="Horizontal" Spacing="10" Margin="0,4,0,20">
-          <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Samaat.Accent}" ToolTip.Tip="Samaat">
-            <TextBlock Text="S" Classes="display" FontSize="18" Foreground="{DynamicResource Samaat.OnAccent}"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-          </Border>
+          <!-- The fixed logo (Samaat.UI.Logo): it doesn't change with the accent preset -->
+          <Image Source="{x:Static uilogo:Logo.Image}" Width="32" Height="32" ToolTip.Tip="Samaat" AutomationProperties.Name="Samaat" />
           <TextBlock Classes="full display" Text="Samaat" FontSize="18" VerticalAlignment="Center" />
         </StackPanel>
 

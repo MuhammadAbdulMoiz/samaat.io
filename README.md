@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/logo.png" width="72" alt="Samaat logo" /></p>
+
 <h1 align="center">Samaat</h1>
 
 <p align="center">

@@ -17,7 +17,9 @@
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
   <ItemGroup>
+    <!-- The desktop's device catalog, profiles and artwork photos; extracted on start (AndroidHost.ExtractDevices). -->
     <AndroidAsset Include="..\..\devices\**\*.json" LinkBase="Assets\devices" />
+    <AndroidAsset Include="..\..\devices\**\*.png" LinkBase="Assets\devices" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" />

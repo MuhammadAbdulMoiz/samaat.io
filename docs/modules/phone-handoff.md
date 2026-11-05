@@ -12,7 +12,7 @@ Status: **implemented, not yet run on hardware.** Tested end to end in CI: pairi
 - **Pair once**, like Bluetooth: Settings → Phone → **Pair a phone** on the computer, **Pair with a computer** on the phone, check that both show the same 6-digit code, and tap **Pair** on both.
 - **Move from either side.** On the computer's Links page: **Move to {phone}** and **Bring back here**. On the phone's earbuds page: **Move to {computer}** and **Bring to this phone**. Progress shows live on both screens.
 - **Never stranded.** The computer coordinates every move. It checks the other side first, releases the earbuds on one device, and asks the other to connect them. If that doesn't happen in time, it connects them back where they were.
-- The phone app also shows battery, noise control and EQ presets, using the same drivers as the desktop.
+- The phone app also shows battery, noise control and EQ presets with the desktop's drivers and protocols (the `devices/` catalog, Jieli RCSP, Fast Pair, then the BLE Battery Service, then Android's own level), and the desktop's artwork: the model photos from `devices/`, the split left/right/case photos, the "?" looks and **Change look**.
 
 ## How a move works
 
@@ -65,7 +65,7 @@ Full protocol: [docs/plans/2026-11-04-phone-handoff.md](../plans/2026-11-04-phon
 
 - `Samaat.Handoff.Tests` (99): crypto (tamper, replay, reorder, wrong key), framing, every message type, pairing (codes match, decline, commitment mismatch), sessions, every coordinator path including timeouts, the phone agent, and loopback end-to-end (pair, move both ways, rollback, forget, the computer restarting).
 - `Samaat.App.Tests`: the Links card states, and the desktop paired with a real phone client over loopback, moving both ways, plus screenshots.
-- `Samaat.Mobile.Tests` (16): the phone UI against a real computer host, accessibility checks (44 px targets, names, colour pairs, low battery in words), plus phone-sized screenshots.
+- `Samaat.Mobile.Tests` (18): the phone UI against a real computer host, accessibility checks (44 px targets, names, colour pairs, low battery in words), plus phone-sized screenshots.
 - Android: compile and package in CI (`android` job). Hardware: the checklist in the plan.
 
 ## Building the Android app

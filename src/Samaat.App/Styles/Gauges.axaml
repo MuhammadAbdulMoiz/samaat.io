@@ -1,76 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:c="using:Samaat.App.Shared.Controls"
         xmlns:ui="using:Samaat.UI.Controls">
-
-  <!-- The ring around the device artwork shows the overall level -->
-  <Style Selector="ui|BatteryRing">
-    <Setter Property="TrackBrush" Value="{DynamicResource Samaat.Track}" />
-    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
-  <Style Selector="ui|BatteryRing.low">
-    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Warn}" />
-  </Style>
-  <Style Selector="ui|BatteryRing.critical">
-    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Critical}" />
-  </Style>
-  <Style Selector="Border.stage">
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="ClipToBounds" Value="True" />
-  </Style>
-
-  <!-- Split device photo: two buds side by side, the case below them; no transitions, so reduce-motion needs nothing -->
-  <Style Selector="ItemsControl.artworkParts Image">
-    <Setter Property="Height" Value="64" />
-  </Style>
-  <Style Selector="ItemsControl.artworkParts > ContentPresenter:nth-child(2)">
-    <Setter Property="Grid.Column" Value="1" />
-  </Style>
-  <Style Selector="ItemsControl.artworkParts > ContentPresenter:nth-child(3)">
-    <Setter Property="Grid.Row" Value="1" />
-    <Setter Property="Grid.ColumnSpan" Value="2" />
-  </Style>
-  <Style Selector="ItemsControl.artworkParts > ContentPresenter:nth-child(3) Image">
-    <Setter Property="Height" Value="80" />
-  </Style>
-  <Style Selector="StackPanel.artworkPart.missing">
-    <Setter Property="Opacity" Value="0.4" />
-  </Style>
-  <Style Selector="StackPanel.artworkPart TextBlock.charging">
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
-  </Style>
-
-  <!-- Unknown looks: faint silhouette with a small "?" badge -->
-  <Style Selector="Path.unknownShape">
-    <Setter Property="Fill" Value="{DynamicResource Samaat.Faint}" />
-    <Setter Property="Opacity" Value="0.5" />
-  </Style>
-  <Style Selector="Border.unknownBadge">
-    <Setter Property="Width" Value="20" />
-    <Setter Property="Height" Value="20" />
-    <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Faint}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="IsHitTestVisible" Value="False" />
-  </Style>
-  <Style Selector="Border.unknownBadge > TextBlock">
-    <Setter Property="Text" Value="?" />
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
-    <Setter Property="HorizontalAlignment" Value="Center" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-  </Style>
-
-  <!-- Motion: levels glide to new values instead of jumping -->
-  <Style Selector="ui|BatteryRing">
-    <Setter Property="Transitions">
-      <Transitions>
-        <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
-      </Transitions>
-    </Setter>
-  </Style>
+  <!-- The artwork styles themselves live in Samaat.UI (Styles/Artwork.axaml), shared with the phone. -->
 
   <!-- Reduced motion (class set on the window): values jump instead of gliding -->
   <Style Selector="Window.reduce-motion ui|BatteryRing">

@@ -5,6 +5,11 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
+    <!-- The desktop's device profiles and artwork photos, for the simulator and tests (Android ships them as assets). -->
+    <Content Include="..\..\devices\**\*.json" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\devices\**\*.png" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />

@@ -178,7 +178,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         ApplyLook(Tile(BatteryComponent.Left).IsReported || Tile(BatteryComponent.Right).IsReported);
     }
 
-    private const string UnknownSingleKey = "unknown.single", UnknownPiecesKey = "unknown.pieces";
+    private const string UnknownSingleKey = ArtworkLook.UnknownSingle, UnknownPiecesKey = ArtworkLook.UnknownPieces;
 
     /// <summary>
     /// Which artwork to draw. A photo needs the profile's full photo; its part photos are used only with it and when each bud is reported.
@@ -188,25 +188,13 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     {
         // looksLikeEarbuds only picks the drawn silhouette inside UnknownSingle, which the view does from HasBuds.
         _ = looksLikeEarbuds;
-        switch (choice)
-        {
-            case UnknownSingleKey:
-                return new ResolvedLook(LookKind.UnknownSingle);
-            case UnknownPiecesKey:
-                return new ResolvedLook(LookKind.UnknownPieces);
-        }
-
-        var profile = (choice is null or "auto" ? null : profiles.FirstOrDefault(p => p.Id == choice && p.Image is not null))
-            ?? (matched?.Image is not null ? matched : null);
-        return profile is null
-            ? new ResolvedLook(reportsBuds ? LookKind.UnknownPieces : LookKind.UnknownSingle)
-            : new ResolvedLook(reportsBuds && profile.PartImages is not null ? LookKind.PartsPhoto : LookKind.Photo, profile);
+        return ArtworkLook.Resolve(choice, matched, profiles, reportsBuds);
     }
 
     private void ApplyLook(bool reportsBuds)
     {
         var look = ResolveLook(_choice, _profile, _profiles, reportsBuds, LooksLikeEarbuds);
-        var key = _choice is UnknownSingleKey or UnknownPiecesKey || _profiles.Any(p => p.Id == _choice && p.Image is not null) ? _choice! : "auto";
+        var key = ArtworkLook.MenuKey(_choice, _profiles);
         if (!Equals(look, _look))
         {
             _look = look;

@@ -158,10 +158,12 @@
     <Setter Property="Padding" Value="12,0" />
     <Setter Property="MinWidth" Value="44" />
   </Style>
+  <Style Selector="Button.ghost">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
   <Style Selector="Button.ghost /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
   </Style>
   <Style Selector="Button.icon">
     <Setter Property="Width" Value="44" />
@@ -277,6 +279,11 @@
     <Setter Property="VerticalAlignment" Value="Bottom" />
     <Setter Property="Margin" Value="2,0,0,5" />
   </Style>
+  <Style Selector="TextBlock.number">
+    <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+  </Style>
   <Style Selector="TextBlock.muted">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
   </Style>
@@ -291,30 +298,6 @@
   </Style>
   <Style Selector="ProgressBar.level.critical">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Critical}" />
-  </Style>
-
-  <!-- Hero: the battery ring and earbuds on the sound-wave canvas (desktop Gauges.axaml) -->
-  <Style Selector="Border.stage">
-    <Setter Property="CornerRadius" Value="14" />
-    <Setter Property="ClipToBounds" Value="True" />
-  </Style>
-  <Style Selector="ui|BatteryRing">
-    <Setter Property="TrackBrush" Value="{DynamicResource Samaat.Track}" />
-    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Accent}" />
-    <Setter Property="Transitions">
-      <Transitions>
-        <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
-      </Transitions>
-    </Setter>
-  </Style>
-  <Style Selector="ui|BatteryRing.low">
-    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Warn}" />
-  </Style>
-  <Style Selector="ui|BatteryRing.critical">
-    <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Critical}" />
-  </Style>
-  <Style Selector="Path.budShape">
-    <Setter Property="Fill" Value="{DynamicResource Samaat.GlyphFill}" />
   </Style>
 
   <!-- Icon tiles in option rows and cards (desktop Controls.axaml) -->

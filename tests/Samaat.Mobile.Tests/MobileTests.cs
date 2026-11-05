@@ -404,6 +404,51 @@ public sealed class MobileTests : IAsyncDisposable
         Assert.False(buds.ShowConnect);
     }
 
+    [AvaloniaFact]
+    public async Task Artwork_UsesTheDesktopsLooksAndPhotos()
+    {
+        await StartAsync();
+        var buds = _viewModel.Devices.Single(d => d.Name == "Simulated Buds Pro");
+
+        // No profile matches the simulator, and it reports each bud: the desktop's "separate pieces" look.
+        Assert.True(buds.ShowUnknownPieces);
+        Assert.False(buds.ShowRing);
+        Assert.Equal(["93", "81", "64"], buds.Pieces.Select(p => p.Value));
+
+        // "Change look" offers the same models with photos as the desktop, from the same devices/ folder.
+        Assert.Equal(["Automatic", "Unknown · single", "Unknown · separate pieces"], buds.LookOptions.Take(3).Select(o => o.Label));
+        Assert.Contains(buds.LookOptions, o => o.Label == "Audionic ParadoX-E");
+        Assert.Contains(buds.LookOptions, o => o.Label == "realme Buds T200 Lite");
+
+        // A model with part photos: left bud, right bud and case, each with its own level.
+        buds.LookOptions.Single(o => o.Label == "Audionic ParadoX-E").Select.Execute(null);
+        Assert.True(buds.ShowArtworkParts);
+        Assert.Equal(3, buds.ArtworkParts.Count);
+        Assert.All(buds.ArtworkParts, part => Assert.True(part.Image.Size.Width > 0));
+        Assert.Equal("audionic.paradox-e", _runtime.Looks.Get(buds.Device.Identity.Id));
+        Assert.True(buds.LookOptions.Single(o => o.Label == "Audionic ParadoX-E").IsSelected);
+
+        // A headset: one photo inside the ring.
+        var headset = _viewModel.Devices.Single(d => d.Name == "Simulated Headset");
+        headset.LookOptions.Single(o => o.Label == "Microsoft Modern Wireless Headset").Select.Execute(null);
+        Assert.True(headset.HasArtworkImage);
+        Assert.True(headset.ShowRing);
+
+        // Back to Automatic forgets the choice.
+        buds.LookOptions.Single(o => o.Label == "Automatic").Select.Execute(null);
+        Assert.Null(_runtime.Looks.Get(buds.Device.Identity.Id));
+        Assert.True(buds.ShowUnknownPieces);
+    }
+
+    [AvaloniaFact]
+    public async Task Header_ShowsTheFixedLogo()
+    {
+        await StartAsync();
+
+        var logo = _window.GetVisualDescendants().OfType<Image>().Single(i => AutomationProperties.GetName(i) == "Samaat");
+        Assert.Same(Samaat.UI.Logo.Image, logo.Source);
+    }
+
     /// <summary>Set SAMAAT_SCREENSHOTS to save phone-sized screenshots (dark and light).</summary>
     [AvaloniaFact]
     public async Task RendersScreenshots()
@@ -455,6 +500,14 @@ public sealed class MobileTests : IAsyncDisposable
         await buds.PendingMove;
         await UntilAsync(() => buds.CanSendToComputer, "Move to Desk PC");
         Capture("device-moved");
+
+        // The desktop's artwork: a model with part photos, and a headset photo in the ring.
+        buds.LookOptions.Single(o => o.Label == "Audionic ParadoX-E").Select.Execute(null);
+        Capture("device-artwork");
+        var headset = _viewModel.Devices.Single(d => d.Name == "Simulated Headset");
+        headset.LookOptions.Single(o => o.Label == "Microsoft Modern Wireless Headset").Select.Execute(null);
+        _viewModel.OpenCommand.Execute(headset);
+        Capture("device-photo");
     }
 
     public async ValueTask DisposeAsync()

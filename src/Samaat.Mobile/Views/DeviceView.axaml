@@ -10,21 +10,104 @@
 
     <!-- Hero: the earbuds inside their battery ring, on the sound-wave canvas. No card, as on the desktop rail. -->
     <StackPanel Spacing="12">
+      <!-- The desktop rail's artwork (MainWindow.axaml), with the same devices/ photos and looks -->
       <Border Classes="stage" Height="216">
         <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
           <ui:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
-          <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+          <!-- Split photo: each bud and the case with its own level, buds above the case as in the product photo -->
+          <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ArtworkPartViewModel">
+                <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figure.HasLevel}" Spacing="2"
+                            AutomationProperties.Name="{Binding Figure.AccessibleText}">
+                  <Image Source="{Binding Image}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                  <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                    <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" IsVisible="{Binding Figure.IsCharging}"
+                              Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Center" />
+                    <TextBlock Classes="number" Classes.charging="{Binding Figure.IsCharging}" Text="{Binding Figure.Value}" />
+                    <TextBlock Classes="meta" Text="{Binding Figure.Unit}" VerticalAlignment="Bottom" />
+                  </StackPanel>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Unknown look, separate pieces: faint left bud, right bud and case, each with its level -->
+          <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6"
+                HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownPieces}">
+            <StackPanel Classes="artworkPart" Classes.missing="{Binding !Pieces[0].HasLevel}" Spacing="2"
+                        AutomationProperties.Name="{Binding Pieces[0].AccessibleText}">
+              <Panel Height="64" HorizontalAlignment="Center">
+                <Viewbox Height="64"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+                <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+              </Panel>
+              <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                <TextBlock Classes="number" Text="{Binding Pieces[0].Value}" />
+                <TextBlock Classes="meta" Text="{Binding Pieces[0].Unit}" VerticalAlignment="Bottom" />
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Classes="artworkPart" Classes.missing="{Binding !Pieces[1].HasLevel}" Spacing="2"
+                        AutomationProperties.Name="{Binding Pieces[1].AccessibleText}">
+              <Panel Height="64" HorizontalAlignment="Center">
+                <Viewbox Height="64" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+                <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+              </Panel>
+              <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                <TextBlock Classes="number" Text="{Binding Pieces[1].Value}" />
+                <TextBlock Classes="meta" Text="{Binding Pieces[1].Unit}" VerticalAlignment="Bottom" />
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="artworkPart" Classes.missing="{Binding !Pieces[2].HasLevel}" Spacing="2"
+                        AutomationProperties.Name="{Binding Pieces[2].AccessibleText}">
+              <Panel Height="50" HorizontalAlignment="Center">
+                <Viewbox Height="50"><Canvas Width="64" Height="48"><Path Data="{StaticResource Glyph.Case}" Classes="unknownShape" /></Canvas></Viewbox>
+                <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+              </Panel>
+              <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                <TextBlock Classes="number" Text="{Binding Pieces[2].Value}" />
+                <TextBlock Classes="meta" Text="{Binding Pieces[2].Unit}" VerticalAlignment="Bottom" />
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+
+          <!-- The ring with the model photo, or the single "?" drawing -->
+          <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowRing}">
             <ui:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
                             Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding SummaryIsCritical}" />
-            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasBuds}">
-              <Viewbox Width="44"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="budShape" /></Canvas></Viewbox>
-              <Viewbox Width="44" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="budShape" /></Canvas></Viewbox>
-            </StackPanel>
-            <PathIcon Data="{StaticResource Icon.Headphones}" Width="80" Height="80" Foreground="{DynamicResource Samaat.Faint}"
-                      IsVisible="{Binding !HasBuds}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
+                   Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+            <Panel Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownSingle}">
+              <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasBuds}">
+                <Viewbox Width="40"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+                <Viewbox Width="40" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+              </StackPanel>
+              <PathIcon Data="{StaticResource Icon.Headphones}" Width="84" Height="84" Foreground="{DynamicResource Samaat.Faint}" Opacity="0.55"
+                        IsVisible="{Binding !HasBuds}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+            </Panel>
           </Panel>
         </Panel>
       </Border>
+      <Button Classes="ghost" Content="Change look" HorizontalAlignment="Center" Margin="0,-10,0,0" FontSize="13"
+              Foreground="{DynamicResource Samaat.Muted}" AutomationProperties.Name="Change look">
+        <Button.Flyout>
+          <MenuFlyout Placement="Bottom" ItemsSource="{Binding LookOptions}">
+            <MenuFlyout.ItemContainerTheme>
+              <ControlTheme x:DataType="vm:LookOptionViewModel" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                <Setter Property="Header" Value="{Binding Label}" />
+                <Setter Property="Command" Value="{Binding Select}" />
+                <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+                <Setter Property="MinHeight" Value="44" />
+              </ControlTheme>
+            </MenuFlyout.ItemContainerTheme>
+          </MenuFlyout>
+        </Button.Flyout>
+      </Button>
 
       <Grid ColumnDefinitions="*,Auto">
         <StackPanel Spacing="4" VerticalAlignment="Center">

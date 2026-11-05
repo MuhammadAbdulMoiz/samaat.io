@@ -260,6 +260,27 @@ public class ContrastTests
         }
     }
     [AvaloniaFact]
+    public void Logo_HasFixedColours_WhateverTheAccent()
+    {
+        var png = Samaat.App.Tray.AppIcon.RenderPng(64);
+        using var bitmap = new Avalonia.Media.Imaging.Bitmap(new MemoryStream(png));
+        var pixels = new byte[64 * 64 * 4];
+        var handle = System.Runtime.InteropServices.GCHandle.Alloc(pixels, System.Runtime.InteropServices.GCHandleType.Pinned);
+        try
+        {
+            bitmap.CopyPixels(new PixelRect(0, 0, 64, 64), handle.AddrOfPinnedObject(), pixels.Length, 64 * 4);
+        }
+        finally
+        {
+            handle.Free();
+        }
+
+        // A point on the tile, clear of the "S": the logo's lime (BGRA), not the current accent.
+        var i = (32 * 64 + 6) * 4;
+        Assert.Equal(Samaat.UI.Logo.TileColor, Color.FromRgb(pixels[i + 2], pixels[i + 1], pixels[i]));
+    }
+
+    [AvaloniaFact]
     public void SelectedOptionDescription_UsesTheTextColour()
     {
         // Muted on accent-soft is 4.45:1 in dark mode, under AA; the style switches it to the text colour.

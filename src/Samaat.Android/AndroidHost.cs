@@ -4,6 +4,8 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Samaat.Core.Drivers;
+using Samaat.Core.Profiles;
+using Samaat.Core.Settings;
 using Samaat.Handoff.Storage;
 using Samaat.Mobile.Runtime;
 using Samaat.Platform.Android;
@@ -37,7 +39,9 @@ internal static class AndroidHost
             var app = context.ApplicationContext ?? context;
             var prompt = new AndroidUserPrompt(app, () => Foreground, Resource.Drawable.icon);
             _audio = new AndroidPhoneAudio(app, prompt);
-            var registry = new DriverRegistry(LoadCatalog(app));
+            // The same devices/ folder as the desktop: driver catalog, model profiles and artwork photos.
+            var devices = ExtractDevices(app);
+            var registry = new DriverRegistry(DeviceCatalog.FromDirectory(devices));
             registry.Register(new Samaat.Protocols.Jieli.JieliDriver());
             registry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
             var store = new PeerStore(Path.Combine(app.FilesDir!.AbsolutePath, "computers.json"));
@@ -47,42 +51,50 @@ internal static class AndroidHost
                 store,
                 PhoneName(app),
                 new AndroidBeaconListener(app),
-                new AndroidMobilePlatform(app, _audio));
+                new AndroidMobilePlatform(app, _audio),
+                profiles: DeviceProfileDb.Load(devices),
+                settings: new SettingsStore(Path.Combine(app.FilesDir!.AbsolutePath, "settings.json")));
             return _runtime;
         }
     }
 
-    /// <summary>The devices/ catalog ships as APK assets.</summary>
-    private static DeviceCatalog LoadCatalog(Context context)
+    /// <summary>
+    /// Copies the devices/ assets (JSON and photos) into app storage, so the desktop's file-based loaders and image paths
+    /// work unchanged. Rewritten on every start: it's small, and an update brings new models.
+    /// </summary>
+    private static string ExtractDevices(Context context)
     {
-        var documents = new List<string>();
-        void Walk(string path)
+        var root = Path.Combine(context.FilesDir!.AbsolutePath, "devices");
+        void Copy(string assetPath, string target)
         {
-            foreach (var name in context.Assets?.List(path) ?? [])
+            foreach (var name in context.Assets?.List(assetPath) ?? [])
             {
-                var child = $"{path}/{name}";
-                if (name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                var child = $"{assetPath}/{name}";
+                var destination = Path.Combine(target, name);
+                if (name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                 {
-                    using var stream = context.Assets!.Open(child);
-                    using var reader = new StreamReader(stream);
-                    documents.Add(reader.ReadToEnd());
+                    Directory.CreateDirectory(target);
+                    using var input = context.Assets!.Open(child);
+                    using var output = File.Create(destination);
+                    input.CopyTo(output);
                 }
                 else if (!name.Contains('.'))
                 {
-                    Walk(child);
+                    Copy(child, destination);
                 }
             }
         }
 
         try
         {
-            Walk("devices");
-            return DeviceCatalog.Parse(documents);
+            Copy("devices", root);
         }
         catch (Exception)
         {
-            return DeviceCatalog.Empty;
+            // A failed copy leaves what an earlier start extracted; the app still runs without models or photos.
         }
+
+        return root;
     }
 
     /// <summary>The name the user gave the phone, as the computer will show it.</summary>

@@ -116,3 +116,13 @@ Measured in tests (`Samaat.Mobile.Tests`): every visible button on every phone s
 | Earbuds | Device | Pairing | Paired |
 |---|---|---|---|
 | ![](../images/mobile-devices.png) | ![](../images/mobile-device.png) | ![](../images/mobile-computer-code.png) | ![](../images/mobile-computer-paired.png) |
+
+## One logo, one artwork (2026-11-05)
+
+- **Logo:** the lime tile with a dark "S" made for the Android launcher is now the only logo: the desktop sidebar, the window and tray icon, the phone header and the launcher. It's defined once (`Samaat.UI.Logo`, `docs/images/logo.svg`) with **fixed colours**, so it no longer changes with the accent preset as the old sidebar box did.
+- **Artwork:** the phone draws devices exactly as the desktop does. `ArtworkLook.Resolve` (Core) picks the look on both, the artwork styles live in `Samaat.UI/Styles/Artwork.axaml`, and the photos come from the same `devices/` folder (shipped in the APK and extracted on start). The phone has the desktop's **Change look** menu, saved per device.
+
+| Logo | Split photo | Headset photo |
+|---|---|---|
+| ![](../images/logo.png) | ![](../images/mobile-device-artwork.png) | ![](../images/mobile-device-photo.png) |
+

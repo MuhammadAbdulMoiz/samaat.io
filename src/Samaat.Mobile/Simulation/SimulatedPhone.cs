@@ -1,5 +1,6 @@
 using Samaat.Core.Commands;
 using Samaat.Core.Devices;
+using Samaat.Core.Profiles;
 using Samaat.Handoff.Discovery;
 using Samaat.Handoff.Moving;
 using Samaat.Handoff.Storage;
@@ -70,7 +71,9 @@ public static class SimulatedMobile
         Samaat.Handoff.PhoneLinkClientOptions? clientOptions = null)
     {
         var source = new SimulatorDeviceSource(TimeSpan.FromSeconds(2), time);
+        // The same devices/ folder as the desktop, copied next to the app: model names and artwork photos.
+        var profiles = DeviceProfileDb.Load(Path.Combine(AppContext.BaseDirectory, "devices"));
         return new MobileRuntime([source], new SimulatedPhoneAudio(source.Devices), store ?? new PeerStore(null), "Simulated phone",
-            beacons ?? new InMemoryBeaconBus().CreateListener(), new NoMobilePlatform(), time, clientOptions);
+            beacons ?? new InMemoryBeaconBus().CreateListener(), new NoMobilePlatform(), time, clientOptions, profiles);
     }
 }

@@ -52,6 +52,20 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Sidebar_ShowsTheFixedLogo_NotAnAccentBox()
+    {
+        var (window, viewModel) = await ShowAsync();
+        viewModel.Settings.SetAccentCommand.Execute(AccentChoice.Ice);
+
+        var logo = window.GetVisualDescendants().OfType<Image>().Single(i => AutomationProperties.GetName(i) == "Samaat");
+        Assert.Same(Samaat.UI.Logo.Image, logo.Source);
+
+        viewModel.Settings.SetAccentCommand.Execute(AccentChoice.Lime);
+        window.Close();
+        await viewModel.DisposeAsync();
+    }
+
+    [AvaloniaFact]
     public async Task LowBudRaisesAlert()
     {
         var (window, viewModel) = await ShowAsync();

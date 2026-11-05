@@ -1,4 +1,6 @@
 using Samaat.Core.Devices;
+using Samaat.Core.Profiles;
+using Samaat.Core.Settings;
 using Samaat.Handoff;
 using Samaat.Handoff.Discovery;
 using Samaat.Handoff.Moving;
@@ -58,8 +60,12 @@ public sealed class MobileRuntime : IAsyncDisposable
         IBeaconListener beacons,
         IMobilePlatform platform,
         TimeProvider? time = null,
-        PhoneLinkClientOptions? clientOptions = null)
+        PhoneLinkClientOptions? clientOptions = null,
+        DeviceProfileDb? profiles = null,
+        SettingsStore? settings = null)
     {
+        Profiles = profiles ?? DeviceProfileDb.Empty;
+        Looks = new ArtworkChoices(settings);
         Time = time ?? TimeProvider.System;
         Registry = new DeviceRegistry(sources);
         Audio = audio;
@@ -69,6 +75,12 @@ public sealed class MobileRuntime : IAsyncDisposable
     }
 
     public DeviceRegistry Registry { get; }
+
+    /// <summary>The devices/ profiles: model names and the desktop's artwork photos.</summary>
+    public DeviceProfileDb Profiles { get; }
+
+    /// <summary>The artwork look picked per device ("Change look"), as on the desktop.</summary>
+    public ArtworkChoices Looks { get; }
 
     public IPhoneAudioLink Audio { get; }
 
@@ -97,5 +109,33 @@ public sealed class MobileRuntime : IAsyncDisposable
     {
         await Computer.DisposeAsync();
         await Registry.DisposeAsync();
+    }
+}
+
+/// <summary>
+/// The "Change look" choice per device, kept in <see cref="AppSettings.ArtworkChoices"/> like the desktop.
+/// Without a settings file (tests, simulator) choices last until the app closes.
+/// </summary>
+public sealed class ArtworkChoices(SettingsStore? store)
+{
+    private readonly Dictionary<string, string> _choices = new(store?.Load().ArtworkChoices ?? new Dictionary<string, string>());
+
+    public string? Get(string deviceId) => _choices.GetValueOrDefault(deviceId);
+
+    public void Set(string deviceId, string? choice)
+    {
+        if (choice is null or ArtworkLook.Automatic)
+        {
+            _choices.Remove(deviceId);
+        }
+        else
+        {
+            _choices[deviceId] = choice;
+        }
+
+        if (store is not null)
+        {
+            store.Save(store.Load() with { ArtworkChoices = new Dictionary<string, string>(_choices) });
+        }
     }
 }

@@ -13,6 +13,7 @@
   </Application.Resources>
   <Application.Styles>
     <FluentTheme />
+    <StyleInclude Source="avares://Samaat.UI/Styles/Artwork.axaml" />
     <StyleInclude Source="avares://Samaat/Styles/Base.axaml" />
     <StyleInclude Source="avares://Samaat/Styles/Shell.axaml" />
     <StyleInclude Source="avares://Samaat/Styles/Gauges.axaml" />

@@ -5,6 +5,7 @@ using Samaat.Core.Bluetooth;
 using Samaat.Core.Capabilities;
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
+using Samaat.Protocols.Standard;
 using Samaat.Transport;
 
 namespace Samaat.Platform.Android;
@@ -126,6 +127,34 @@ public sealed class AndroidDeviceSource : IDeviceSource
             {
                 gatt.Dispose();
                 gatt = null;
+            }
+        }
+
+        // The desktop's fallbacks, in its order: a driver's battery, then the standard BLE Battery Service, then the OS level.
+        if (!features.Any(f => f is IBatteryFeature) && _audio.IsConnected(address))
+        {
+            var bleGatt = gatt ?? new AndroidGattClient(_context, bluetooth);
+            IBatteryFeature? standard = null;
+            try
+            {
+                using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                budget.CancelAfter(TimeSpan.FromSeconds(3));
+                standard = await GattBatteryFeature.CreateAsync(bleGatt, _time, budget.Token);
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or Java.Lang.Exception or IOException)
+            {
+                // No BLE side, or it didn't answer in time.
+            }
+
+            if (standard is not null)
+            {
+                features.Add(standard);
+                tier = tier == SupportTier.Basic ? SupportTier.Standard : tier;
+                gatt ??= bleGatt;
+            }
+            else if (!ReferenceEquals(bleGatt, gatt))
+            {
+                bleGatt.Dispose();
             }
         }
 
