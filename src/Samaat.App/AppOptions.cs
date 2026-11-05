@@ -32,7 +32,7 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
         return new(
             Simulate: simulate is not null,
             IncludeNonAudio: args.Contains("--all-devices"),
-            Minimized: args.Contains("--minimized"),
+            Minimized: args.Contains("--minimized") || LaunchedAtStartup(),
             TestNotification: args.Contains("--test-notification"),
             Scenario: scenario);
     }
@@ -43,6 +43,14 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
         "empty" => SimulatorScenario.Empty,
         _ => SimulatorScenario.Demo,
     };
+
+    // The packaged startup task launches the exe without arguments.
+    private static bool LaunchedAtStartup() =>
+#if SAMAAT_WINDOWS
+        Samaat.Platform.Windows.PackagedApp.LaunchedAtStartup;
+#else
+        false;
+#endif
 
 #if SAMAAT_WINDOWS
     public bool HasRealBluetooth => true;
