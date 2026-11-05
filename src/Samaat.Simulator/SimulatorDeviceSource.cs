@@ -17,10 +17,17 @@ public sealed class SimulatorDeviceSource : IDeviceSource
 
     public static readonly TimeSpan DefaultCommandLatency = TimeSpan.FromMilliseconds(350);
 
-    public SimulatorDeviceSource(TimeSpan tickInterval, TimeProvider? time = null, TimeSpan? commandLatency = null)
+    public SimulatorDeviceSource(TimeSpan tickInterval, TimeProvider? time = null, TimeSpan? commandLatency = null,
+        SimulatorScenario scenario = SimulatorScenario.Demo)
     {
         time ??= TimeProvider.System;
         var latency = commandLatency ?? DefaultCommandLatency;
+        _timer = time.CreateTimer(_ => Tick(), null, tickInterval, tickInterval);
+        if (scenario != SimulatorScenario.Demo)
+        {
+            _devices = scenario == SimulatorScenario.WorstCase ? WorstCaseDevices.Create(time, latency) : [];
+            return;
+        }
 
         var proNoise = new SimulatedNoiseControl(
             new NoiseControlOptions(
@@ -57,12 +64,11 @@ public sealed class SimulatorDeviceSource : IDeviceSource
                 new DeviceDetails { Address = "02:00:5E:10:00:03", VendorId = 0x005D, ProductId = 0x2001, Services = ["A2DP", "HSP"] }),
                 SimulatedBatteryLayout.CombinedOnly, time, [Diagnostics("Simulated Headset")], latency),
         ];
-        _timer = time.CreateTimer(_ => Tick(), null, tickInterval, tickInterval);
     }
 
     public string Name => "Simulator";
 
-    private static DeviceDiagnostics Diagnostics(string name)
+    internal static DeviceDiagnostics Diagnostics(string name)
     {
         var entry = new CatalogEntry($"samaat.{name.ToLowerInvariant().Replace(' ', '-')}", name, "Samaat", SimulatorDriver.Instance.Id,
             new DeviceMatch(NamePattern: $"^{name}$"), Verified: true, VerifiedFirmware: ["1.0.0"], Features: new HashSet<Core.Capabilities.FeatureId>());
