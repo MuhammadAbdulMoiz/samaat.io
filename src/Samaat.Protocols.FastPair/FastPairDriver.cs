@@ -6,10 +6,10 @@ namespace Samaat.Protocols.FastPair;
 
 /// <summary>
 /// Google Fast Pair Message Stream over RFCOMM: battery (left, right, case) and firmware from what the buds
-/// push on connect. Strictly read-only; the driver never writes to the channel. The caller owns the deadline:
+/// push on connect. Writes only the two SASS get requests (see <see cref="FastPairMessages.SassGetCapability"/>); when the buds answer with SASS multipoint, a read-only multipoint feature is added. The caller owns the deadline:
 /// pass a token that expires when discovery should give up.
 /// </summary>
-public sealed class FastPairDriver(TimeSpan? refreshTimeout = null) : IEarbudDriver
+public sealed class FastPairDriver(TimeSpan? refreshTimeout = null, TimeSpan? sassTimeout = null) : IEarbudDriver
 {
     public const string DriverId = "fast-pair";
 
@@ -19,7 +19,7 @@ public sealed class FastPairDriver(TimeSpan? refreshTimeout = null) : IEarbudDri
 
     public string DisplayName => "Google Fast Pair";
 
-    /// <summary>Returns the battery feature once a valid battery message has arrived; otherwise nothing. Never throws.</summary>
+    /// <summary>Returns the battery feature once a valid battery message has arrived, plus multipoint if SASS reports it; otherwise nothing. Never throws.</summary>
     public async Task<IReadOnlyList<IFeature>> OpenAsync(DriverContext context, CancellationToken cancellationToken = default)
     {
         IRfcommChannel? channel = null;
@@ -37,7 +37,21 @@ public sealed class FastPairDriver(TimeSpan? refreshTimeout = null) : IEarbudDri
                 ct => context.Transports.OpenRfcommAsync(MessageStreamService, ct),
                 context.Time,
                 refreshTimeout ?? TimeSpan.FromSeconds(3));
+            // The SASS deadline runs from the request, alongside the wait for the greeting.
+            var sass = FastPairMultipointFeature.Start(feature).ReadyAsync(sassTimeout ?? TimeSpan.FromSeconds(1), cancellationToken);
             await feature.FirstReadingAsync(cancellationToken);
+            try
+            {
+                if (await sass is { } multipoint)
+                {
+                    return [feature, multipoint];
+                }
+            }
+            catch (Exception)
+            {
+                // Any SASS failure just means battery only.
+            }
+
             return [feature];
         }
         catch (Exception)

@@ -38,3 +38,9 @@ The T200 Lite's battery (left, right, case, charging) and firmware are readable 
 ## Next
 
 Done: `Samaat.Protocols.FastPair` reads this stream (read-only, nothing written) and `devices/realme/buds-t200-lite.json` ties it to the buds. The CLI now shows `realme Buds T200 Lite [Connected, Full support]` with Left 80 % and Right 70 % from the device protocol and firmware 1.0.0. Still to do: confirm the case byte with the buds charging in the case, check a second firmware, and decide whether ANC (newer Fast Pair message groups) is worth probing.
+
+## Multipoint / SASS probe (later the same day)
+
+With the buds connected to the PC and the phone, Samaat stopped, and the user's OK, a throwaway probe sent the three no-data SASS "get" requests (`07 10 0000`, `07 33 0000`, `07 21 0000`). The buds pushed their usual greeting and nothing else: no capability reply within 1 s, which the spec defines as "SASS unsupported". Samaat therefore can't see or switch the phone connection on these buds. Log and spec notes: [docs/protocols/fast-pair-message-stream.md](../protocols/fast-pair-message-stream.md).
+
+Also seen: the greeting comes on every channel open, but only one client can hold the channel. A second client (Samaat or a leftover probe) connects fine and receives nothing, which looks like silent buds.
