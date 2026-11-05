@@ -18,7 +18,7 @@
     <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
       <StackPanel Orientation="Horizontal" Spacing="6">
         <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-        <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
 
@@ -37,7 +37,7 @@
         <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
           </StackPanel>
         </Border>
 
@@ -56,7 +56,7 @@
         <Border Classes="row" IsVisible="{Binding HasRequest}">
           <StackPanel Spacing="8" DataContext="{Binding Request}" x:DataType="phone:PairingPromptViewModel">
             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding Code}" Classes="number" FontSize="32" FontWeight="SemiBold" LetterSpacing="2"
+            <TextBlock Text="{Binding Code}" Classes="number" FontSize="{StaticResource Samaat.FontSize.Code}" FontWeight="SemiBold" LetterSpacing="2"
                        AutomationProperties.Name="Pairing code" />
             <TextBlock Text="{Binding Hint}" Classes="meta" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -131,28 +131,28 @@
 <Button Classes="swatch" Classes.selected="{Binding IsLimeAccent}" AutomationProperties.Name="Lime" ToolTip.Tip="Lime"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Lime}">
   <Panel>
-    <Ellipse Fill="#C8F169" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Lime}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsLimeAccent}" />
   </Panel>
 </Button>
 <Button Classes="swatch" Classes.selected="{Binding IsEmeraldAccent}" AutomationProperties.Name="Emerald" ToolTip.Tip="Emerald"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Emerald}">
   <Panel>
-    <Ellipse Fill="#3DDC97" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Emerald}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsEmeraldAccent}" />
   </Panel>
 </Button>
 <Button Classes="swatch" Classes.selected="{Binding IsIceAccent}" AutomationProperties.Name="Ice" ToolTip.Tip="Ice"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Ice}">
   <Panel>
-    <Ellipse Fill="#6CC4FF" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Ice}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsIceAccent}" />
   </Panel>
 </Button>
 <Button Classes="swatch" Classes.selected="{Binding IsMonoAccent}" AutomationProperties.Name="Mono" ToolTip.Tip="Mono"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Mono}">
   <Panel>
-    <Ellipse Fill="#E6E9EC" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Mono}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsMonoAccent}" />
   </Panel>
 </Button>
@@ -360,7 +360,7 @@
 <Grid ColumnDefinitions="Auto,*">
   <Image Source="{x:Static uilogo:Logo.Image}" Width="40" Height="40" VerticalAlignment="Top" AutomationProperties.Name="Samaat logo" />
   <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-    <TextBlock Text="Samaat" Classes="display" FontSize="16" />
+    <TextBlock Text="Samaat" Classes="display" FontSize="{StaticResource Samaat.FontSize.Heading}" />
     <TextBlock Text="{Binding VersionText}" Classes="meta" />
     <TextBlock Text="A companion for Bluetooth earbuds from any brand." Classes="meta" TextWrapping="Wrap" />
   </StackPanel>

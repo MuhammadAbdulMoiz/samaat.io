@@ -30,7 +30,7 @@
         <StackPanel Spacing="6" AutomationProperties.Name="{Binding SummaryText}">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Text="Features available" Classes="meta" />
-            <TextBlock Grid.Column="1" Text="{Binding FeatureCountText}" Classes="number" FontSize="12" />
+            <TextBlock Grid.Column="1" Text="{Binding FeatureCountText}" Classes="number" FontSize="{StaticResource Samaat.FontSize.Meta}" />
           </Grid>
           <ProgressBar Classes="level" Minimum="0" Maximum="100" Value="{Binding AvailablePercent}" />
           <TextBlock Text="{Binding SummaryText}" Classes="meta" />
@@ -109,7 +109,7 @@
               <Border Classes="row">
                 <Grid ColumnDefinitions="140,*">
                   <TextBlock Text="{Binding Label}" Classes="meta" />
-                  <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" Classes="number" FontSize="12" TextWrapping="Wrap" />
+                  <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" Classes="number" FontSize="{StaticResource Samaat.FontSize.Meta}" TextWrapping="Wrap" />
                 </Grid>
               </Border>
             </DataTemplate>
@@ -126,7 +126,7 @@
             <PathIcon Data="{StaticResource Icon.Info}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Muted}" Margin="0,0,10,0" />
             <TextBlock Grid.Column="1" Text="Event log" Classes="panelTitle" VerticalAlignment="Center" />
             <Border Grid.Column="2" Classes="chip" Padding="6,1" Margin="12,0" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Events.Count}" Classes="number" FontSize="11" />
+              <TextBlock Text="{Binding Events.Count}" Classes="number" FontSize="{StaticResource Samaat.FontSize.Label}" />
             </Border>
             <PathIcon Grid.Column="3" Classes="chevron" Data="{StaticResource Icon.Chevron}" />
           </Grid>
@@ -137,8 +137,8 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="info:EventRow">
                 <Grid ColumnDefinitions="80,*" Margin="0,2">
-                  <TextBlock Text="{Binding Time}" Classes="number muted" FontSize="12" />
-                  <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Time}" Classes="number muted" FontSize="{StaticResource Samaat.FontSize.Meta}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="{StaticResource Samaat.FontSize.Meta}" TextWrapping="Wrap" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

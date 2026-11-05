@@ -65,7 +65,7 @@
   <Style Selector="Border.deviceThumb">
     <Setter Property="Width" Value="36" />
     <Setter Property="Height" Value="36" />
-    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Tile}" />
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
     <Setter Property="BorderThickness" Value="1" />
@@ -92,10 +92,10 @@
   <Style Selector="Button.nav, Button.deviceRow">
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
   </Style>
   <Style Selector="Button.nav">
-    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="MinHeight" Value="{StaticResource Samaat.Size.Row}" />
     <Setter Property="Padding" Value="10,0" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
   </Style>
@@ -139,7 +139,7 @@
   <Style Selector="Border.initials">
     <Setter Property="Width" Value="32" />
     <Setter Property="Height" Value="32" />
-    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
   </Style>
   <Style Selector="Button.deviceRow.current Border.initials">
@@ -151,9 +151,9 @@
 
   <!-- Alert counter: a real state, so it may use a status colour -->
   <Style Selector="Button.alertChip">
-    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="MinHeight" Value="{StaticResource Samaat.Size.Row}" />
     <Setter Property="Padding" Value="10,0" />
-    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -179,9 +179,9 @@
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.PanelEdge}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Panel}" />
     <Setter Property="Padding" Value="12,8,6,8" />
-    <Setter Property="BoxShadow" Value="0 8 24 0 #40000000" />
+    <Setter Property="BoxShadow" Value="{StaticResource Samaat.Shadow.Overlay}" />
   </Style>
 
   <!-- Device filter beside Refresh: on the right when labelled, under Refresh in the icon rail -->

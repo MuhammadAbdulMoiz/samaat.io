@@ -1,9 +1,35 @@
 {
   "extraKnownMarketplaces": {
-    "ponytail": { "source": { "source": "github", "repo": "DietrichGebert/ponytail" } },
-    "karpathy-skills": { "source": { "source": "github", "repo": "forrestchang/andrej-karpathy-skills" } },
-    "claude-video": { "source": { "source": "git", "url": "https://github.com/bradautomates/claude-video.git" } },
-    "claude-kit": { "source": { "source": "github", "repo": "JohnnyVizz/claude-kit" } }
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "karpathy-skills": {
+      "source": {
+        "source": "github",
+        "repo": "forrestchang/andrej-karpathy-skills"
+      }
+    },
+    "claude-video": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/bradautomates/claude-video.git"
+      }
+    },
+    "claude-kit": {
+      "source": {
+        "source": "github",
+        "repo": "JohnnyVizz/claude-kit"
+      }
+    },
+    "ecc": {
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/ECC"
+      }
+    }
   },
   "enabledPlugins": {
     "ponytail@ponytail": true,
@@ -11,6 +37,7 @@
     "andrej-karpathy-skills@karpathy-skills": true,
     "watch@claude-video": true,
     "savvy-progress@claude-kit": true,
-    "mattpocock-skills@claude-plugins-official": true
+    "mattpocock-skills@claude-plugins-official": true,
+    "ecc@ecc": true
   }
 }

@@ -48,7 +48,7 @@
     <Border Classes="panel">
       <StackPanel Spacing="12">
         <TextBlock Text="Support" Classes="panelTitle" />
-        <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" MinHeight="48">
+        <Border Classes="strip" MinHeight="48">
           <Grid ColumnDefinitions="Auto,*">
             <Border Classes="optionIcon on" VerticalAlignment="Center">
               <PathIcon Data="{StaticResource Icon.ShieldCheck}" Width="16" Height="16" />
@@ -62,7 +62,7 @@
         <Grid ColumnDefinitions="Auto,*">
           <PathIcon Data="{StaticResource Icon.Info}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Muted}" VerticalAlignment="Top" Margin="0,2,0,0" />
           <StackPanel Grid.Column="1" Margin="8,0,0,0">
-            <TextBlock Text="{Binding AdapterText}" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding AdapterText}" FontSize="{StaticResource Samaat.FontSize.Meta}" TextWrapping="Wrap" />
             <TextBlock Classes="meta" TextWrapping="Wrap"
                        Text="Without a vendor adapter, Samaat shows what Windows and standard Bluetooth services report." />
           </StackPanel>

@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Samaat design tokens that don't change with the theme: shape, type, sizes, elevation and the fixed accent swatches.
+       Colours that follow the theme live in Tokens.axaml. Views and styles use these keys instead of literals
+       (DesignSystemTests keeps it that way). Everything sits on a 4 px grid, with 2 px half steps for hairlines. -->
+
+  <!-- Corner radii: 6 for controls and rows, 8 for tiles, 10 for panels and cards -->
+  <CornerRadius x:Key="Samaat.Radius.Hairline">2</CornerRadius>
+  <CornerRadius x:Key="Samaat.Radius.Control">6</CornerRadius>
+  <CornerRadius x:Key="Samaat.Radius.Tab">7</CornerRadius>
+  <CornerRadius x:Key="Samaat.Radius.Tile">8</CornerRadius>
+  <CornerRadius x:Key="Samaat.Radius.Panel">10</CornerRadius>
+  <!-- Round shapes 20 px tall: the switch track and the "?" badge -->
+  <CornerRadius x:Key="Samaat.Radius.Round20">10</CornerRadius>
+
+  <!-- Type ramp. Text: label 11, meta 12, body 13, panel title 15, heading 16, brand 18, page title 22.
+       Figures (Space Grotesk, tabular): small 18 (Glance), medium 20 (Focus summary), figure 30, code 32 (pairing code). -->
+  <x:Double x:Key="Samaat.FontSize.Label">11</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Meta">12</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Body">13</x:Double>
+  <x:Double x:Key="Samaat.FontSize.PanelTitle">15</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Heading">16</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Brand">18</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Title">22</x:Double>
+  <x:Double x:Key="Samaat.FontSize.FigureSmall">18</x:Double>
+  <x:Double x:Key="Samaat.FontSize.FigureMedium">20</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Figure">30</x:Double>
+  <x:Double x:Key="Samaat.FontSize.Code">32</x:Double>
+
+  <!-- Hit targets: every control is at least 32 px, rows 40, option rows 48 -->
+  <x:Double x:Key="Samaat.Size.Control">32</x:Double>
+  <x:Double x:Key="Samaat.Size.Row">40</x:Double>
+  <x:Double x:Key="Samaat.Size.OptionRow">48</x:Double>
+
+  <!-- Spacing inside panels -->
+  <Thickness x:Key="Samaat.Padding.Panel">16</Thickness>
+  <Thickness x:Key="Samaat.Padding.Strip">8,6</Thickness>
+
+  <!-- Elevation: a raised key (selected tab) and a floating overlay (toast) -->
+  <BoxShadows x:Key="Samaat.Shadow.Key">0 1 2 0 #40000000</BoxShadows>
+  <BoxShadows x:Key="Samaat.Shadow.Overlay">0 8 24 0 #40000000</BoxShadows>
+
+  <!-- Accent swatches in Settings show each preset's dark-theme accent in both themes, with an ink check on top.
+       They must match AccentPalette (DesignSystemTests checks). -->
+  <SolidColorBrush x:Key="Samaat.Swatch.Lime" Color="#C8F169" />
+  <SolidColorBrush x:Key="Samaat.Swatch.Emerald" Color="#3DDC97" />
+  <SolidColorBrush x:Key="Samaat.Swatch.Ice" Color="#6CC4FF" />
+  <SolidColorBrush x:Key="Samaat.Swatch.Mono" Color="#E6E9EC" />
+  <SolidColorBrush x:Key="Samaat.Swatch.Check" Color="#0B0D10" />
+</ResourceDictionary>

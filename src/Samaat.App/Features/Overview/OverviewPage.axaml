@@ -30,7 +30,7 @@
         <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Left">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding AlertText}" FontSize="12" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding AlertText}" />
           </StackPanel>
         </Border>
 
@@ -81,7 +81,7 @@
             <Border Classes="alert critical" IsVisible="{Binding HasError}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-                <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
           </WrapPanel>
@@ -107,7 +107,7 @@
                   Command="{Binding $parent[Window].((shell:MainWindowViewModel)DataContext).NavigateCommand}"
                   CommandParameter="{x:Static shell:AppSection.Connections}">
             <StackPanel Orientation="Horizontal" Spacing="4">
-              <TextBlock Text="Manage" FontSize="12" Foreground="{DynamicResource Samaat.Muted}" />
+              <TextBlock Text="Manage" FontSize="{StaticResource Samaat.FontSize.Meta}" Foreground="{DynamicResource Samaat.Muted}" />
               <PathIcon Data="{StaticResource Icon.ChevronRight}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
             </StackPanel>
           </Button>

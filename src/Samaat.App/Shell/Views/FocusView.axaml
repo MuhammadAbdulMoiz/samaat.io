@@ -31,7 +31,7 @@
         <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding AlertText}" FontSize="12" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding AlertText}" />
           </StackPanel>
         </Border>
 
@@ -88,7 +88,7 @@
               <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-                  <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -134,7 +134,7 @@
           <TextBlock Classes="meta" Text="{Binding StatusLineText}" TextTrimming="CharacterEllipsis" />
         </StackPanel>
         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" AutomationProperties.Name="{Binding BatteryAccessibleText}">
-          <TextBlock Classes="number" Text="{Binding SummaryFigure}" FontSize="20" />
+          <TextBlock Classes="number" Text="{Binding SummaryFigure}" FontSize="{StaticResource Samaat.FontSize.FigureMedium}" />
           <TextBlock Classes="unit" Text="{Binding SummaryUnit}" />
         </StackPanel>
       </Grid>
