@@ -379,6 +379,11 @@
     <TextBlock Text="Samaat" Classes="display" FontSize="{StaticResource Samaat.FontSize.Heading}" />
     <TextBlock Text="{Binding VersionText}" Classes="meta" />
     <TextBlock Text="A companion for Bluetooth earbuds from any brand" Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding LicenceNotice}" Classes="meta" TextWrapping="Wrap" Margin="0,8,0,0" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <HyperlinkButton Content="Licence" NavigateUri="{Binding LicenceUri}" Padding="0" Foreground="{DynamicResource Samaat.Accent}" AutomationProperties.Name="Read the GNU GPL v3 licence" />
+      <HyperlinkButton Content="Source code" NavigateUri="{Binding SourceUri}" Padding="0" Foreground="{DynamicResource Samaat.Accent}" AutomationProperties.Name="Open Samaat's source code" />
+    </StackPanel>
   </StackPanel>
 </Grid>
 </Border>
