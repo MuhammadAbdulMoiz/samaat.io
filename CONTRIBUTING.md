@@ -4,6 +4,20 @@
 
 We work test-first (see [docs/STATUS.md §4](docs/STATUS.md#4-working-on-samaat-tdd)): write a failing test, make it pass, then refactor. Run `dotnet test Samaat.slnx` before every commit. CI runs it on Ubuntu and Windows.
 
+## Branches and releases
+
+| Branch | What it's for | How changes get in |
+|---|---|---|
+| `master` | Released versions only. Each release is tagged, e.g. `v0.2.0` | A release pull request from dev. No direct pushes |
+| dev (`feature/ui-redesign` for now) | Integration: every change lands here first | Pull requests with CI green |
+| `feat/*`, `fix/*`, `docs/*`, `claude/*` | One change each, short-lived | Branch from dev, open a pull request into dev, delete the branch after merge |
+| `hotfix/*` | An urgent fix to a released version | Branch from `master`, merge into `master`, then merge `master` back into dev |
+
+- **Start work from dev:** `git switch -c feat/<short-name> origin/feature/ui-redesign`, and open the pull request against `feature/ui-redesign`, not `master`.
+- **Release:** open a pull request from dev into `master`, merge it once CI passes, then tag the merge commit (`git tag v0.x.y && git push origin v0.x.y`).
+- **Keep dev current:** after a hotfix, or any change made on `master`, merge `master` back into dev so the two don't drift.
+- When dev is renamed to `dev`, GitHub moves open pull requests and the default-branch setting with it. Only this section and the CI trigger mention the old name.
+
 ## Adding or changing device support
 
 Device support is only as good as its evidence. A catalog entry may set `"verified": true` only when the pull request includes:
