@@ -95,9 +95,7 @@ Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0
 ```
 
-To try the phone side on your laptop, or install it on an Android phone, follow [Try it](docs/TRY-IT.md).
-
-That's the Windows app with real Bluetooth. The Android app builds with the Android workload ([how](docs/modules/phone-handoff.md#building-the-android-app)); CI uploads an APK. Two more ways to run the desktop app:
+That's the Windows app with real Bluetooth. The phone app lives in its own repo, **[samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile)**: it runs on Android, or in a window on your laptop, and pairs with this app ([try it](docs/TRY-IT.md)). Two more ways to run the desktop app:
 
 ```bash
 dotnet run --project src/Samaat.App -f net10.0                          # simulated earbuds, any OS
@@ -127,9 +125,6 @@ src/
   Samaat.Simulator/            simulated earbuds for UI work and tests
   Samaat.UI/                   shared design system: tokens, icons, fonts, battery ring
   Samaat.App/                  Avalonia desktop app
-  Samaat.Mobile/               Avalonia phone UI
-  Samaat.Platform.Android/     Android Bluetooth audio, devices, RFCOMM and GATT
-  Samaat.Android/              Android app
   Samaat.Cli/                  console tool for checking real hardware
 tests/                         xUnit, including headless UI screenshots (desktop and phone)
 ```

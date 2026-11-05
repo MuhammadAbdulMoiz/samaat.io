@@ -4,7 +4,7 @@ Status: **implemented, not yet run on hardware.** Tested end to end in CI: pairi
 
 | Computer: Links page | Computer: pairing | Phone: earbuds | Phone: pairing |
 |---|---|---|---|
-| ![](../images/buds-pro-connections-phone.png) | ![](../images/settings-phone-pairing.png) | ![](../images/mobile-device.png) | ![](../images/mobile-computer-code.png) |
+| ![](../images/buds-pro-connections-phone.png) | ![](../images/settings-phone-pairing.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-device.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-computer-code.png) |
 
 ## What it does
 
@@ -57,31 +57,18 @@ Full protocol: [docs/plans/2026-11-04-phone-handoff.md](../plans/2026-11-04-phon
 | Move logic and rollback; the phone's side | `src/Samaat.Handoff/Moving/HandoffCoordinator.cs`, `PhoneAgent.cs` |
 | Computer host, phone client, beacon, paired devices | `src/Samaat.Handoff/PhoneLinkHost.cs`, `PhoneLinkClient.cs`, `Discovery/`, `Storage/` |
 | Desktop UI | `src/Samaat.App/Features/Phone/`, Settings and Links pages |
-| Phone UI (shared, headless-testable) | `src/Samaat.Mobile/` |
-| Android audio link, devices, RFCOMM, GATT | `src/Samaat.Platform.Android/` |
-| Android app (activity, foreground service) | `src/Samaat.Android/` |
+| Phone UI, Android platform layer and app, phone preview | the **[samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile)** repo (`src/Samaat.Mobile`, `Samaat.Platform.Android`, `Samaat.Android`, `Samaat.Mobile.Preview`), which builds this repo's shared projects from a submodule |
 
 ## Tests
 
 - `Samaat.Handoff.Tests` (99): crypto (tamper, replay, reorder, wrong key), framing, every message type, pairing (codes match, decline, commitment mismatch), sessions, every coordinator path including timeouts, the phone agent, and loopback end-to-end (pair, move both ways, rollback, forget, the computer restarting).
 - `Samaat.App.Tests`: the Links card states, and the desktop paired with a real phone client over loopback, moving both ways, plus screenshots.
-- `Samaat.Mobile.Tests` (18): the phone UI against a real computer host, accessibility checks (44 px targets, names, colour pairs, low battery in words), plus phone-sized screenshots.
-- Android: compile and package in CI (`android` job). Hardware: the checklist in the plan.
+- `Samaat.Mobile.Tests` (18, in samaat-mobile): the phone UI against a real computer host, accessibility checks (44 px targets, names, colour pairs, low battery in words), plus phone-sized screenshots.
+- Android: compiled and packaged by samaat-mobile's CI (`android` job). Hardware: the checklist in the plan.
 
-## Trying it
+## Trying it and building the Android app
 
-[docs/TRY-IT.md](../TRY-IT.md): the desktop app, the phone app on a laptop (`src/Samaat.Mobile.Preview`, pairs with the desktop over the real network), and installing the APK on an Android phone.
-
-## Building the Android app
-
-```bash
-dotnet workload install android
-dotnet build src/Samaat.Android -t:InstallAndroidDependencies -p:AndroidSdkDirectory=<sdk> -p:AcceptAndroidSDKLicenses=True
-dotnet publish src/Samaat.Android -c Release -p:AndroidSdkDirectory=<sdk> -o artifacts/apk
-adb install artifacts/apk/io.samaat.app-Signed.apk
-```
-
-CI uploads the APK as the `samaat-android-apk` artifact. It's signed with the debug key, which is fine for testing but not for a store.
+See [docs/TRY-IT.md](../TRY-IT.md) and the **[samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile)** repo: the phone app in a window on a laptop (pairs with the desktop over the real network), and the Android APK (built by samaat-mobile's CI, or locally with the Android workload). The APK is signed with the debug key, which is fine for testing but not for a store.
 
 ## Known limits
 

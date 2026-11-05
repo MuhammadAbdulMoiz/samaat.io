@@ -83,7 +83,7 @@ Each TCP connection (phone is the client):
 | `Samaat.Platform.Android` | net10.0-android | Bonded devices as `IEarbudDevice`, audio connect/disconnect strategies, RFCOMM and GATT transports (so the Jieli and Fast Pair drivers work on the phone), multicast lock |
 | `Samaat.Android` | net10.0-android | App head: activity, foreground service (keeps the computer link alive), manifest and permissions |
 
-The Android projects are not in `Samaat.slnx` (they need the Android workload). `Samaat.Mobile.slnx` builds them, and a separate CI job builds the APK on Ubuntu.
+**Moved (2026-11-05):** the phone projects (`Samaat.Mobile`, `Samaat.Mobile.Preview`, `Samaat.Platform.Android`, `Samaat.Android`, `Samaat.Mobile.Tests`) now live in **[samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile)**, which builds this repo's shared projects from a submodule. Originally: the Android projects were not in `Samaat.slnx` (they need the Android workload). `Samaat.Mobile.slnx` builds them, and a separate CI job builds the APK on Ubuntu.
 
 ## Desktop UI
 

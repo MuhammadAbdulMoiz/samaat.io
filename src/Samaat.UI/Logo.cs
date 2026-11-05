@@ -9,7 +9,7 @@ namespace Samaat.UI;
 /// <summary>
 /// The Samaat logo: a lime tile with a dark "S". Its colours are fixed (they don't follow the accent preset or the theme),
 /// so the mark is the same on the desktop sidebar, the window and tray icon, the phone and the Android launcher.
-/// The paths are the Android launcher icon's (src/Samaat.Android/Resources/drawable/icon.xml), moved to a tight 64×64 box;
+/// The paths are the Android launcher icon's (samaat-mobile repo: src/Samaat.Android/Resources/drawable/icon.xml), moved to a tight 64×64 box;
 /// docs/images/logo.svg is the same drawing for documents.
 /// </summary>
 public static class Logo

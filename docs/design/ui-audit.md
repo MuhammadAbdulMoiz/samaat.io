@@ -111,11 +111,11 @@ Benchmark: the desktop app itself. Run with the `design-critique` and `accessibi
 | 2 | The phone's message dismiss button was 38 px wide | 2.5.5 | 🟡 | Ghost buttons have a 44 px minimum width |
 | 3 | Low battery was shown by colour alone | 1.4.1 | 🔴 | Words, an icon and an accessible name ("Right bud, 17 percent, low") |
 
-Measured in tests (`Samaat.Mobile.Tests`): every visible button on every phone screen is at least 44×44 and has a name, and 15 phone colour pairs pass in both themes (low and critical on the page, selected rows and tabs, alert pills, status bars on their track, the ring). The shared token pairs stay covered by the desktop's `ContrastTests`. Still to do by hand: TalkBack on a real phone, and 200 % font scale.
+Measured in tests (`Samaat.Mobile.Tests`, now in [samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile)): every visible button on every phone screen is at least 44×44 and has a name, and 15 phone colour pairs pass in both themes (low and critical on the page, selected rows and tabs, alert pills, status bars on their track, the ring). The shared token pairs stay covered by the desktop's `ContrastTests`. Still to do by hand: TalkBack on a real phone, and 200 % font scale.
 
 | Earbuds | Device | Pairing | Paired |
 |---|---|---|---|
-| ![](../images/mobile-devices.png) | ![](../images/mobile-device.png) | ![](../images/mobile-computer-code.png) | ![](../images/mobile-computer-paired.png) |
+| ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-devices.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-device.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-computer-code.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-computer-paired.png) |
 
 ## One logo, one artwork (2026-11-05)
 
@@ -124,5 +124,5 @@ Measured in tests (`Samaat.Mobile.Tests`): every visible button on every phone s
 
 | Logo | Split photo | Headset photo |
 |---|---|---|
-| ![](../images/logo.png) | ![](../images/mobile-device-artwork.png) | ![](../images/mobile-device-photo.png) |
+| ![](../images/logo.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-device-artwork.png) | ![](https://raw.githubusercontent.com/MuhammadAbdulMoiz/samaat-mobile/main/docs/images/mobile-device-photo.png) |
 
