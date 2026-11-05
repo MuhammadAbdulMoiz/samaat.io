@@ -1,5 +1,8 @@
 using System.Net;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.VisualTree;
+using Avalonia.Automation;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
@@ -138,10 +141,13 @@ public sealed class PhoneLinkFlowTests
     private readonly InMemoryBeaconBus _bus = new();
     private readonly FakePhoneAudio _phoneAudio = new FakePhoneAudio().With(BudsProAddress, connected: false);
 
-    private async Task<(MainWindow Window, MainWindowViewModel ViewModel, PhoneLinkClient Phone)> ShowAsync()
+    /// <param name="screenshots">Run the window on <see cref="ScreenshotClock"/>, so its frames are the same on every run.</param>
+    private async Task<(MainWindow Window, MainWindowViewModel ViewModel, PhoneLinkClient Phone)> ShowAsync(bool screenshots = false)
     {
         var dir = Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"));
+        var clock = screenshots ? ScreenshotClock.Create() : null;
         var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false),
+            time: clock, sources: clock is null ? null : ScreenshotClock.Sources(clock),
             settings: new SettingsStore(Path.Combine(dir, "settings.json")),
             phoneLinkFactory: devices => new PhoneLinkHost(new PeerStore(Path.Combine(dir, "phones.json")),
                 new PhoneLinkHostOptions("Desk PC") { BindAddress = IPAddress.Loopback, Port = 0, BeaconInterval = TimeSpan.FromMilliseconds(100) },
@@ -165,6 +171,26 @@ public sealed class PhoneLinkFlowTests
             await Task.Delay(20);
             Dispatcher.UIThread.RunJobs();
         }
+    }
+
+    /// <summary>
+    /// A move or a theme switch starts transitions that run on the real clock, and the phone link posts to the UI from its
+    /// own threads; so wait a real second, then redraw the whole window (a frame stitched from partial redraws can differ by
+    /// a pixel along a seam) before taking the frame. That keeps the docs pictures the same from run to run.
+    /// </summary>
+    private static Avalonia.Media.Imaging.WriteableBitmap SettledFrame(Window window)
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(1));
+        Settle();
+        foreach (var visual in window.GetVisualDescendants().Prepend(window))
+        {
+            visual.InvalidateVisual();
+        }
+
+        Settle();
+        var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        return frame!;
     }
 
     private static void Settle()
@@ -332,8 +358,11 @@ public sealed class PhoneLinkFlowTests
     [AvaloniaFact]
     public async Task RendersPhoneScreenshots()
     {
-        var (window, viewModel, phone) = await ShowAsync();
+        var (window, viewModel, phone) = await ShowAsync(screenshots: true);
         var directory = Environment.GetEnvironmentVariable("SAMAAT_SCREENSHOTS");
+        // Reduce motion: no transitions and a still busy bar, so a move finishing just before a capture can't leave a
+        // frame mid-fade. Still frames look the same either way.
+        viewModel.Settings.ReduceMotion = true;
 
         void Capture(string name)
         {
@@ -341,8 +370,13 @@ public sealed class PhoneLinkFlowTests
             {
                 Application.Current!.RequestedThemeVariant = variant;
                 Settle();
-                var frame = window.CaptureRenderedFrame();
-                Assert.NotNull(frame);
+                // The pairing code comes from fresh random keys; the docs picture shows a fixed one so it doesn't churn.
+                foreach (var code in window.GetVisualDescendants().OfType<TextBlock>().Where(t => AutomationProperties.GetName(t) == "Pairing code"))
+                {
+                    code.Text = "482 913";
+                }
+
+                var frame = SettledFrame(window);
                 if (directory is not null)
                 {
                     Directory.CreateDirectory(directory);

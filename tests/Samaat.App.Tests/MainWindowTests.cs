@@ -20,12 +20,12 @@ public class MainWindowTests
 {
     private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowAsync(
         DeviceProfileDb? profiles = null, Func<Samaat.Core.Audio.IAudioShare>? audioShareFactory = null, Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null,
-        TimeProvider? time = null)
+        TimeProvider? time = null, IReadOnlyList<Samaat.Core.Devices.IDeviceSource>? sources = null)
     {
         // A temp-directory store, so tests never read or write the real %APPDATA% settings.
         var settings = new SettingsStore(Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"), "settings.json"));
         var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false), time: time, settings: settings, profiles: profiles,
-            audioShareFactory: audioShareFactory, outputSwitcher: outputSwitcher);
+            audioShareFactory: audioShareFactory, outputSwitcher: outputSwitcher, sources: sources);
         var window = new MainWindow { DataContext = viewModel };
         window.Show();
         await viewModel.RefreshDevicesAsync();
@@ -169,11 +169,50 @@ public class MainWindowTests
         }
     }
 
+    /// <summary>The docs screenshots run on <see cref="ScreenshotClock"/>, so the same frame renders the same every time.</summary>
+    private static Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowForScreenshotsAsync(
+        Func<Samaat.Core.Audio.IAudioShare>? audioShareFactory = null, Samaat.Core.Platform.IDefaultOutputSwitcher? outputSwitcher = null)
+    {
+        var clock = ScreenshotClock.Create();
+        return ShowAsync(audioShareFactory: audioShareFactory, outputSwitcher: outputSwitcher, time: clock, sources: ScreenshotClock.Sources(clock));
+    }
+
+    /// <summary>Screenshot churn (audit issue 10): a simulator tick or the wall clock moving must not change a frame.</summary>
+    [AvaloniaFact]
+    public async Task ScreenshotFrames_DontChange_AsRealTimePasses()
+    {
+        var (window, viewModel) = await ShowForScreenshotsAsync();
+        try
+        {
+            viewModel.NavigateCommand.Execute(AppSection.Info);
+            SettleAnimations();
+            var before = Png(window);
+
+            await Task.Delay(TimeSpan.FromSeconds(2.5)); // longer than the simulator's 2 s battery tick
+            Dispatcher.UIThread.RunJobs();
+            SettleAnimations();
+
+            Assert.Equal(before, Png(window));
+        }
+        finally
+        {
+            window.Close();
+            await viewModel.DisposeAsync();
+        }
+
+        static byte[] Png(Window window)
+        {
+            using var stream = new MemoryStream();
+            window.CaptureRenderedFrame()!.Save(stream);
+            return stream.ToArray();
+        }
+    }
+
     /// <summary>Set SAMAAT_SCREENSHOTS to a directory to save rendered screenshots for review.</summary>
     [AvaloniaFact]
     public async Task RendersScreenshots()
     {
-        var (window, viewModel) = await ShowAsync();
+        var (window, viewModel) = await ShowForScreenshotsAsync();
         var directory = Environment.GetEnvironmentVariable("SAMAAT_SCREENSHOTS");
         // The docs know the simulated devices without their "sim-" prefix.
         static string FileName(DeviceViewModel d) => d.Device.Identity.Id.Replace("sim-", "");
@@ -311,7 +350,7 @@ public class MainWindowTests
 
         // The Share audio card needs fake outputs, so it gets its own window.
         var fakes = new List<FakeAudioShare>();
-        var (shareWindow, shareViewModel) = await ShowAsync(audioShareFactory: () =>
+        var (shareWindow, shareViewModel) = await ShowForScreenshotsAsync(audioShareFactory: () =>
         {
             var fake = new FakeAudioShare();
             if (fakes.Count == 0)
