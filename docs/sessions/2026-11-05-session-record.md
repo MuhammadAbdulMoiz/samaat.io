@@ -347,6 +347,7 @@ Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`,
 |---|---|---|
 | This record | `docs/sessions/2026-11-05-session-record.md` on `docs/session-2026-11-05` | Everything; start here |
 | Merge and release plan | `docs/plans/2026-11-05-merge-and-release.md` on `docs/session-2026-11-05` | Merging the open PRs, preparing v1.0.0, releasing to `master` with a tag, the phone app's release, hotfixes |
+| Launch checklist (tickable) | https://claude.ai/artifact/JXH3HjdC7FiqSXZJMqHRa4 (private to the owner; ticks save themselves) | Every step from merging the PRs to Google Play, the QR code and turning handoff on |
 | Licensing and porting plan | `docs/plans/2026-11-05-licensing-and-porting.md` on `docs/session-2026-11-05` | GPL-3.0-or-later, porting rules, brand order, per-port checklist |
 | Decision records | `docs/decisions/` on `feature/ui-redesign` (PR #1–#5, pairing race) and on `claude/audit-fixes` (audit fixes) | Why each change was made |
 | Mobile decision record | `samaat-mobile`: `docs/decisions/2026-11-05-mobile-improvements.md` on `claude/mobile-improvements` | The phone work |
@@ -357,7 +358,7 @@ Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`,
 ### Owner decisions (consolidated)
 
 - [ ] **Licence:** add `LICENSE` with GPL-3.0-or-later to both repos (direction chosen; follow the plan's §1 checks: contributor rights, Store policy).
-- [ ] **Phone-handoff flag default:** on in normal builds, off in the Store build (`AppOptions.PhoneHandoffDefault`). Confirm.
+- [ ] **Phone-handoff flag default:** on in normal builds, off in the Store build (`AppOptions.PhoneHandoffDefault`). Decided: it stays off in the Store build until the phone app is on Google Play and the desktop app shows a QR code to download it (merge and release plan, Phase D rule). Then it's switched on in `v1.1.0`.
 - [ ] **Version:** `1.0.0` (matches the MSIX script). Confirm before tagging `v1.0.0`.
 - [ ] **`.claude/` keep-list** from `.claude/README.md` (on `claude/audit-fixes`).
 - [ ] **ECC plugin in samaat-mobile:** add it to `samaat-mobile/.claude/settings.json` yourself; auto mode blocked the session. The JSON is in the mobile decision record.
@@ -386,3 +387,4 @@ Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`,
 6. Start the first port: Samsung Galaxy Buds from GalaxyBudsClient (plan §3, phase 1).
 7. Do the desktop follow-ups above, in a small PR.
 8. Optionally, tag `v1.0.0` once the decisions are made. The release workflow then builds the zip and the MSIX.
+9. After v1.0.0: put the phone app on Google Play, add the QR code to the desktop app, then turn phone handoff on in the Store build and release `v1.1.0` (plan, Phase D rule).

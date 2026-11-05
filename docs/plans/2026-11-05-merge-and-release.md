@@ -104,6 +104,25 @@ These are the decisions and checks a first public release needs. Each code chang
    - F-Droid needs a FOSS licence, which GPL-3.0 satisfies.
    - Google Play needs a signing key and a listing.
    - Phone handoff has never run on a real phone; test it before advertising it.
+   - There's no iPhone app: iOS doesn't let an app connect or disconnect Bluetooth headphones, so the store is Google Play (and F-Droid optionally), not the App Store.
+
+### Rule: the phone app is on Google Play before the desktop app turns phone handoff on
+
+Owner decision, 2026-11-05. The desktop Store build ships v1.0.0 with phone handoff **off** (`AppOptions.PhoneHandoffDefault`, `SAMAAT_STORE`). It's switched on only once people can actually install the phone app:
+
+1. **Phone app on Google Play.**
+   - Add a tag-triggered release workflow to samaat-mobile that builds a signed `.aab` (and an `.apk` for F-Droid and sideloading).
+   - Create the upload key and turn on Play App Signing. Keep the key in GitHub secrets, never in the repo.
+   - Write the Play listing, the data-safety form (no account, no server, local network only) and the privacy policy link.
+   - Release to the internal test track, check handoff on a real phone, then go to production.
+2. **QR code in the desktop app to get the phone app** (its own feature branch from dev, test-first, with a decision record):
+   - Show it in Settings → Phone and on the Links page's "Your phone" card, next to the pairing flow.
+   - Generate the QR code locally (a small MIT or Apache QR library, or a hand-written encoder). No web request.
+   - The store URL lives in one place (config or a constant in `Samaat.Handoff`), and the link text is shown under the code for people who can't scan.
+   - Headless UI tests: the code renders in both themes, it has an accessible name, and it meets the contrast and hit-target checks. The QR's dark-on-light colours become tokens in `Tokens.axaml`.
+3. **Turn handoff on in the Store build**, and release the desktop app as `v1.1.0`.
+
+Until step 1 is done, the QR code and the "Your phone" card stay hidden in the Store build.
 
 ---
 
