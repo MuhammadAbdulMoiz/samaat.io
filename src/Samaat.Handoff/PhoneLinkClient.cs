@@ -8,6 +8,7 @@ using Samaat.Handoff.Moving;
 using Samaat.Handoff.Pairing;
 using Samaat.Handoff.Protocol;
 using Samaat.Handoff.Storage;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff;
 
@@ -232,6 +233,7 @@ public sealed class PhoneLinkClient : IAsyncDisposable
             catch (HandshakeException ex)
             {
                 LastError = ex.Message;
+                SamaatLog.Info("Phone link", "Connecting to the computer failed", ex);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {

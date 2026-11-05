@@ -1,10 +1,10 @@
-using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Samaat.App.Shell;
 using Samaat.App.Tray;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App;
 
@@ -30,7 +30,7 @@ public partial class App : Application
                 }
                 catch (Exception e)
                 {
-                    Trace.WriteLine($"Samaat icon loading failed: {e.Message}");
+                    SamaatLog.Warn("App", "Loading the toast icon failed", e);
                     return null;
                 }
             }
@@ -43,7 +43,7 @@ public partial class App : Application
                 }
                 catch (Exception e)
                 {
-                    Trace.WriteLine($"Samaat icon loading failed: {e.Message}");
+                    SamaatLog.Warn("App", "Loading the window icon failed", e);
                     return null;
                 }
             }
@@ -64,7 +64,7 @@ public partial class App : Application
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"Samaat tray icon unavailable: {e}");
+                SamaatLog.Warn("App", "The tray icon is unavailable", e);
             }
 
             window.Closing += (_, e) =>

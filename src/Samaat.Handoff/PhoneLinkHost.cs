@@ -10,6 +10,7 @@ using Samaat.Handoff.Moving;
 using Samaat.Handoff.Pairing;
 using Samaat.Handoff.Protocol;
 using Samaat.Handoff.Storage;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff;
 
@@ -296,6 +297,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
             catch (SocketException ex)
             {
                 ListenError = $"Samaat couldn't listen for your phone: {ex.Message}";
+                SamaatLog.Error("Phone link", "Couldn't listen for phones", ex);
                 return;
             }
         }
@@ -400,7 +402,11 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         }
         catch (Exception ex) when (ex is HandshakeException or IOException or OperationCanceledException or SocketException or ObjectDisposedException)
         {
-            // A failed or abandoned handshake just closes the connection.
+            // A failed or abandoned handshake just closes the connection; a refused or broken one is worth a line.
+            if (ex is HandshakeException or InvalidDataException)
+            {
+                SamaatLog.Info("Phone link", "A phone's handshake failed", ex);
+            }
         }
         finally
         {

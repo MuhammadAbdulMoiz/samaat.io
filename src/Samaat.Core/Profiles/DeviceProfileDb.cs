@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Core.Profiles;
 
@@ -42,6 +43,7 @@ public sealed class DeviceProfileDb
         }
         catch (Exception e)
         {
+            SamaatLog.Warn("Profiles", $"Device profiles couldn't be listed in {directory}", e);
             return new DeviceProfileDb(profiles, [$"{directory}: {e.Message}"]);
         }
 
@@ -67,6 +69,7 @@ public sealed class DeviceProfileDb
             catch (Exception e)
             {
                 errors.Add($"{Path.GetRelativePath(directory, file)}: {e.Message}");
+                SamaatLog.Warn("Profiles", $"Device profile {Path.GetRelativePath(directory, file)} couldn't be loaded", e);
             }
         }
 

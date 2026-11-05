@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Samaat.Handoff.Protocol;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff.Storage;
 
@@ -151,6 +152,7 @@ public sealed class PeerStore
                 catch (System.Security.Cryptography.CryptographicException)
                 {
                     LastError = $"The pairing with {entry.Name} can't be read on this account; pair it again.";
+                    SamaatLog.Warn("Phone link", LastError);
                 }
             }
 
@@ -159,6 +161,7 @@ public sealed class PeerStore
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
             LastError = $"Paired devices could not be read ({e.Message}); starting unpaired.";
+            SamaatLog.Warn("Phone link", LastError, e);
         }
     }
 
@@ -185,6 +188,7 @@ public sealed class PeerStore
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Security.Cryptography.CryptographicException)
         {
             LastError = $"Paired devices could not be saved: {e.Message}";
+            SamaatLog.Warn("Phone link", LastError, e);
         }
     }
 }

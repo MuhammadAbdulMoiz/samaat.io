@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -6,6 +5,7 @@ using NAudio.CoreAudioApi;
 using Samaat.Core.Commands;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -80,7 +80,7 @@ internal static class BluetoothAudioLink
         }
         catch (Exception ex)
         {
-            Trace.TraceWarning($"PC link probe failed: {ex.Message}");
+            SamaatLog.Warn("PC link", "Probing the audio endpoints failed", ex);
             return 0;
         }
     });
@@ -95,6 +95,7 @@ internal static class BluetoothAudioLink
         }
         catch (Exception ex)
         {
+            SamaatLog.Warn("PC link", "Listing the audio endpoints failed", ex);
             var hr = Marshal.GetHRForException(ex);
             return new PcLinkSendResult(false, 1, hr < 0 ? hr : EFail);
         }
@@ -111,6 +112,7 @@ internal static class BluetoothAudioLink
                 }
                 catch (Exception ex) when (ex is COMException or InvalidCastException or InvalidOperationException)
                 {
+                    SamaatLog.Warn("PC link", $"Couldn't find the audio filter of endpoint {index}", ex);
                     var hr = Marshal.GetHRForException(ex);
                     targets.Add(new PcLinkTarget($"endpoint-{index}", () => hr < 0 ? hr : EFail));
                 }

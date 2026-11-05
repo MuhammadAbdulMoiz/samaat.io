@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Samaat.Transport;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -51,8 +52,9 @@ internal sealed class WinsockRfcommChannel : IRfcommChannel
             cancellationToken.ThrowIfCancellationRequested();
             return new WinsockRfcommChannel(socket);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            SamaatLog.Info("RFCOMM", $"Couldn't open RFCOMM channel {channel}", ex);
             socket.Dispose();
             return null;
         }

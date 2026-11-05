@@ -1,3 +1,5 @@
+using Samaat.Core.Diagnostics;
+
 namespace Samaat.Core.Commands;
 
 /// <summary>Runs a device command with a confirmation timeout and turns errors into results.</summary>
@@ -36,6 +38,7 @@ public static class CommandRunner
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            SamaatLog.Warn("Commands", "A device command failed", ex);
             return new CommandResult(CommandStatus.Failed, ex.Message);
         }
     }

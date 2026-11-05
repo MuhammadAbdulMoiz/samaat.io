@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Core.Settings;
 
@@ -53,10 +54,12 @@ public sealed class SettingsStore(string path)
             LastError = TryKeepCopy()
                 ? "Settings file was unreadable; using defaults (the old file was kept as settings.json.bad)."
                 : "Settings file was unreadable and could not be set aside; using defaults.";
+            SamaatLog.Warn("Settings", LastError);
         }
         catch (Exception e)
         {
             LastError = $"Settings could not be read: {e.Message} Using defaults.";
+            SamaatLog.Warn("Settings", LastError, e);
         }
 
         return new AppSettings();
@@ -80,6 +83,7 @@ public sealed class SettingsStore(string path)
         catch (Exception e)
         {
             LastError = $"Settings could not be saved: {e.Message}";
+            SamaatLog.Warn("Settings", LastError, e);
             try
             {
                 File.Delete(temp);

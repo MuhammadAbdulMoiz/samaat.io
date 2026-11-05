@@ -1,6 +1,7 @@
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Transport;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Protocols.Jieli;
 
@@ -40,9 +41,10 @@ public sealed class JieliDriver(TimeSpan? authStepTimeout = null, TimeSpan? resp
 
             return await OpenSessionAsync(write, notify, context.Time, cancellationToken);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Timeouts and Bluetooth errors just mean no driver features.
+            SamaatLog.Info("Jieli", "The RCSP session didn't open", ex);
             return [];
         }
     }

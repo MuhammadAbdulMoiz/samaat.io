@@ -10,6 +10,7 @@ using Samaat.Core.Bluetooth;
 using Samaat.Core.Capabilities;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
 using Samaat.Core.Profiles;
@@ -52,8 +53,16 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
     private readonly TimeProvider _time;
     private string? _lastBattery;
 
-    public DeviceInfoViewModel(IEarbudDevice device, Action<Action>? post = null, TimeProvider? time = null, DeviceProfile? profile = null)
+    /// <summary>How many log lines "Copy report" includes.</summary>
+    public const int ReportLogLines = 40;
+
+    private readonly Func<int, IReadOnlyList<string>>? _recentLog;
+
+    /// <param name="recentLog">The newest log lines for the report; defaults to the installed log sink's, if it keeps any.</param>
+    public DeviceInfoViewModel(IEarbudDevice device, Action<Action>? post = null, TimeProvider? time = null, DeviceProfile? profile = null,
+        Func<int, IReadOnlyList<string>>? recentLog = null)
     {
+        _recentLog = recentLog ?? (SamaatLog.Sink is IRecentLog log ? log.Tail : null);
         _device = device;
         _diagnostics = device.GetFeature<IDeviceDiagnostics>();
         _battery = device.GetFeature<IBatteryFeature>();
@@ -224,7 +233,30 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
             sb.AppendLine(CultureInfo.InvariantCulture, $"{e.Time} {e.Text}");
         }
 
+        AppendRecentLog(sb);
         return sb.ToString();
+    }
+
+    private void AppendRecentLog(StringBuilder sb)
+    {
+        if (_recentLog is null)
+        {
+            return;
+        }
+
+        var lines = _recentLog(ReportLogLines);
+        sb.AppendLine();
+        if (lines.Count == 0)
+        {
+            sb.AppendLine("Recent log: nothing logged");
+            return;
+        }
+
+        sb.AppendLine("Recent log:");
+        foreach (var line in lines)
+        {
+            sb.AppendLine(line);
+        }
     }
 
     private static readonly (string Module, string Prefix)[] Modules =

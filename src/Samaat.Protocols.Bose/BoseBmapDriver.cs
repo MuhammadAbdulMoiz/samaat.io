@@ -1,6 +1,7 @@
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Transport;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Protocols.Bose;
 
@@ -38,9 +39,10 @@ public sealed class BoseBmapDriver(TimeSpan? replyTimeout = null) : IEarbudDrive
                     return [feature];
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Timeouts, a closed channel and Bluetooth errors all just mean this channel is no use.
+                SamaatLog.Info("Bose", "A BMAP channel didn't answer", ex);
             }
 
             await DisposeQuietlyAsync(channel);

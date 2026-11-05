@@ -4,6 +4,7 @@ using Samaat.Core.Commands;
 using Samaat.Handoff.Pairing;
 using Samaat.Handoff.Protocol;
 using Samaat.Handoff.Security;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff.Link;
 
@@ -187,7 +188,11 @@ public sealed class PeerChannel : IAsyncDisposable
         catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException
             or InvalidDataException or CryptographicException or System.Net.Sockets.SocketException)
         {
-            // A dropped connection, a closed channel or a tampered frame all end the session.
+            // A dropped connection, a closed channel or a tampered frame all end the session. Only tampering is unusual.
+            if (ex is InvalidDataException or CryptographicException)
+            {
+                SamaatLog.Warn("Phone link", "Ended a session after an unreadable frame", ex);
+            }
         }
         finally
         {

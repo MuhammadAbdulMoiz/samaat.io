@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Core.Audio;
 
@@ -54,7 +54,7 @@ public sealed class AudioShare : IAudioShare
             }
             catch (Exception ex)
             {
-                Trace.TraceWarning($"AudioShare: pushing delay failed: {ex.Message}");
+                SamaatLog.Warn("Audio share", "Pushing the delay failed", ex);
             }
         }
     }
@@ -176,7 +176,7 @@ public sealed class AudioShare : IAudioShare
         }
         catch (Exception ex)
         {
-            Trace.TraceWarning($"AudioShare: open failed: {ex}");
+            SamaatLog.Error("Audio share", "Starting failed", ex);
             Stop(AudioShareState.Stopped, $"Couldn't start: {ex.Message}");
         }
     }
@@ -201,7 +201,7 @@ public sealed class AudioShare : IAudioShare
         }
         catch (Exception ex)
         {
-            Trace.TraceWarning($"AudioShare: pipe dispose failed: {ex.Message}");
+            SamaatLog.Warn("Audio share", "Closing the audio pipe failed", ex);
         }
     }
 
@@ -234,7 +234,7 @@ public sealed class AudioShare : IAudioShare
         }
         catch (Exception ex)
         {
-            Trace.TraceError($"AudioShare: outputs change failed: {ex}");
+            SamaatLog.Error("Audio share", "Updating the outputs failed", ex);
         }
     }
 
@@ -289,7 +289,7 @@ public sealed class AudioShare : IAudioShare
         }
         catch (Exception ex)
         {
-            Trace.TraceError($"AudioShare: pipe stop failed: {ex}");
+            SamaatLog.Error("Audio share", "Stopping the audio pipe failed", ex);
         }
     }
 
@@ -302,7 +302,7 @@ public sealed class AudioShare : IAudioShare
         }
         catch (Exception ex)
         {
-            Trace.TraceError($"AudioShare: Changed handler failed: {ex}");
+            SamaatLog.Error("Audio share", "A Changed handler failed", ex);
         }
     }
 }
