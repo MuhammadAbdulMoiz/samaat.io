@@ -268,3 +268,75 @@ public sealed class RfcommReceiveBufferTests
         Assert.Equal(Enumerable.Range(0, Total), seen);
     }
 }
+
+/// <summary>SASS decoders. Built from the spec, not captured: the realme T200 Lite doesn't implement SASS.</summary>
+public sealed class SassMessageTests
+{
+    private static StreamMessage Msg(string hex)
+    {
+        var bytes = Convert.FromHexString(hex);
+        return new StreamMessage(bytes[0], bytes[1], bytes[4..]);
+    }
+
+    [Fact]
+    public void WriteFrames_AreExactlyTheTwoGetRequests()
+    {
+        Assert.Equal(Convert.FromHexString("07100000"), FastPairMessages.SassGetCapability);
+        Assert.Equal(Convert.FromHexString("07330000"), FastPairMessages.SassGetConnectionStatus);
+    }
+
+    [Fact]
+    public void Capability_DecodesVersionAndFlags()
+    {
+        Assert.True(FastPairMessages.TrySassCapability(Msg("07110004" + "0102" + "E000"), out var cap));
+        Assert.Equal(new SassCapability(0x0102, true, true, true), cap);
+        Assert.True(FastPairMessages.TrySassCapability(Msg("07110004" + "0102" + "4000"), out cap));
+        Assert.Equal(new SassCapability(0x0102, false, true, false), cap);
+    }
+
+    [Fact]
+    public void Capability_Version0Decodes_ShortDataAndWrongGroupAreRejected()
+    {
+        Assert.True(FastPairMessages.TrySassCapability(Msg("07110004" + "0000" + "0000"), out var cap));
+        Assert.Equal(0, cap.Version);
+        Assert.False(FastPairMessages.TrySassCapability(Msg("07110003" + "010280"), out _));
+        Assert.False(FastPairMessages.TrySassCapability(Msg("07110005" + "0102E00000"), out _)); // provider replies are exactly 4 bytes
+        Assert.False(FastPairMessages.TrySassCapability(Msg("03110004" + "0102E000"), out _));
+        Assert.False(FastPairMessages.TrySassCapability(Msg("07100004" + "0102E000"), out _));
+    }
+
+    [Theory]
+    [InlineData("00", SassActiveDevice.OtherSeeker)]
+    [InlineData("01", SassActiveDevice.ThisSeeker)]
+    [InlineData("02", SassActiveDevice.OtherDevice)]
+    public void ConnectionStatus_DecodesTheActiveFlag_IgnoringTheEncryptedRest(string first, SassActiveDevice expected)
+    {
+        Assert.True(FastPairMessages.TrySassConnectionStatus(Msg("07340003" + first + "AABB"), out var active));
+        Assert.Equal(expected, active);
+    }
+
+    [Fact]
+    public void ConnectionStatus_RejectsUnknownFlagAndEmptyData()
+    {
+        Assert.False(FastPairMessages.TrySassConnectionStatus(Msg("07340001" + "03"), out _));
+        Assert.False(FastPairMessages.TrySassConnectionStatus(Msg("07340000"), out _));
+        Assert.False(FastPairMessages.TrySassConnectionStatus(Msg("03340001" + "01"), out _));
+    }
+
+    [Fact]
+    public void SwitchEvent_DecodesReasonTargetAndName()
+    {
+        Assert.True(FastPairMessages.TrySassSwitchEvent(Msg("07320007" + "03" + "02" + Convert.ToHexString("Pixel"u8)), out var e));
+        Assert.Equal(new SassSwitchEvent(3, false, "Pixel"), e);
+        Assert.True(FastPairMessages.TrySassSwitchEvent(Msg("07320002" + "01" + "01"), out e));
+        Assert.Equal(new SassSwitchEvent(1, true, ""), e);
+    }
+
+    [Theory]
+    [InlineData("07320002" + "0103")]
+    [InlineData("07320001" + "01")]
+    [InlineData("07320004" + "0102" + "C328")] // malformed UTF-8
+    [InlineData("03320002" + "0101")]
+    public void SwitchEvent_RejectsBadInput(string hex) =>
+        Assert.False(FastPairMessages.TrySassSwitchEvent(Msg(hex), out _));
+}

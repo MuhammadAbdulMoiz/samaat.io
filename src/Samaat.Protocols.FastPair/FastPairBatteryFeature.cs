@@ -7,7 +7,7 @@ namespace Samaat.Protocols.FastPair;
 
 /// <summary>
 /// Left, right and case battery plus firmware and model from the Fast Pair Message Stream the buds push on
-/// connect. Read-only: nothing is ever written to the channel. It owns the channel; disposing it closes it.
+/// connect. It writes only the two SASS get requests (<see cref="FastPairMessages.SassGetCapability"/>, <see cref="FastPairMessages.SassGetConnectionStatus"/>), via <see cref="SendAsync"/>. It owns the channel; disposing it closes it.
 /// </summary>
 public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature, IAsyncDisposable
 {
@@ -77,6 +77,12 @@ public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature
 
     public event EventHandler<BatteryState>? Changed;
 
+    /// <summary>Every parsed message, raised outside the lock. Handlers must not throw.</summary>
+    internal event Action<StreamMessage>? MessageReceived;
+
+    /// <summary>Raised after <see cref="RefreshAsync"/> starts listening on a reopened channel.</summary>
+    internal event Action? ChannelAttached;
+
     // Both interfaces name their event Changed; this one is the firmware/model event.
     event EventHandler? IDeviceInfoFeature.Changed
     {
@@ -125,6 +131,7 @@ public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature
             if (await _reopen(timeout.Token) is { } channel)
             {
                 Listen(channel);
+                ChannelAttached?.Invoke();
                 await next.Task.WaitAsync(timeout.Token);
                 gotReading = true;
             }
@@ -147,6 +154,23 @@ public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature
             _nextReading = null;
             _refreshLock.Release();
         }
+    }
+
+    /// <summary>Writes to the current channel; only the SASS get requests may be passed. Throws IOException with no channel.</summary>
+    internal async Task SendAsync(byte[] message, CancellationToken cancellationToken)
+    {
+        Link? link;
+        lock (_gate)
+        {
+            link = _link;
+        }
+
+        if (link is null)
+        {
+            throw new IOException("The Message Stream isn't open.");
+        }
+
+        await link.Channel.WriteAsync(message, cancellationToken);
     }
 
     private void Listen(IRfcommChannel channel)
@@ -187,10 +211,12 @@ public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature
     {
         BatteryState? battery = null;
         var infoChanged = false;
+        List<StreamMessage> received = [];
         lock (_gate)
         {
             foreach (var message in parser.Push(chunk))
             {
+                received.Add(message);
                 if (FastPairMessages.TryBattery(message, out var level))
                 {
                     battery = Apply(level) ?? battery;
@@ -217,6 +243,11 @@ public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature
         if (infoChanged)
         {
             _infoChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        foreach (var message in received)
+        {
+            MessageReceived?.Invoke(message);
         }
     }
 

@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Time.Testing;
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
+using Samaat.Core.Commands;
+using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Protocols.FastPair;
@@ -11,6 +13,9 @@ namespace Samaat.Protocols.Tests;
 public sealed class FastPairDriverTests
 {
     private static readonly Guid MessageStream = Guid.Parse("df21fe2c-2515-4fdb-8886-f12c4d67927c");
+
+    private static FastPairDriver Driver(TimeSpan? refreshTimeout = null) =>
+        new(refreshTimeout, sassTimeout: TimeSpan.FromMilliseconds(50));
 
     private static DriverContext Context(FakeRfcommTransports transports, FakeTimeProvider? time = null) =>
         new(new DeviceSignals("realme Buds T200 Lite"),
@@ -28,7 +33,7 @@ public sealed class FastPairDriverTests
 
     private static async Task<FastPairBatteryFeature> OpenFeature(FakeRfcommTransports transports, FastPairDriver? driver = null)
     {
-        var features = await (driver ?? new FastPairDriver()).OpenAsync(Context(transports));
+        var features = await (driver ?? Driver()).OpenAsync(Context(transports));
         return Assert.IsType<FastPairBatteryFeature>(Assert.Single(features));
     }
 
@@ -51,7 +56,7 @@ public sealed class FastPairDriverTests
         Assert.Equal(90, battery.Current.Get(BatteryComponent.Left)!.Percent);
         Assert.Equal(70, battery.Current.Get(BatteryComponent.Right)!.Percent);
         Assert.True(battery.Current.Get(BatteryComponent.Case) is null or { Percent: null });
-        Assert.Equal(0, channel.Writes);
+        FastPairWrites.AssertAllowed(channel);
     }
 
     [Fact]
@@ -123,7 +128,7 @@ public sealed class FastPairDriverTests
     {
         var transports = new FakeRfcommTransports((_, _) => Task.FromResult<IRfcommChannel?>(null));
 
-        Assert.Empty(await new FastPairDriver().OpenAsync(Context(transports)));
+        Assert.Empty(await Driver().OpenAsync(Context(transports)));
     }
 
     [Fact]
@@ -131,7 +136,7 @@ public sealed class FastPairDriverTests
     {
         var transports = new FakeRfcommTransports((_, _) => throw new InvalidOperationException("bluetooth is off"));
 
-        Assert.Empty(await new FastPairDriver().OpenAsync(Context(transports)));
+        Assert.Empty(await Driver().OpenAsync(Context(transports)));
     }
 
     [Fact]
@@ -140,11 +145,11 @@ public sealed class FastPairDriverTests
         var channel = new FakeRfcommChannel();
         using var budget = new CancellationTokenSource(TimeSpan.FromMilliseconds(150));
 
-        var features = await new FastPairDriver().OpenAsync(Context(Opens(channel)), budget.Token);
+        var features = await Driver().OpenAsync(Context(Opens(channel)), budget.Token);
 
         Assert.Empty(features);
         Assert.True(channel.Disposed);
-        Assert.Equal(0, channel.Writes);
+        FastPairWrites.AssertAllowed(channel);
     }
 
     [Fact]
@@ -153,7 +158,7 @@ public sealed class FastPairDriverTests
         var channel = new FakeRfcommChannel();
         using var budget = new CancellationTokenSource(TimeSpan.FromMilliseconds(150));
 
-        var features = await new FastPairDriver().OpenAsync(
+        var features = await Driver().OpenAsync(
             Context(Opens(channel, Convert.FromHexString("030300037F7F7F"))), budget.Token);
 
         Assert.Empty(features);
@@ -176,12 +181,12 @@ public sealed class FastPairDriverTests
         using var budget = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var started = DateTime.UtcNow;
 
-        var features = await new FastPairDriver().OpenAsync(Context(transports), budget.Token);
+        var features = await Driver().OpenAsync(Context(transports), budget.Token);
 
         Assert.Empty(features);
         Assert.True(channel.Disposed);
         Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(5));
-        Assert.Equal(0, channel.Writes);
+        FastPairWrites.AssertAllowed(channel);
     }
 
     [Fact]
@@ -189,7 +194,7 @@ public sealed class FastPairDriverTests
     {
         var channel = new FakeRfcommChannel();
         var time = new FakeTimeProvider();
-        var features = await new FastPairDriver().OpenAsync(Context(Opens(channel, FastPairCaptured.Greeting), time));
+        var features = await Driver().OpenAsync(Context(Opens(channel, FastPairCaptured.Greeting), time));
         var battery = (FastPairBatteryFeature)features.Single();
 
         channel.Close();
@@ -198,7 +203,7 @@ public sealed class FastPairDriverTests
         var left = battery.Current.Get(BatteryComponent.Left)!;
         Assert.Equal(90, left.Percent);
         Assert.True(left.IsStale(time.GetUtcNow(), TimeSpan.FromMinutes(30)));
-        Assert.Equal(0, channel.Writes);
+        FastPairWrites.AssertAllowed(channel);
     }
 
     [Fact]
@@ -212,7 +217,7 @@ public sealed class FastPairDriverTests
 
         Assert.True(channel.Disposed);
         Assert.Equal(90, battery.Current.Get(BatteryComponent.Left)!.Percent);
-        Assert.Equal(0, channel.Writes);
+        FastPairWrites.AssertAllowed(channel);
     }
 
     [Fact]
@@ -236,7 +241,7 @@ public sealed class FastPairDriverTests
         Assert.Equal(2, transports.Opened.Count);
         Assert.Equal(50, battery.Current.Get(BatteryComponent.Left)!.Percent);
         Assert.Equal(40, battery.Current.Get(BatteryComponent.Right)!.Percent);
-        Assert.Equal(0, first.Writes + second.Writes);
+        FastPairWrites.AssertAllowed(first, second);
     }
 
     [Fact]
@@ -275,7 +280,7 @@ public sealed class FastPairDriverTests
 
             return Task.FromResult<IRfcommChannel?>(next);
         });
-        var battery = await OpenFeature(transports, new FastPairDriver(refreshTimeout: TimeSpan.FromMilliseconds(100)));
+        var battery = await OpenFeature(transports, Driver(refreshTimeout: TimeSpan.FromMilliseconds(100)));
 
         await battery.RefreshAsync();
 
@@ -298,12 +303,12 @@ public sealed class FastPairDriverTests
 
             return Task.FromResult<IRfcommChannel?>(next);
         });
-        var battery = await OpenFeature(transports, new FastPairDriver(refreshTimeout: TimeSpan.FromMilliseconds(100)));
+        var battery = await OpenFeature(transports, Driver(refreshTimeout: TimeSpan.FromMilliseconds(100)));
 
         await battery.RefreshAsync();
 
         Assert.True(second.Disposed);
-        Assert.Equal(0, first.Writes + second.Writes);
+        FastPairWrites.AssertAllowed(first, second);
         Assert.Equal(90, battery.Current.Get(BatteryComponent.Left)!.Percent);
     }
 
@@ -331,12 +336,12 @@ public sealed class FastPairDriverTests
 
             return Task.FromResult<IRfcommChannel?>(next);
         });
-        var battery = await OpenFeature(transports, new FastPairDriver(refreshTimeout: TimeSpan.FromSeconds(10)));
+        var battery = await OpenFeature(transports, Driver(refreshTimeout: TimeSpan.FromSeconds(10)));
 
         await battery.RefreshAsync();
 
         Assert.True(second.Disposed);
-        Assert.Equal(0, first.Writes + second.Writes);
+        FastPairWrites.AssertAllowed(first, second);
         Assert.Equal(90, battery.Current.Get(BatteryComponent.Left)!.Percent);
     }
 
@@ -348,12 +353,12 @@ public sealed class FastPairDriverTests
         using var budget = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var started = DateTime.UtcNow;
 
-        var features = await new FastPairDriver().OpenAsync(Context(Opens(channel)), budget.Token);
+        var features = await Driver().OpenAsync(Context(Opens(channel)), budget.Token);
 
         Assert.Empty(features);
         Assert.True(channel.Disposed);
         Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(1));
-        Assert.Equal(0, channel.Writes);
+        FastPairWrites.AssertAllowed(channel);
     }
 
     [Fact]
@@ -364,5 +369,151 @@ public sealed class FastPairDriverTests
         await cancelled.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => battery.RefreshAsync(cancelled.Token));
+    }
+
+    // SASS replies are built from the spec, not captured: the realme T200 Lite doesn't implement SASS.
+    private static readonly byte[] CapMultipointOn = Convert.FromHexString("07110004" + "0102" + "E000");
+    private static readonly byte[] CapToggleableOff = Convert.FromHexString("07110004" + "0102" + "C000");
+    private static readonly byte[] CapSassOnly = Convert.FromHexString("07110004" + "0102" + "8000");
+    private static readonly byte[] CapVersion0 = Convert.FromHexString("07110004" + "0000" + "E000");
+    private static readonly byte[] OtherIsActive = Convert.FromHexString("07340003" + "02AABB");
+
+    private static FakeRfcommChannel Sass(byte[]? capability) => new()
+    {
+        Respond = frame => capability is not null && frame.SequenceEqual(FastPairMessages.SassGetCapability) ? [capability] : [],
+    };
+
+    private static async Task<IReadOnlyList<IFeature>> Open(FakeRfcommChannel channel) =>
+        await Driver().OpenAsync(Context(Opens(channel, FastPairCaptured.Greeting)));
+
+    [Fact]
+    public async Task RealmeGreetingWithNoSassReply_WritesOnlyTheCapabilityRequest_AndReturnsBatteryOnly()
+    {
+        var channel = new FakeRfcommChannel();
+
+        var features = await Open(channel);
+
+        Assert.IsType<FastPairBatteryFeature>(Assert.Single(features));
+        Assert.Equal([FastPairMessages.SassGetCapability], channel.Written);
+    }
+
+    [Fact]
+    public async Task SilentSass_TimesOutAlongsideASlowGreeting_NotAfterIt()
+    {
+        var channel = new FakeRfcommChannel();
+        var transports = new FakeRfcommTransports((_, _) => Task.FromResult<IRfcommChannel?>(channel));
+
+        var open = new FastPairDriver(sassTimeout: TimeSpan.FromSeconds(1)).OpenAsync(Context(transports));
+        await Task.Delay(TimeSpan.FromSeconds(1.2)); // the SASS deadline has passed before the greeting arrives
+        channel.Emit(FastPairCaptured.Greeting);
+
+        // A deadline started only after the greeting would need another full second.
+        var features = await open.WaitAsync(TimeSpan.FromMilliseconds(600));
+        Assert.IsType<FastPairBatteryFeature>(Assert.Single(features));
+        FastPairWrites.AssertAllowed(channel);
+    }
+
+    [Fact]
+    public async Task SassMultipointProvider_WritesTheTwoGetRequestsAndNothingElse()
+    {
+        var channel = Sass(CapMultipointOn);
+
+        var features = await Open(channel);
+
+        Assert.Equal(2, features.Count);
+        Assert.Equal([FastPairMessages.SassGetCapability, FastPairMessages.SassGetConnectionStatus], channel.Written);
+    }
+
+    [Fact]
+    public async Task CapabilityWithMultipointOn_ReturnsAReadOnlyMultipointFeature()
+    {
+        var features = await Open(Sass(CapMultipointOn));
+
+        var sass = Assert.IsAssignableFrom<IMultipointFeature>(features[1]);
+        Assert.Equal(new MultipointOptions(2, false, false, false), sass.Options);
+        Assert.Equal(CapabilitySource.RuntimeQuery, sass.Source);
+        Assert.Equal(Verification.Unverified, sass.Verification);
+        Assert.True(sass.Current.MultipointEnabled);
+        Assert.Equal(HostLinkState.Active, Assert.Single(sass.Current.Hosts).State);
+        Assert.Equal(CommandStatus.Unsupported, (await sass.SwitchToAsync("other")).Status);
+        Assert.Equal(CommandStatus.Unsupported, (await sass.DisconnectAsync("other")).Status);
+        Assert.Equal(CommandStatus.Unsupported, (await sass.SetMultipointEnabledAsync(false)).Status);
+    }
+
+    [Fact]
+    public async Task StatusAndSwitchEvents_UpdateTheHostsAndRaiseChanged()
+    {
+        var channel = Sass(CapMultipointOn);
+        var sass = (IMultipointFeature)(await Open(channel))[1];
+        var raised = 0;
+        sass.Changed += (_, _) => raised++;
+
+        channel.Emit(OtherIsActive);
+        Assert.Equal(1, raised);
+        Assert.Equal(HostLinkState.Connected, sass.Current.Hosts.Single(h => h.IsThisHost).State);
+        var other = sass.Current.Hosts.Single(h => !h.IsThisHost);
+        Assert.Equal((HostLinkState.Active, "Other device"), (other.State, other.Name));
+
+        channel.Emit(OtherIsActive); // no change, no event
+        Assert.Equal(1, raised);
+
+        channel.Emit(Convert.FromHexString("07320009" + "00" + "02" + Convert.ToHexString("Pixel 8"u8)));
+        Assert.Equal("Pixel 8", sass.Current.Hosts.Single(h => !h.IsThisHost).Name);
+
+        channel.Emit(Convert.FromHexString("07320002" + "00" + "01"));
+        Assert.Equal(HostLinkState.Active, sass.Current.Hosts.Single(h => h.IsThisHost).State);
+        Assert.Equal(HostLinkState.Connected, sass.Current.Hosts.Single(h => !h.IsThisHost).State);
+
+        channel.Emit(Convert.FromHexString("07340001" + "00"));
+        Assert.Equal(HostLinkState.Active, sass.Current.Hosts.Single(h => !h.IsThisHost).State);
+        channel.Emit(Convert.FromHexString("07340001" + "01"));
+        Assert.Equal(HostLinkState.Active, sass.Current.Hosts.Single(h => h.IsThisHost).State);
+        FastPairWrites.AssertAllowed(channel);
+    }
+
+    [Fact]
+    public async Task CapabilityVersion0_OrNoMultipoint_MeansBatteryOnly()
+    {
+        Assert.IsType<FastPairBatteryFeature>(Assert.Single(await Open(Sass(CapVersion0))));
+        Assert.IsType<FastPairBatteryFeature>(Assert.Single(await Open(Sass(CapSassOnly))));
+    }
+
+    [Fact]
+    public async Task ToggleableButOff_ReturnsTheFeatureWithMultipointDisabled_AndNeverAsksForStatus()
+    {
+        var channel = Sass(CapToggleableOff);
+
+        var features = await Open(channel);
+
+        Assert.False(((IMultipointFeature)features[1]).Current.MultipointEnabled);
+        Assert.Equal([FastPairMessages.SassGetCapability], channel.Written);
+    }
+
+    [Fact]
+    public async Task WriteThatThrows_YieldsBatteryOnlyWithoutAnException()
+    {
+        var channel = new FakeRfcommChannel { WriteFails = new IOException("link dropped") };
+
+        Assert.IsType<FastPairBatteryFeature>(Assert.Single(await Open(channel)));
+    }
+
+    [Fact]
+    public async Task Refresh_ResendsTheCapabilityRequestOnTheNewChannel_AndTheStatusRequestWhenMultipointIsOn()
+    {
+        var first = Sass(CapMultipointOn);
+        var second = Sass(CapMultipointOn);
+        var channels = new Queue<FakeRfcommChannel>([first, second]);
+        var transports = new FakeRfcommTransports((_, _) =>
+        {
+            var next = channels.Dequeue();
+            next.Emit(next == first ? FastPairCaptured.Greeting : FastPairCaptured.Battery50_40);
+            return Task.FromResult<IRfcommChannel?>(next);
+        });
+        var features = await Driver().OpenAsync(Context(transports));
+
+        await ((FastPairBatteryFeature)features[0]).RefreshAsync();
+
+        Assert.Equal([FastPairMessages.SassGetCapability, FastPairMessages.SassGetConnectionStatus], second.Written);
+        FastPairWrites.AssertAllowed(first, second);
     }
 }
