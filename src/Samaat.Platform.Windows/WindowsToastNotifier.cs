@@ -8,7 +8,7 @@ using Windows.UI.Notifications;
 namespace Samaat.Platform.Windows;
 
 /// <summary>
-/// Toast notifications for an unpackaged app. Windows only shows toasts from an app with an
+/// Toast notifications. A packaged app toasts with its package identity; an unpackaged app needs an
 /// AppUserModelID, so the first use registers one under HKCU (the same registration the Windows
 /// Community Toolkit performs for unpackaged apps).
 /// </summary>
@@ -23,13 +23,18 @@ public sealed class WindowsToastNotifier(Func<byte[]?>? iconPng = null) : INotif
     {
         try
         {
-            EnsureRegistered();
+            var packaged = PackagedApp.IsPackaged;
+            if (!packaged)
+            {
+                EnsureRegistered();
+            }
+
             var xml = new XmlDocument();
             xml.LoadXml(
                 "<toast><visual><binding template=\"ToastGeneric\">" +
                 $"<text>{SecurityElement.Escape(title)}</text><text>{SecurityElement.Escape(body)}</text>" +
                 "</binding></visual></toast>");
-            ToastNotificationManager.CreateToastNotifier(Aumid).Show(new ToastNotification(xml));
+            (packaged ? ToastNotificationManager.CreateToastNotifier() : ToastNotificationManager.CreateToastNotifier(Aumid)).Show(new ToastNotification(xml));
         }
         catch (Exception e)
         {
