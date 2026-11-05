@@ -346,6 +346,7 @@ Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`,
 | Doc | Where | What |
 |---|---|---|
 | This record | `docs/sessions/2026-11-05-session-record.md` on `docs/session-2026-11-05` | Everything; start here |
+| Merge and release plan | `docs/plans/2026-11-05-merge-and-release.md` on `docs/session-2026-11-05` | Merging the open PRs, preparing v1.0.0, releasing to `master` with a tag, the phone app's release, hotfixes |
 | Licensing and porting plan | `docs/plans/2026-11-05-licensing-and-porting.md` on `docs/session-2026-11-05` | GPL-3.0-or-later, porting rules, brand order, per-port checklist |
 | Decision records | `docs/decisions/` on `feature/ui-redesign` (PR #1–#5, pairing race) and on `claude/audit-fixes` (audit fixes) | Why each change was made |
 | Mobile decision record | `samaat-mobile`: `docs/decisions/2026-11-05-mobile-improvements.md` on `claude/mobile-improvements` | The phone work |
@@ -374,6 +375,8 @@ Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`,
 - Replace the phone's `MobileLog` with the shared `SamaatLog` once #6 merges.
 
 ### Tomorrow, in order
+
+*(The full merge and release steps are in [`docs/plans/2026-11-05-merge-and-release.md`](../plans/2026-11-05-merge-and-release.md). CI is already green on #6 and on mobile #1, including the Android job.)*
 
 1. Check CI on PR #6 (Ubuntu and Windows, including the Windows test project and the coverage summary) and on mobile PR #1 (the Android job).
 2. Merge #6 (merge commit), then mobile #1.
