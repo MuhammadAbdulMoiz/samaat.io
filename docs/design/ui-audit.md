@@ -81,3 +81,38 @@ Benchmark: OpenMouse's design notes (ideas only; no code, assets or colours copi
 | Shape | 4 px grid, 16 px panel padding and gaps, rows 40 px or more, buttons 32 px, switches 36x20, radii 6 / 10 / 14. |
 | Theme | Accent presets Lime, Emerald, Ice and Mono, all checked against the WCAG AA tests in both themes. |
 | Motion | New "Reduce motion" setting (follows Windows until changed): no page fade and no gliding values. |
+
+## Phone app critique and accessibility audit (2026-11-05)
+
+Benchmark: the desktop app itself. Run with the `design-critique` and `accessibility-review` skills against the first phone screens.
+
+### Critique: what changed
+
+| Finding | Severity | Change |
+|---|---|---|
+| The device page had no hero, breaking principle 1 | 🔴 | The desktop's stage: earbuds inside the battery ring on the sound-wave canvas, then the figure and status line |
+| Low battery (17 %) was plain white | 🔴 | Amber or coral number, ring and bar, a warning icon, and "Right bud low · 17%" in words (principle 2) |
+| Android 15+ forces edge to edge, so content would sit under the system bars | 🔴 | Safe-area insets: the content keeps clear and the navigation bar's surface reaches under the gesture bar |
+| Two lime primaries on one screen, one of which would fail | 🟡 | One primary per screen: Connect hides while the computer holds the earbuds |
+| Battery read "93%" in grey cells | 🟡 | The desktop's figure: label, value and muted unit, level bar, meta ("In use", "Low") |
+| Options lacked icons, check marks and the status line | 🟡 | The desktop's option rows; EQ presets as rows ("Presets stored on the earbuds") |
+| Device rows filled the tile with lime for "connected" | 🟡 | Neutral tiles: lime means charge or selection, and the dot carries connection |
+| The nearby computer showed its IP address | 🟢 | "Ready to pair" |
+| The paired Computer page was nearly empty | 🟢 | "Earbuds on {computer}" with where each pair is |
+| No brand mark | 🟢 | The lime "S" tile beside "Samaat", as in the desktop sidebar |
+
+**One design system.** Tokens, icons, fonts, `BatteryRing` and `SoundWaves` moved into `Samaat.UI`, and both apps include them from there, so the phone can't drift from the desktop.
+
+### Accessibility (WCAG 2.1 AA)
+
+| # | Issue | Criterion | Severity | Fix |
+|---|---|---|---|---|
+| 1 | A selected option's description (muted on accent-soft) was 4.45:1 in dark mode, **on the desktop too** | 1.4.3 | 🟡 | Selected rows use the text colour for the description, in both apps; tested |
+| 2 | The phone's message dismiss button was 38 px wide | 2.5.5 | 🟡 | Ghost buttons have a 44 px minimum width |
+| 3 | Low battery was shown by colour alone | 1.4.1 | 🔴 | Words, an icon and an accessible name ("Right bud, 17 percent, low") |
+
+Measured in tests (`Samaat.Mobile.Tests`): every visible button on every phone screen is at least 44×44 and has a name, and 15 phone colour pairs pass in both themes (low and critical on the page, selected rows and tabs, alert pills, status bars on their track, the ring). The shared token pairs stay covered by the desktop's `ContrastTests`. Still to do by hand: TalkBack on a real phone, and 200 % font scale.
+
+| Earbuds | Device | Pairing | Paired |
+|---|---|---|---|
+| ![](../images/mobile-devices.png) | ![](../images/mobile-device.png) | ![](../images/mobile-computer-code.png) | ![](../images/mobile-computer-paired.png) |

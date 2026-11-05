@@ -7,7 +7,7 @@ Last updated: 2026-11-04
 - **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. The **first vendor adapter** (Jieli RCSP over BLE) reads per-bud battery and switches noise control (off, noise cancelling, transparency) and EQ presets on the Audionic ParadoX-E ([test notes](hardware-tests/2026-11-03-audionic-paradox-e.md), [protocol](protocols/jieli-rcsp.md)). Everything else runs against **simulated devices**.
 - **New: move earbuds between this computer and a phone, and the Android app** ([details](modules/phone-handoff.md)). Works with single-connection earbuds: the computer checks the phone, disconnects here, the phone connects, and the computer reconnects if the phone doesn't. Pairing by a 6-digit code, encrypted link over the local network. The Android app (Avalonia, sharing Core and the drivers) has battery, noise control, EQ and the move card. **Not run on a phone yet**; CI builds the APK.
 - **Not done:** multipoint and custom EQ bands on real earbuds, and any real device other than the ParadoX-E. The Quantum Zbuds have no usable vendor protocol.
-- **Tests:** 741 automated tests (Core 230, Protocols 177, App 223, Handoff 99, Mobile 12). CI runs them on Linux and Windows, and builds the Android APK. The UI tests render dark and light screenshots of every page, desktop and phone.
+- **Tests:** 746 automated tests (Core 230, Protocols 177, App 224, Handoff 99, Mobile 16). CI runs them on Linux and Windows, and builds the Android APK. The UI tests render dark and light screenshots of every page, desktop and phone.
 
 | Overview | Sound | Links |
 |---|---|---|
@@ -192,7 +192,8 @@ src/
   Samaat.Platform.Windows/     WinRT discovery, Windows-reported battery, GATT client
   Samaat.Simulator/            simulated devices for development and tests
   Samaat.Handoff/              phone link: pairing, encrypted sessions, moving earbuds with rollback
-  Samaat.App/                  Avalonia desktop app (Shell/, Features/, Shared/, Styles/, Assets/)
+  Samaat.UI/                   the shared design system: tokens, icons, fonts, battery ring, sound waves
+  Samaat.App/                  Avalonia desktop app (Shell/, Features/, Shared/, Styles/)
   Samaat.Mobile/               Avalonia phone UI, shared by the Android app and its tests
   Samaat.Platform.Android/     Android Bluetooth audio, devices, RFCOMM and GATT
   Samaat.Android/              Android app (activity, foreground service); built by Samaat.Mobile.slnx

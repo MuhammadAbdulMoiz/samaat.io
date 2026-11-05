@@ -5,9 +5,6 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
@@ -15,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
+    <ProjectReference Include="..\Samaat.UI\Samaat.UI.csproj" />
     <ProjectReference Include="..\Samaat.Handoff\Samaat.Handoff.csproj" />
     <ProjectReference Include="..\Samaat.Simulator\Samaat.Simulator.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.Jieli\Samaat.Protocols.Jieli.csproj" />

@@ -53,6 +53,13 @@ public sealed partial class ComputerViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<NearbyComputerViewModel> Nearby { get; } = [];
 
+    /// <summary>The computer's earbuds and where they are, while online.</summary>
+    public ObservableCollection<ComputerEarbudsViewModel> ComputerEarbuds { get; } = [];
+
+    public bool HasComputerEarbuds => ComputerEarbuds.Count > 0;
+
+    public string ComputerEarbudsTitle => $"Earbuds on {ComputerName}";
+
     public bool HasNearby => Nearby.Count > 0;
 
     public bool ShowSearching => !HasNearby;
@@ -207,6 +214,14 @@ public sealed partial class ComputerViewModel : ObservableObject, IDisposable
             _ => "Not paired",
         };
         LinkError = IsOnline ? null : Link.LastError;
+        ComputerEarbuds.Clear();
+        foreach (var device in IsOnline ? Link.ComputerDevices : [])
+        {
+            ComputerEarbuds.Add(new ComputerEarbudsViewModel(device.Name, device.Connected, device.Connected ? $"Playing on {ComputerName}" : "Not connected"));
+        }
+
+        OnPropertyChanged(nameof(HasComputerEarbuds));
+        OnPropertyChanged(nameof(ComputerEarbudsTitle));
 
         var nearby = Link.PairableComputers;
         if (!nearby.SequenceEqual(Nearby.Select(n => n.Computer)))
@@ -229,13 +244,15 @@ public sealed partial class ComputerViewModel : ObservableObject, IDisposable
     }
 }
 
+public sealed record ComputerEarbudsViewModel(string Name, bool IsConnected, string StateText);
+
 public sealed class NearbyComputerViewModel(NearbyComputer computer, Func<NearbyComputer, Task> pair)
 {
     public NearbyComputer Computer { get; } = computer;
 
     public string Name => Computer.Name;
 
-    public string Detail => Computer.Endpoint.Address.ToString();
+    public string Detail => "Ready to pair";
 
     public string PairAccessibleName => $"Pair with {Name}";
 

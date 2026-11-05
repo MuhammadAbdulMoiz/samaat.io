@@ -121,6 +121,7 @@ src/
   Samaat.Platform.Windows/     WinRT Bluetooth, WASAPI audio sharing, connect and disconnect
   Samaat.Handoff/              phone link: pairing, encrypted sessions, moving earbuds with rollback
   Samaat.Simulator/            simulated earbuds for UI work and tests
+  Samaat.UI/                   shared design system: tokens, icons, fonts, battery ring
   Samaat.App/                  Avalonia desktop app
   Samaat.Mobile/               Avalonia phone UI
   Samaat.Platform.Android/     Android Bluetooth audio, devices, RFCOMM and GATT

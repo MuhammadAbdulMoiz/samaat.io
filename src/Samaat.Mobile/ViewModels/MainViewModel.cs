@@ -43,11 +43,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string EmptyText => "No earbuds are paired with this phone. Pair them in Bluetooth settings, then come back.";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsEarbuds), nameof(IsComputer), nameof(ShowDeviceList), nameof(ShowDevice), nameof(ShowEmpty), nameof(Title), nameof(CanGoBack))]
+    [NotifyPropertyChangedFor(nameof(IsEarbuds), nameof(IsComputer), nameof(ShowDeviceList), nameof(ShowDevice), nameof(ShowEmpty), nameof(Title), nameof(CanGoBack), nameof(ShowBrand))]
     public partial MobileTab Tab { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowDeviceList), nameof(ShowDevice), nameof(ShowEmpty), nameof(Title), nameof(CanGoBack))]
+    [NotifyPropertyChangedFor(nameof(ShowDeviceList), nameof(ShowDevice), nameof(ShowEmpty), nameof(Title), nameof(CanGoBack), nameof(ShowBrand))]
     public partial DeviceItemViewModel? SelectedDevice { get; set; }
 
     public bool IsEarbuds => Tab == MobileTab.Earbuds;
@@ -59,6 +59,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public bool ShowDevice => IsEarbuds && SelectedDevice is not null;
 
     public bool CanGoBack => ShowDevice;
+
+    /// <summary>The brand mark sits beside "Samaat" on the home screen only, as in the desktop sidebar.</summary>
+    public bool ShowBrand => IsEarbuds && SelectedDevice is null;
 
     public string Title => ShowDevice ? SelectedDevice!.Name : IsComputer ? "Computer" : "Samaat";
 

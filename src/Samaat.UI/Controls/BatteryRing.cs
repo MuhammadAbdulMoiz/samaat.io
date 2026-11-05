@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 
-namespace Samaat.App.Shared.Controls;
+namespace Samaat.UI.Controls;
 
 /// <summary>A circular battery gauge: a full track with an arc for the charge, starting at 12 o'clock.</summary>
 public sealed class BatteryRing : Control

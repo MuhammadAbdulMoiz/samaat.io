@@ -251,6 +251,7 @@ public class ContrastTests
                 Check("Accent fill on Track", accent, Brush("Samaat.Track", theme), 3.0);
                 Check("Accent icon on the active sidebar row", accent, Over(Brush("Samaat.AccentSoft", theme), Brush("Samaat.Rail", theme)), 3.0);
                 Check("Wave on Surface", Brush("Samaat.Wave", theme), Brush("Samaat.Surface", theme), 3.0);
+                Check("Selected option text on accent-soft", Brush("Samaat.Text", theme), Over(Brush("Samaat.AccentSoft", theme), Brush("Samaat.Surface", theme)), 4.5);
             }
         }
         finally
@@ -258,6 +259,20 @@ public class ContrastTests
             settings.SetAccentCommand.Execute(AccentChoice.Lime);
         }
     }
+    [AvaloniaFact]
+    public void SelectedOptionDescription_UsesTheTextColour()
+    {
+        // Muted on accent-soft is 4.45:1 in dark mode, under AA; the style switches it to the text colour.
+        var meta = new TextBlock { Text = "No processing", Classes = { "meta" } };
+        var button = new Button { Classes = { "option", "selected" }, Content = meta };
+        var window = new Window { Content = button };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(Brush("Samaat.Text", ThemeVariant.Dark), ((ISolidColorBrush)meta.Foreground!).Color);
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void AlertPillsAreReadable_InBothThemes()
     {

@@ -1,16 +1,17 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:c="using:Samaat.App.Shared.Controls">
+        xmlns:c="using:Samaat.App.Shared.Controls"
+        xmlns:ui="using:Samaat.UI.Controls">
 
   <!-- The ring around the device artwork shows the overall level -->
-  <Style Selector="c|BatteryRing">
+  <Style Selector="ui|BatteryRing">
     <Setter Property="TrackBrush" Value="{DynamicResource Samaat.Track}" />
     <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Accent}" />
   </Style>
-  <Style Selector="c|BatteryRing.low">
+  <Style Selector="ui|BatteryRing.low">
     <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Warn}" />
   </Style>
-  <Style Selector="c|BatteryRing.critical">
+  <Style Selector="ui|BatteryRing.critical">
     <Setter Property="ValueBrush" Value="{DynamicResource Samaat.Critical}" />
   </Style>
   <Style Selector="Border.stage">
@@ -63,7 +64,7 @@
   </Style>
 
   <!-- Motion: levels glide to new values instead of jumping -->
-  <Style Selector="c|BatteryRing">
+  <Style Selector="ui|BatteryRing">
     <Setter Property="Transitions">
       <Transitions>
         <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
@@ -72,7 +73,7 @@
   </Style>
 
   <!-- Reduced motion (class set on the window): values jump instead of gliding -->
-  <Style Selector="Window.reduce-motion c|BatteryRing">
+  <Style Selector="Window.reduce-motion ui|BatteryRing">
     <Setter Property="Transitions">
       <Transitions />
     </Setter>

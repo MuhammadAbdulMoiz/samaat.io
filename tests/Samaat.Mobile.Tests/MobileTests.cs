@@ -4,7 +4,10 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
+using Avalonia.Automation;
+using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
 using Samaat.Handoff;
@@ -110,7 +113,7 @@ public sealed class MobileTests : IAsyncDisposable
         Assert.True(_viewModel.ShowDevice);
         Assert.True(_viewModel.CanGoBack);
         Assert.Equal("Simulated Buds Pro", _viewModel.Title);
-        Assert.Equal(["Left", "Right", "Case"], buds.Battery.Select(b => b.Label));
+        Assert.Equal(["Left bud", "Right bud", "Case"], buds.Battery.Select(b => b.Label));
         Assert.True(buds.HasNoise);
         Assert.Contains(buds.NoiseModes, m => m.Label == "Noise cancelling");
         Assert.True(buds.HasEq);
@@ -266,6 +269,139 @@ public sealed class MobileTests : IAsyncDisposable
         audio.Blocker = null;
         await _viewModel.FixBannerCommand.ExecuteAsync(null);
         Assert.False(_viewModel.HasBanner);
+    }
+
+    /// <summary>Every visible button on a screen: at least 44×44 (WCAG 2.5.5) and named for screen readers (4.1.2).</summary>
+    private void AssertButtonsAccessible(string screen)
+    {
+        for (var i = 0; i < 10; i++)
+        {
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        var buttons = _window.GetVisualDescendants().OfType<Button>()
+            .Where(b => b.IsEffectivelyVisible && b.Bounds.Width > 0)
+            // The scrollbar's own arrows aren't controls of ours; Avalonia hides them for touch.
+            .Where(b => !b.GetVisualAncestors().OfType<Avalonia.Controls.Primitives.ScrollBar>().Any())
+            .ToList();
+        Assert.NotEmpty(buttons);
+        foreach (var button in buttons)
+        {
+            var name = AutomationProperties.GetName(button) is { Length: > 0 } n ? n
+                : button.Content as string
+                ?? button.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+            Assert.False(string.IsNullOrWhiteSpace(name), $"{screen}: a button has no accessible name");
+            Assert.True(button.Bounds.Height >= 44 && button.Bounds.Width >= 44,
+                $"{screen}: '{name}' is {button.Bounds.Width:0}×{button.Bounds.Height:0}, needs 44×44");
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task EveryScreen_ButtonsAreBigEnoughAndNamed()
+    {
+        await StartAsync();
+        PhoneBuds.SetConnected(false);
+        _viewModel.ShowMessage("A message with its dismiss button");
+        AssertButtonsAccessible("earbuds list");
+
+        _viewModel.OpenCommand.Execute(_viewModel.Devices.Single(d => d.Name == "Simulated Buds Pro"));
+        AssertButtonsAccessible("device page");
+
+        _viewModel.ShowComputerCommand.Execute(null);
+        _computer.OpenPairing();
+        await UntilAsync(() => _viewModel.Computer.HasNearby, "the computer in the nearby list");
+        AssertButtonsAccessible("pairing list");
+
+        await PairAsync(() => AssertButtonsAccessible("pairing code"));
+        AssertButtonsAccessible("paired computer");
+    }
+
+    private static Color Token(string key, ThemeVariant theme)
+    {
+        Assert.True(Application.Current!.TryGetResource(key, theme, out var value), key);
+        return ((ISolidColorBrush)value!).Color;
+    }
+
+    private static Color Over(Color top, Color bottom)
+    {
+        var a = top.A / 255.0;
+        byte Mix(byte t, byte b) => (byte)Math.Round(t * a + b * (1 - a));
+        return Color.FromRgb(Mix(top.R, bottom.R), Mix(top.G, bottom.G), Mix(top.B, bottom.B));
+    }
+
+    private static double Ratio(Color a, Color b)
+    {
+        static double L(Color c)
+        {
+            static double Ch(byte v) => v / 255.0 <= 0.03928 ? v / 255.0 / 12.92 : Math.Pow((v / 255.0 + 0.055) / 1.055, 2.4);
+            return 0.2126 * Ch(c.R) + 0.7152 * Ch(c.G) + 0.0722 * Ch(c.B);
+        }
+
+        var (l1, l2) = (L(a), L(b));
+        return (Math.Max(l1, l2) + 0.05) / (Math.Min(l1, l2) + 0.05);
+    }
+
+    /// <summary>
+    /// The colour pairs the phone adds beyond the shared token checks in the desktop's ContrastTests:
+    /// low and critical figures on the page, selected rows and tabs on accent-soft, status bars on their track.
+    /// </summary>
+    [AvaloniaFact]
+    public void PhoneColourPairs_MeetWcagAA_InBothThemes()
+    {
+        foreach (var theme in new[] { ThemeVariant.Dark, ThemeVariant.Light })
+        {
+            Color T(string key) => Token(key, theme);
+            var checks = new (string What, Color Fore, Color Back, double Min)[]
+            {
+                ("Low figure on the page", T("Samaat.Warn"), T("Samaat.Bg"), 4.5),
+                ("Critical figure on the page", T("Samaat.Critical"), T("Samaat.Bg"), 4.5),
+                ("Low words in a device row", T("Samaat.Warn"), T("Samaat.Surface"), 4.5),
+                ("Selected option label", T("Samaat.Text"), Over(T("Samaat.AccentSoft"), T("Samaat.Surface")), 4.5),
+                // Muted would be 4.45:1 here in dark mode; selected rows switch their description to the text colour.
+                ("Selected option description", T("Samaat.Text"), Over(T("Samaat.AccentSoft"), T("Samaat.Surface")), 4.5),
+                ("Selected tab label", T("Samaat.Text"), Over(T("Samaat.AccentSoft"), T("Samaat.Rail")), 4.5),
+                ("Unselected tab label", T("Samaat.Muted"), T("Samaat.Rail"), 4.5),
+                ("Check mark on a selected row", T("Samaat.Accent"), Over(T("Samaat.AccentSoft"), T("Samaat.Surface")), 3.0),
+                ("Low alert pill on the page", T("Samaat.Warn"), Over(T("Samaat.WarnSoft"), T("Samaat.Bg")), 4.5),
+                ("Critical alert pill on the page", T("Samaat.Critical"), Over(T("Samaat.CriticalSoft"), T("Samaat.Bg")), 4.5),
+                ("Critical pill inside a panel", T("Samaat.Critical"), Over(T("Samaat.CriticalSoft"), T("Samaat.Surface")), 4.5),
+                ("Low level bar on its track", T("Samaat.Warn"), T("Samaat.Track"), 3.0),
+                ("Critical level bar on its track", T("Samaat.Critical"), T("Samaat.Track"), 3.0),
+                ("Battery ring on the page", T("Samaat.Accent"), T("Samaat.Bg"), 3.0),
+                ("Icon in an option tile", T("Samaat.Muted"), T("Samaat.Surface2"), 3.0),
+            };
+            foreach (var (what, fore, back, min) in checks)
+            {
+                var ratio = Ratio(fore, back);
+                Assert.True(ratio >= min, $"{what} ({theme}) is {ratio:0.00}:1, needs {min}:1");
+            }
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task LowBattery_IsShownInWords_NotJustColour()
+    {
+        await StartAsync();
+        var lite = _viewModel.Devices.Single(d => d.Name == "Simulated Buds Lite");
+
+        // The simulator's Buds Lite start with the right bud at 17 %.
+        Assert.True(lite.SummaryIsLow);
+        Assert.Equal("Right bud low · 17%", lite.AlertText);
+        Assert.Contains(lite.Battery, c => c.IsLow && c.Meta.StartsWith("Low") && c.AccessibleText.Contains("low"));
+    }
+
+    [AvaloniaFact]
+    public async Task WhileTheComputerHasThem_ConnectGivesWayToBringHere()
+    {
+        await StartAsync();
+        PhoneBuds.SetConnected(false);
+        await PairAsync();
+        var buds = _viewModel.Devices.Single(d => d.Name == "Simulated Buds Pro");
+        await UntilAsync(() => buds.CanBringHere, "Bring to this phone");
+
+        Assert.True(buds.ComputerHasThem);
+        Assert.False(buds.ShowConnect);
     }
 
     /// <summary>Set SAMAAT_SCREENSHOTS to save phone-sized screenshots (dark and light).</summary>

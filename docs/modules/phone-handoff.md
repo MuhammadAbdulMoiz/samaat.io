@@ -65,7 +65,7 @@ Full protocol: [docs/plans/2026-11-04-phone-handoff.md](../plans/2026-11-04-phon
 
 - `Samaat.Handoff.Tests` (99): crypto (tamper, replay, reorder, wrong key), framing, every message type, pairing (codes match, decline, commitment mismatch), sessions, every coordinator path including timeouts, the phone agent, and loopback end-to-end (pair, move both ways, rollback, forget, the computer restarting).
 - `Samaat.App.Tests`: the Links card states, and the desktop paired with a real phone client over loopback, moving both ways, plus screenshots.
-- `Samaat.Mobile.Tests` (12): the phone UI against a real computer host, plus phone-sized screenshots.
+- `Samaat.Mobile.Tests` (16): the phone UI against a real computer host, accessibility checks (44 px targets, names, colour pairs, low battery in words), plus phone-sized screenshots.
 - Android: compile and package in CI (`android` job). Hardware: the checklist in the plan.
 
 ## Building the Android app

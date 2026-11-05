@@ -12,9 +12,6 @@
     <DefineConstants>$(DefineConstants);SAMAAT_WINDOWS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="..\..\devices\**\*.json" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\devices\**\*.png" LinkBase="devices" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
@@ -27,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
+    <ProjectReference Include="..\Samaat.UI\Samaat.UI.csproj" />
     <ProjectReference Include="..\Samaat.Handoff\Samaat.Handoff.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.Jieli\Samaat.Protocols.Jieli.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.FastPair\Samaat.Protocols.FastPair.csproj" />

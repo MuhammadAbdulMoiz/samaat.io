@@ -104,6 +104,10 @@
   <Style Selector="Border.optionIcon.on PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
   </Style>
+  <!-- Muted text on accent-soft is 4.45:1 in dark mode, just under AA, so a selected row's description uses the text colour. -->
+  <Style Selector="Button.option.selected TextBlock.meta">
+    <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
+  </Style>
   <Style Selector="Button.option.selected Border.optionIcon">
     <Setter Property="Background" Value="{DynamicResource Samaat.Accent}" />
   </Style>

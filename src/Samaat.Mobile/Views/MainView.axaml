@@ -5,7 +5,7 @@
              x:Class="Samaat.Mobile.Views.MainView"
              x:DataType="vm:MainViewModel"
              Classes="shell">
-  <Grid RowDefinitions="Auto,Auto,*,Auto">
+  <Grid x:Name="Root" RowDefinitions="Auto,Auto,*,Auto">
 
     <!-- Header -->
     <Grid ColumnDefinitions="Auto,*,Auto" Margin="12,12,12,8" MinHeight="48">
@@ -13,8 +13,13 @@
               AutomationProperties.Name="Back">
         <PathIcon Data="{StaticResource Icon.Chevron}" RenderTransform="rotate(90deg)" />
       </Button>
-      <TextBlock Grid.Column="1" Text="{Binding Title}" Classes="title" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                 Margin="4,0,0,0" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="4,0,0,0">
+        <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Samaat.Accent}" IsVisible="{Binding ShowBrand}">
+          <TextBlock Text="S" Classes="display" FontSize="18" Foreground="{DynamicResource Samaat.OnAccent}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <TextBlock Text="{Binding Title}" Classes="title" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
       <Button Grid.Column="2" Classes="icon" Command="{Binding RefreshCommand}" IsVisible="{Binding IsEarbuds}"
               AutomationProperties.Name="Refresh devices">
         <PathIcon Data="{StaticResource Icon.Refresh}" />
@@ -47,7 +52,7 @@
               <Button Classes="deviceRow" Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).OpenCommand}"
                       CommandParameter="{Binding}" AutomationProperties.Name="{Binding AccessibleText}">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                  <Border Classes="iconTile" Classes.on="{Binding IsConnected}" VerticalAlignment="Center">
+                  <Border Classes="iconTile" VerticalAlignment="Center">
                     <PathIcon Data="{StaticResource Icon.Headphones}" />
                   </Border>
                   <StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center" Spacing="4">
@@ -56,8 +61,17 @@
                       <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
                       <TextBlock Text="{Binding ConnectionText}" Classes="meta" />
                     </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasAlert}">
+                      <PathIcon Data="{StaticResource Icon.Warning}" Width="12" Height="12" Classes="alertIcon"
+                                Classes.critical="{Binding AlertIsCritical}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding AlertText}" Classes="meta alertText" Classes.critical="{Binding AlertIsCritical}" />
+                    </StackPanel>
                   </StackPanel>
-                  <TextBlock Grid.Column="2" Text="{Binding SummaryText}" Classes="figure" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SummaryValue}" Classes="figure" Classes.low="{Binding SummaryIsLow}"
+                               Classes.critical="{Binding SummaryIsCritical}" />
+                    <TextBlock Text="{Binding SummaryUnit}" Classes="unit" />
+                  </StackPanel>
                 </Grid>
               </Button>
             </DataTemplate>
@@ -87,7 +101,7 @@
     </Border>
 
     <!-- Bottom navigation -->
-    <Border Grid.Row="3" Classes="navBar">
+    <Border Grid.Row="3" x:Name="NavBar" Classes="navBar">
       <UniformGrid Columns="2">
         <Button Classes="nav" Classes.selected="{Binding IsEarbuds}" Command="{Binding ShowEarbudsCommand}" Margin="0,0,4,0">
           <StackPanel Spacing="2" HorizontalAlignment="Center">

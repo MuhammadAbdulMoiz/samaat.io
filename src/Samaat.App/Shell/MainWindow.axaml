@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="using:Samaat.App.Shell"
         xmlns:c="using:Samaat.App.Shared.Controls"
+        xmlns:ui="using:Samaat.UI.Controls"
         xmlns:overview="using:Samaat.App.Features.Overview"
         xmlns:sound="using:Samaat.App.Features.Sound"
         xmlns:conn="using:Samaat.App.Features.Connections"
@@ -146,7 +147,7 @@
               <!-- The artwork sits on the canvas: no card -->
               <Border Classes="stage" Height="216">
                 <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
-                  <c:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
+                  <ui:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
                   <!-- Split photo: each bud and the case with its own level, buds above the case as in the product photo -->
                   <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
                                 HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -212,7 +213,7 @@
                         <Binding Path="!ShowUnknownPieces" />
                       </MultiBinding>
                     </Panel.IsVisible>
-                    <c:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
+                    <ui:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
                                    Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
                     <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
                            Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />

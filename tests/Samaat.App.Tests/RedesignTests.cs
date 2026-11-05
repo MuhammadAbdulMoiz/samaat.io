@@ -1,3 +1,4 @@
+using Samaat.UI.Controls;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Animation;

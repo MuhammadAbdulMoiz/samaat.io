@@ -1,59 +1,72 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Samaat.Mobile.ViewModels"
+             xmlns:ui="using:Samaat.UI.Controls"
+             xmlns:uic="using:Samaat.UI"
              x:Class="Samaat.Mobile.Views.DeviceView"
              x:DataType="vm:DeviceItemViewModel">
+  <!-- The desktop's device page at phone width (docs/design/ui-audit.md): the device is the hero, numbers first, flat panels. -->
   <StackPanel Spacing="16">
 
-    <!-- On this phone: connection and battery -->
-    <Border Classes="panel">
-      <StackPanel Spacing="14">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding ConnectionText}" />
+    <!-- Hero: the earbuds inside their battery ring, on the sound-wave canvas. No card, as on the desktop rail. -->
+    <StackPanel Spacing="12">
+      <Border Classes="stage" Height="216">
+        <Panel AutomationProperties.Name="{Binding ArtworkLabel}">
+          <ui:SoundWaves Stroke="{DynamicResource Samaat.Wave}" Opacity="0.14" Count="8" Origin="50%,50%" />
+          <Panel Width="176" Height="176" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ui:BatteryRing Value="{Binding SummaryPercent}" HasValue="{Binding HasSummary}" Thickness="6"
+                            Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding SummaryIsCritical}" />
+            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasBuds}">
+              <Viewbox Width="44"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="budShape" /></Canvas></Viewbox>
+              <Viewbox Width="44" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="budShape" /></Canvas></Viewbox>
+            </StackPanel>
+            <PathIcon Data="{StaticResource Icon.Headphones}" Width="80" Height="80" Foreground="{DynamicResource Samaat.Faint}"
+                      IsVisible="{Binding !HasBuds}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Panel>
+        </Panel>
+      </Border>
+
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="figure" Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding SummaryIsCritical}" Text="{Binding SummaryValue}" />
+            <TextBlock Classes="unit" Text="{Binding SummaryUnit}" />
           </StackPanel>
-          <Button Grid.Column="1" Classes="primary" Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}" />
-          <Button Grid.Column="1" Classes="subtle" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}" />
-          <ProgressBar Grid.Column="1" Classes="busy" IsIndeterminate="True" Width="60" IsVisible="{Binding IsLinkBusy}" />
-        </Grid>
-        <ItemsControl ItemsSource="{Binding Battery}" IsVisible="{Binding HasBattery}" Margin="0,0,-8,0">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <UniformGrid Rows="1" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:BatteryCellViewModel">
-              <Border Classes="cell" Margin="0,0,8,0" AutomationProperties.Name="{Binding AccessibleText}">
-                <StackPanel Spacing="6">
-                  <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="{Binding Label}" Classes="meta" />
-                    <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="12" Height="12" IsVisible="{Binding IsCharging}"
-                              Foreground="{DynamicResource Samaat.Accent}" />
-                  </StackPanel>
-                  <TextBlock Text="{Binding Text}" Classes="figure" />
-                  <ProgressBar Classes="level" Value="{Binding Percent}" />
-                </StackPanel>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <Border Classes="alert critical" IsVisible="{Binding HasError}">
-          <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" FontWeight="SemiBold" />
-        </Border>
-      </StackPanel>
-    </Border>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding ConnectionText}" Classes="muted" />
+          </StackPanel>
+        </StackPanel>
+        <Button Grid.Column="1" Classes="primary" Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}"
+                VerticalAlignment="Center" />
+        <Button Grid.Column="1" Classes="subtle" Content="Disconnect" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}"
+                VerticalAlignment="Center" />
+        <ProgressBar Grid.Column="1" Classes="busy" IsIndeterminate="True" Width="64" IsVisible="{Binding IsLinkBusy}" VerticalAlignment="Center" />
+      </Grid>
+
+      <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Left">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+          <TextBlock Text="{Binding AlertText}" FontSize="13" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      <Border Classes="alert critical" IsVisible="{Binding HasError}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" VerticalAlignment="Top" Margin="0,2,0,0" />
+          <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" FontWeight="SemiBold" MaxWidth="320" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
 
     <!-- Move to and from the computer: works with any earbuds -->
     <Border Classes="panel">
       <StackPanel Spacing="12">
         <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding ShowProgress}" Margin="-16,-16,-16,0" />
         <Grid ColumnDefinitions="Auto,*">
-          <Border Classes="iconTile" Classes.on="{Binding IsComputerOnline}" VerticalAlignment="Center">
-            <PathIcon Data="{StaticResource Icon.Laptop}" />
+          <Border Classes="optionIcon" Classes.on="{Binding IsComputerOnline}" VerticalAlignment="Center">
+            <PathIcon Data="{StaticResource Icon.Laptop}" Width="16" Height="16" />
           </Border>
-          <StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="4" VerticalAlignment="Center">
+          <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2" VerticalAlignment="Center">
             <TextBlock Text="{Binding ComputerTitle}" Classes="panelTitle" />
             <TextBlock Text="{Binding ComputerStateText}" Classes="meta" TextWrapping="Wrap" />
           </StackPanel>
@@ -65,51 +78,108 @@
         <Button Classes="subtle" HorizontalAlignment="Stretch" Content="Pair with a computer" Command="{Binding PairComputerCommand}"
                 IsVisible="{Binding ShowPairComputer}" />
         <TextBlock Text="{Binding ProgressText}" Classes="meta" IsVisible="{Binding ShowProgress}" TextWrapping="Wrap" />
-        <TextBlock Text="{Binding ResultText}" Classes="meta" IsVisible="{Binding ShowSuccess}" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding ShowSuccess}">
+          <PathIcon Data="{StaticResource Icon.Check}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Top" Margin="0,2,0,0" />
+          <TextBlock Text="{Binding ResultText}" Classes="meta" TextWrapping="Wrap" MaxWidth="320" />
+        </StackPanel>
         <Border Classes="alert critical" IsVisible="{Binding ShowFailure}">
-          <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" FontWeight="SemiBold" />
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" VerticalAlignment="Top" Margin="0,2,0,0" />
+            <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" FontWeight="SemiBold" MaxWidth="300" />
+          </StackPanel>
         </Border>
       </StackPanel>
     </Border>
 
-    <!-- Noise control -->
-    <Border Classes="panel" IsVisible="{Binding HasNoise}">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Noise control" Classes="panelTitle" />
-        <ItemsControl ItemsSource="{Binding NoiseModes}">
+    <!-- Battery: the desktop's figures (label, value and unit, level bar, meta) -->
+    <Border Classes="panel" IsVisible="{Binding HasBattery}">
+      <StackPanel Spacing="12">
+        <StackPanel Spacing="2">
+          <TextBlock Text="Battery" Classes="panelTitle" />
+          <TextBlock Text="{Binding BatteryReasonText}" Classes="meta" TextWrapping="Wrap" />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Battery}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <StackPanel Spacing="8" />
+              <UniformGrid Rows="1" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:OptionViewModel">
-              <Button Classes="option" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
-                      AutomationProperties.Name="{Binding Label}">
-                <StackPanel Spacing="2">
-                  <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
-                  <TextBlock Text="{Binding Description}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding HasDescription}" />
+            <DataTemplate x:DataType="vm:BatteryCellViewModel">
+              <StackPanel Spacing="4" Margin="0,0,16,0" AutomationProperties.Name="{Binding AccessibleText}">
+                <TextBlock Text="{Binding Label}" Classes="meta" />
+                <StackPanel Orientation="Horizontal">
+                  <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" IsVisible="{Binding IsCharging}"
+                            Foreground="{DynamicResource Samaat.Accent}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                  <TextBlock Classes="figure" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}" Text="{Binding Value}" />
+                  <TextBlock Classes="unit" Text="{Binding Unit}" />
                 </StackPanel>
-              </Button>
+                <ProgressBar Classes="level" Classes.low="{Binding IsLow}" Classes.critical="{Binding IsCritical}"
+                             Value="{Binding Percent}" IsVisible="{Binding HasLevel}" />
+                <TextBlock Text="{Binding Meta}" Classes="meta" TextWrapping="Wrap" />
+              </StackPanel>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
       </StackPanel>
     </Border>
 
-    <!-- EQ presets stored on the earbuds -->
-    <Border Classes="panel" IsVisible="{Binding HasEq}">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Equalizer" Classes="panelTitle" />
-        <ItemsControl ItemsSource="{Binding EqPresets}">
+    <!-- Noise control: the desktop's option rows -->
+    <Border Classes="panel" IsVisible="{Binding HasNoise}">
+      <StackPanel Spacing="12">
+        <TextBlock Text="Noise control" Classes="panelTitle" />
+        <ItemsControl ItemsSource="{Binding NoiseModes}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <WrapPanel />
+              <StackPanel Spacing="4" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:OptionViewModel">
-              <Button Classes="chip" Classes.selected="{Binding IsSelected}" Content="{Binding Label}" Command="{Binding SelectCommand}" />
+              <Button Classes="option" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                      AutomationProperties.Name="{Binding Label}">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Classes="optionIcon">
+                    <PathIcon Data="{Binding IconKey, Converter={x:Static uic:UiConverters.IconByKey}}" Width="16" Height="16" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Description}" Classes="meta" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <PathIcon Grid.Column="2" Data="{StaticResource Icon.Check}" Width="14" Height="14" VerticalAlignment="Center"
+                            Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding IsSelected}" />
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="{Binding NoiseStatusText}" Classes="meta" />
+      </StackPanel>
+    </Border>
+
+    <!-- EQ presets stored on the earbuds -->
+    <Border Classes="panel" IsVisible="{Binding HasEq}">
+      <StackPanel Spacing="12">
+        <StackPanel Spacing="2">
+          <TextBlock Text="Equalizer" Classes="panelTitle" />
+          <TextBlock Text="Presets stored on the earbuds" Classes="meta" />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding EqPresets}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="4" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:OptionViewModel">
+              <Button Classes="option" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                      AutomationProperties.Name="{Binding Label}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <PathIcon Grid.Column="1" Data="{StaticResource Icon.Check}" Width="14" Height="14" VerticalAlignment="Center"
+                            Foreground="{DynamicResource Samaat.Accent}" IsVisible="{Binding IsSelected}" />
+                </Grid>
+              </Button>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>

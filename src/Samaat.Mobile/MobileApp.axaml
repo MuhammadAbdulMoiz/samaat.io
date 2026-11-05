@@ -5,10 +5,10 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceInclude Source="avares://Samaat.Mobile/Styles/Icons.axaml" />
-        <ResourceInclude Source="avares://Samaat.Mobile/Styles/Tokens.axaml" />
+        <ResourceInclude Source="avares://Samaat.UI/Styles/Icons.axaml" />
+        <ResourceInclude Source="avares://Samaat.UI/Styles/Tokens.axaml" />
       </ResourceDictionary.MergedDictionaries>
-      <FontFamily x:Key="DisplayFont">avares://Samaat.Mobile/Assets/Fonts#Space Grotesk</FontFamily>
+      <FontFamily x:Key="DisplayFont">avares://Samaat.UI/Assets/Fonts#Space Grotesk</FontFamily>
     </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>

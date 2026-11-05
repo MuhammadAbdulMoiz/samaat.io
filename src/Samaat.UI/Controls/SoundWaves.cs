@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 
-namespace Samaat.App.Shared.Controls;
+namespace Samaat.UI.Controls;
 
 /// <summary>Concentric rings fading outwards from a point: the "hearing" motif behind the device hero.</summary>
 public sealed class SoundWaves : Control

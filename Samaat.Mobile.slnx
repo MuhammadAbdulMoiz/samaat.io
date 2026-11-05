@@ -4,6 +4,7 @@
     <Project Path="src/Samaat.Android/Samaat.Android.csproj" />
     <Project Path="src/Samaat.Platform.Android/Samaat.Platform.Android.csproj" />
     <Project Path="src/Samaat.Mobile/Samaat.Mobile.csproj" />
+    <Project Path="src/Samaat.UI/Samaat.UI.csproj" />
     <Project Path="src/Samaat.Handoff/Samaat.Handoff.csproj" />
     <Project Path="src/Samaat.Core/Samaat.Core.csproj" />
     <Project Path="src/Samaat.Transport/Samaat.Transport.csproj" />

@@ -82,7 +82,8 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(ShowConnect), nameof(ShowDisconnect))]
     public partial bool IsLinkBusy { get; set; }
 
-    public bool ShowConnect => Address is not null && !IsConnected && !IsLinkBusy;
+    /// <summary>Hidden while the computer has the earbuds: then "Bring to this phone" is the one primary action.</summary>
+    public bool ShowConnect => Address is not null && !IsConnected && !IsLinkBusy && !ComputerHasThem;
 
     public bool ShowDisconnect => Address is not null && IsConnected && !IsLinkBusy;
 
@@ -123,6 +124,44 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(AccessibleText))]
     public partial string SummaryText { get; set; } = "–";
 
+    /// <summary>The hero figure: number and unit apart, like the desktop ("81" "%").</summary>
+    [ObservableProperty]
+    public partial string SummaryValue { get; set; } = "–";
+
+    [ObservableProperty]
+    public partial string SummaryUnit { get; set; } = "";
+
+    [ObservableProperty]
+    public partial double SummaryPercent { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasSummary { get; set; }
+
+    [ObservableProperty]
+    public partial bool SummaryIsLow { get; set; }
+
+    [ObservableProperty]
+    public partial bool SummaryIsCritical { get; set; }
+
+    /// <summary>"Right bud low · 17%": low battery is never shown by colour alone (docs/design/ui-audit.md, principle 2).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAlert))]
+    public partial string? AlertText { get; set; }
+
+    public bool HasAlert => AlertText is not null;
+
+    [ObservableProperty]
+    public partial bool AlertIsCritical { get; set; }
+
+    [ObservableProperty]
+    public partial string BatteryReasonText { get; set; } = "";
+
+    /// <summary>Whether this device draws two buds (true) or a headset (false) in the hero.</summary>
+    public bool HasBuds => _battery?.Components.Contains(BatteryComponent.Left) == true
+        || Name.Contains("bud", StringComparison.OrdinalIgnoreCase) || Name.Contains("pods", StringComparison.OrdinalIgnoreCase);
+
+    public string ArtworkLabel => $"{Name} {(HasBuds ? "earbuds" : "headset")}";
+
     // Noise control
 
     public bool HasNoise => _noise is not null && _noise.Options.Modes.Count > 0;
@@ -160,6 +199,10 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     public partial bool CanBringHere { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowConnect))]
+    public partial bool ComputerHasThem { get; set; }
 
     [ObservableProperty]
     public partial string SendText { get; set; } = "Move to computer";
@@ -280,6 +323,7 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
             : there.Connected ? $"Playing on {name}"
             : IsConnected ? $"{name} can take these earbuds"
             : $"Not connected to {name} or this phone";
+        ComputerHasThem = IsComputerOnline && there?.Connected == true;
         var ready = IsComputerOnline && there is { CanConnect: true } && !IsMoving;
         CanSendToComputer = ready && !there!.Connected;
         CanBringHere = ready && !IsConnected;
@@ -297,7 +341,24 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
             }
         }
 
-        SummaryText = state.SummaryPercent is { } p ? $"{p}%" : "–";
+        var summary = state.SummaryPercent;
+        SummaryText = summary is { } p ? $"{p}%" : "–";
+        SummaryValue = summary?.ToString() ?? "–";
+        SummaryUnit = summary is null ? "" : "%";
+        SummaryPercent = summary ?? 0;
+        HasSummary = summary is not null;
+
+        // The most urgent bud (or the single level) decides the alert; the case only informs, as on the desktop by default.
+        var urgent = Battery.Where(c => c.Component != BatteryComponent.Case && (c.IsLow || c.IsCritical))
+            .OrderByDescending(c => c.IsCritical).ThenBy(c => c.Percent).FirstOrDefault();
+        SummaryIsCritical = urgent?.IsCritical == true;
+        SummaryIsLow = urgent is { IsCritical: false };
+        AlertIsCritical = SummaryIsCritical;
+        AlertText = urgent is null ? null : $"{urgent.Label} {(urgent.IsCritical ? "critically low" : "low")} · {urgent.Value}%";
+        BatteryReasonText = _battery is null ? "This device reports no battery level."
+            : Battery.Count == 0 ? IsConnected ? "Waiting for a reading." : "Connect the earbuds to read their battery."
+            : Battery.Any(c => c.Component is BatteryComponent.Left or BatteryComponent.Right) ? "Each level is reported by the earbuds."
+            : "Reported by Android for the whole device.";
         OnPropertyChanged(nameof(HasBattery));
     }
 
@@ -315,9 +376,23 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
                 NoiseControlPresentation.Label(mode),
                 NoiseControlPresentation.Description(mode),
                 _noise.Current.Mode == mode,
-                () => SetAsync(ct => _noise.SetModeAsync(mode, ct))));
+                () => SetAsync(ct => _noise.SetModeAsync(mode, ct)),
+                mode switch
+                {
+                    NoiseMode.NoiseCancelling => "Icon.NoiseCancelling",
+                    NoiseMode.Adaptive => "Icon.Sparkle",
+                    NoiseMode.Transparency => "Icon.Transparency",
+                    _ => "Icon.CircleOff",
+                }));
         }
+
+        NoiseStatusText = _noise.Current.Mode == NoiseMode.Off
+            ? "Noise control is off"
+            : $"{NoiseControlPresentation.Label(_noise.Current.Mode)} is on";
     }
+
+    [ObservableProperty]
+    public partial string NoiseStatusText { get; set; } = "";
 
     private void RefreshEq()
     {
@@ -368,28 +443,76 @@ public sealed partial class DeviceItemViewModel : ObservableObject, IDisposable
     }
 }
 
-public sealed class BatteryCellViewModel(BatteryReading reading)
+/// <summary>
+/// One battery figure with the desktop's anatomy: label, value and unit apart, a level bar, and a meta line.
+/// Low and critical use the desktop's default thresholds (20 % and 10 %) and always say so in words.
+/// </summary>
+public sealed class BatteryCellViewModel
 {
-    public string Label { get; } = reading.Component switch
+    public const int LowThreshold = 20;
+    public const int CriticalThreshold = 10;
+
+    public BatteryCellViewModel(BatteryReading reading)
     {
-        BatteryComponent.Left => "Left",
-        BatteryComponent.Right => "Right",
-        BatteryComponent.Case => "Case",
-        _ => "Battery",
-    };
+        Component = reading.Component;
+        Label = reading.Component switch
+        {
+            BatteryComponent.Left => "Left bud",
+            BatteryComponent.Right => "Right bud",
+            BatteryComponent.Case => "Case",
+            _ => "Battery",
+        };
+        HasLevel = reading.Percent is not null;
+        Percent = reading.Percent ?? 0;
+        Value = reading.Percent?.ToString() ?? "–";
+        Unit = HasLevel ? "%" : "";
+        IsCharging = reading.IsCharging;
+        IsCritical = HasLevel && Percent <= CriticalThreshold && !IsCharging;
+        IsLow = HasLevel && Percent <= LowThreshold && !IsCharging && !IsCritical;
+        var state = IsCritical ? "Critical" : IsLow ? "Low" : IsCharging ? "Charging" : reading.Charging == ChargingState.Full ? "Full" : "";
+        var where = reading.Status switch
+        {
+            BudStatus.InCase => "In case",
+            BudStatus.Connected => "In use",
+            BudStatus.Disconnected => "Not connected",
+            _ => "",
+        };
+        Meta = string.Join(" · ", new[] { state, where }.Where(t => t.Length > 0));
+        AccessibleText = HasLevel
+            ? $"{Label}, {Value} percent{(state.Length > 0 ? $", {state.ToLowerInvariant()}" : "")}"
+            : $"{Label}, no reading";
+    }
 
-    public double Percent { get; } = reading.Percent ?? 0;
+    public BatteryComponent Component { get; }
 
-    public string Text { get; } = reading.Percent is { } p ? $"{p}%" : "–";
+    public string Label { get; }
 
-    public bool IsCharging { get; } = reading.IsCharging;
+    public string Value { get; }
 
-    public string AccessibleText => $"{Label} {Text}{(IsCharging ? ", charging" : "")}";
+    public string Unit { get; }
+
+    public double Percent { get; }
+
+    public bool HasLevel { get; }
+
+    public bool IsLow { get; }
+
+    public bool IsCritical { get; }
+
+    public bool IsCharging { get; }
+
+    public string Meta { get; }
+
+    public string AccessibleText { get; }
 }
 
-/// <summary>A selectable choice: a noise mode or an EQ preset.</summary>
-public sealed class OptionViewModel(string label, string? description, bool isSelected, Func<Task> select)
+/// <summary>A selectable choice: a noise mode (with its icon) or an EQ preset.</summary>
+public sealed class OptionViewModel(string label, string? description, bool isSelected, Func<Task> select, string? iconKey = null)
 {
+    public string? IconKey { get; } = iconKey;
+
+    public bool HasIcon => IconKey is not null;
+
     public string Label { get; } = label;
 
     public string? Description { get; } = description;
