@@ -98,7 +98,7 @@ A system-wide equaliser for whatever Windows plays, for earbuds with no device E
 
 ### 11. Lab view: SDP/GATT explorer and trace recorder
 **Source:** Roadmap (PLAN §3, "Diagnostics / Lab view"; open decision §13 Q5). **Size:** M.
-List a device's SDP records and GATT services, open a channel, and record raw frames to `traces/<vendor>/` in the format the protocol tests replay. This turns "add a new vendor" from a day of Wireshark into an in-app workflow.
+List a device's SDP records and GATT services, open a channel, and record raw frames as the hex constants the protocol tests replay (see CONTRIBUTING, "Adding or changing device support"). This turns "add a new vendor" from a day of Wireshark into an in-app workflow.
 **Lives in:** `Features/Info` (Diagnostics) behind an opt-in Settings switch, using the existing `IGattClient` and `IRfcommChannel`.
 **Decision needed:** ship it to end users as opt-in, or keep it to developer builds (PLAN §13 Q5).
 

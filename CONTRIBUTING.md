@@ -28,7 +28,7 @@ Device support is only as good as its evidence. A catalog entry may set `"verifi
 
 1. **The model and firmware**: exact retail name, the firmware version shown by the vendor app, the region if it matters.
 2. **A Samaat report**: Info page → **Copy report** (or `samaat-cli --watch` output), with the device connected.
-3. **For a driver**: recorded byte traces of each command the driver sends and the device's replies, committed under `traces/<vendor>/` and replayed in tests.
+3. **For a driver**: the bytes of each command the driver sends and the device's replies, recorded from the real device and replayed in tests. They live in `tests/Samaat.Protocols.Tests` as hex constants in a class named for their source (`Captured` in `JieliFakes.cs`, `FastPairCaptured` in `FastPairFakes.cs`, `BoseFrames` in `BoseBmapTests.cs`), whose summary links the hardware test note in `docs/hardware-tests/` that recorded them. Label any synthetic frame as synthetic.
 4. **A manual checklist**, completed on real hardware:
    - [ ] Device is listed and recognised as the right model
    - [ ] Battery matches the vendor app (each component the model reports)
