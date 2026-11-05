@@ -58,7 +58,7 @@
           <Border Classes="alert critical" IsVisible="{Binding HasError}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-              <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
         </WrapPanel>
@@ -147,7 +147,7 @@
         <Border Classes="alert critical" IsVisible="{Binding HasError}">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
           </StackPanel>
         </Border>
       </WrapPanel>
@@ -165,7 +165,7 @@
       </Grid>
 
       <!-- The source: everything shared is a copy of this output -->
-      <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" IsVisible="{Binding IsSupported}">
+      <Border Classes="strip" IsVisible="{Binding IsSupported}">
         <Grid ColumnDefinitions="Auto,*,Auto">
           <Border Classes="optionIcon on">
             <PathIcon Data="{Binding DefaultIconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
@@ -214,7 +214,7 @@
                           IsVisible="{Binding $parent[ItemsControl].((sound:AudioShareViewModel)DataContext).CanSwitch}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <PathIcon Data="{StaticResource Icon.Switch}" Width="14" Height="14" />
-                      <TextBlock Text="Switch here" FontSize="12" />
+                      <TextBlock Text="Switch here" FontSize="{StaticResource Samaat.FontSize.Meta}" />
                     </StackPanel>
                   </Button>
                   <ToggleSwitch Grid.Column="3" Classes="share" IsChecked="{Binding IsSharing}" IsEnabled="{Binding CanToggle}"
@@ -233,7 +233,7 @@
                 <Border Classes="alert" HorizontalAlignment="Left" IsVisible="{Binding HasStatus}">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-                    <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
               </StackPanel>
@@ -247,7 +247,7 @@
       <Border Classes="alert" HorizontalAlignment="Left" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-          <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
 

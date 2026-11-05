@@ -34,3 +34,4 @@ Without hardware evidence, entries stay `"verified": false` and the UI marks the
 - New capabilities start as a feature interface in `Samaat.Core`, then the simulator, then the UI.
 - Every write returns a `CommandResult`, and the UI must handle refused and timed-out commands.
 - Never hide an unsupported feature: show it with a reason.
+- UI values come from the design system: colours from `Samaat.UI/Styles/Tokens.axaml`, radii, type sizes, hit targets and shadows from `Samaat.UI/Styles/Metrics.axaml`, and repeated looks from a style class. `DesignSystemTests` fails the build on a raw hex colour, font size, shadow or tokenised radius in `.axaml`.

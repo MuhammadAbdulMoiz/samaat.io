@@ -16,7 +16,7 @@
         <StackPanel Spacing="12">
           <TextBlock Text="This computer" Classes="panelTitle" />
 
-          <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" MinHeight="48">
+          <Border Classes="strip" MinHeight="48">
             <Grid ColumnDefinitions="Auto,*,Auto">
               <Border Classes="optionIcon" Classes.on="{Binding IsConnected}" VerticalAlignment="Center">
                 <PathIcon Data="{StaticResource Icon.Laptop}" Width="16" Height="16" />
@@ -56,7 +56,7 @@
           <Border Classes="alert critical" HorizontalAlignment="Left" IsVisible="{Binding Connections.HasError}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-              <TextBlock Text="{Binding Connections.ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Connections.ErrorText}" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
 </StackPanel>
@@ -79,7 +79,7 @@
         <ItemsControl ItemsSource="{Binding Targets}" IsVisible="{Binding HasPhones}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="phone:PhoneTargetViewModel">
-              <Border Classes="row host" CornerRadius="6" Padding="8">
+              <Border Classes="row host" CornerRadius="{StaticResource Samaat.Radius.Control}" Padding="8">
                 <Grid ColumnDefinitions="Auto,*,Auto">
                   <Border Classes="optionIcon" Classes.on="{Binding IsOnline}" VerticalAlignment="Center">
                     <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
@@ -106,7 +106,7 @@
         <Border Classes="alert critical" IsVisible="{Binding ShowFailure}" HorizontalAlignment="Left">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding ResultText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" />
           </StackPanel>
         </Border>
       </StackPanel>
@@ -162,7 +162,7 @@
                       <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <Border Classes="chip" Padding="5,0" VerticalAlignment="Center" IsVisible="{Binding IsThisHost}">
-                          <TextBlock Text="This computer" FontSize="11" />
+                          <TextBlock Text="This computer" FontSize="{StaticResource Samaat.FontSize.Label}" />
                         </Border>
                         <TextBlock Text="{Binding StateText}" Classes="meta" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                       </StackPanel>
@@ -172,14 +172,14 @@
                               AutomationProperties.Name="{Binding DisconnectLabel}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                           <PathIcon Data="{StaticResource Icon.Disconnect}" Width="14" Height="14" />
-                          <TextBlock Text="Disconnect" FontSize="12" />
+                          <TextBlock Text="Disconnect" FontSize="{StaticResource Samaat.FontSize.Meta}" />
                         </StackPanel>
                       </Button>
                       <Button Classes="ghost" Command="{Binding SwitchCommand}" IsVisible="{Binding CanSwitch}"
                               AutomationProperties.Name="{Binding SwitchLabel}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                           <PathIcon Data="{Binding SwitchIconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="14" Height="14" />
-                          <TextBlock Text="{Binding SwitchText}" FontSize="12" />
+                          <TextBlock Text="{Binding SwitchText}" FontSize="{StaticResource Samaat.FontSize.Meta}" />
                         </StackPanel>
                       </Button>
                     </StackPanel>

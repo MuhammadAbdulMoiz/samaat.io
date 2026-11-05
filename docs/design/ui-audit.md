@@ -146,3 +146,19 @@ Plan: `docs/plans/2026-11-04-dashboard-views.md`. There are three layouts, with 
 **Settings.** `AppSettings` gains `Version` (2), `Dashboard`, `DeviceFilter` and `LastConnected`. Files without them load as Studio and Connected, and keep all their other values. Enums now read leniently: an unknown name, such as a newer build's layout or a typo in `theme`, falls back to that setting's default instead of setting the whole file aside as `settings.json.bad`.
 
 ![Focus](../images/focus-buds-pro.png) ![Glance](../images/glance.png) ![Glance, small window](../images/glance-narrow.png) ![No connected devices](../images/no-connected-devices.png)
+
+## Design tokens beyond colour (2026-11-05)
+
+Until now only colours were tokens. Radii, the type ramp, hit-target sizes, shadows and the accent swatches were literal values, repeated across 14 files. They had already started to drift: the swatches in Settings repeated `AccentPalette`'s hex values by hand, and every alert message set its own `FontSize="12" FontWeight="SemiBold"`. This round makes the design system the single source of truth for all of them. **No pixels changed**: all 58 dark and light screenshots render identically before and after.
+
+| Before | After | Why |
+|---|---|---|
+| `CornerRadius="6"`, `"8"`, `"10"` and `FontSize="12"` typed out in styles and views | `Samaat.UI/Styles/Metrics.axaml`: radii (`Samaat.Radius.Control` 6, `Tile` 8, `Panel` 10, plus `Hairline`, `Tab` and `Round20`), the type ramp (`Samaat.FontSize.Label` 11 through `Code` 32), hit targets (`Samaat.Size.Control` 32, `Row` 40, `OptionRow` 48), panel and strip padding, and two shadows (`Samaat.Shadow.Key`, `Overlay`) | Change a value once and the whole app follows. The names say what a value is for, so a new view picks "a control radius", not "6" |
+| Swatch ellipses filled with `#C8F169` and friends, a copy of `AccentPalette` | `Samaat.Swatch.Lime`, `Emerald`, `Ice`, `Mono` and `Check`. A test applies each preset and checks that its swatch matches | A new or retuned preset can't leave a stale swatch behind |
+| 13 alert and error texts each set their size and weight | `Border.alert TextBlock` sets them. Alerts now only need `Classes="alert"` | One rule per concept, and a new alert can't come out a different size |
+| Three "state strips" (Share's "Playing on", Links' state row, the Details adapter note) were each a hand-styled `Border` | `Border.strip` | Same anatomy, same name |
+| `Artwork.axaml` (shared with the phone) depended on whatever the host app defined | It merges `Metrics.axaml` itself | The phone app keeps working whether or not it merges the new dictionary |
+
+**Guard rails.** `DesignSystemTests` scans every `.axaml` file in `Samaat.App` and `Samaat.UI`, except the two token dictionaries. A build fails on a hex colour, a literal font size or shadow, or a literal radius that has a token. Round shapes, whose radius is half their size (the 32 px swatch's 16, the hero stage's 14), are geometry, not style, and may stay literal. The test also checks that every metric token resolves in both themes.
+
+**Where values live now.** Theme colours go in `Tokens.axaml`. Anything that doesn't change with the theme goes in `Metrics.axaml`. Component looks are style classes in `Samaat.App/Styles`. Views pick classes and tokens, never raw values.
