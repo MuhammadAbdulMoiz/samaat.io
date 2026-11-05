@@ -157,6 +157,10 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial double AvailablePercent { get; set; }
 
+    /// <summary>The support tier under the Diagnostics meter, which already shows the feature count.</summary>
+    [ObservableProperty]
+    public partial string SupportText { get; set; } = "";
+
     /// <summary>"14 of 15": the figure next to the meter.</summary>
     [ObservableProperty]
     public partial string FeatureCountText { get; set; } = "";
@@ -259,6 +263,7 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
         SummaryText = $"{available.Count} of {all.Count} features available · {CapabilityText.Tier(_device.Identity.Tier)}";
         AvailablePercent = all.Count == 0 ? 0 : 100.0 * available.Count / all.Count;
         FeatureCountText = $"{available.Count} of {all.Count}";
+        SupportText = CapabilityText.Tier(_device.Identity.Tier);
         AvailableRows = available
             .Select(c => new CapabilityRow(CapabilityText.Name(c.Feature),
                 $"{CapabilityText.Source(c.Source)} · {CapabilityText.Access(c.Access)}{(c.Verified == Verification.Verified ? " · verified" : "")}"))
@@ -336,7 +341,7 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
 
     private static string Describe(BatteryState state) => string.Join(" · ", state.Readings
         .OrderBy(r => r.Component)
-        .Select(r => $"{r.Component} {(r.Percent is { } p ? $"{p}%" : "?")}{(r.IsCharging ? " ⚡" : "")}"));
+        .Select(r => $"{r.Component} {(r.Percent is { } p ? $"{p}%" : "?")}{(r.IsCharging ? " charging" : "")}"));
 
     public void Dispose()
     {

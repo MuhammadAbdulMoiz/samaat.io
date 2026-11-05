@@ -35,6 +35,6 @@ public class BatteryPanelTests
 
         Assert.Equal(["Overall", "Left bud", "Right bud", "Case"], vm.ShownFigures.Select(f => f.Label));
         Assert.Equal("40", vm.ShownFigures.Single(f => f.Label == "Case").Value);
-        Assert.Equal("The left bud and right bud aren't reported by this device.", vm.BatteryReasonText);
+        Assert.Equal("The left bud and right bud aren't reported by this device", vm.BatteryReasonText);
     }
 }

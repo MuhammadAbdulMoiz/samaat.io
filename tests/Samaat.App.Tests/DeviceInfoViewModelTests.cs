@@ -43,6 +43,7 @@ public class DeviceInfoViewModelTests
 
         Assert.Equal("1 of 16 features available · Basic support", vm.SummaryText);
         Assert.Equal("1 of 16", vm.FeatureCountText);
+        Assert.Equal("Basic support", vm.SupportText);
         Assert.Equal(100.0 / 16, vm.AvailablePercent, 3);
         Assert.Equal("Overall battery", Assert.Single(vm.AvailableRows).Name);
         Assert.Equal(["Battery", "Noise control", "Equalizer", "Connections"], vm.UnavailableGroups.Select(g => g.Module));

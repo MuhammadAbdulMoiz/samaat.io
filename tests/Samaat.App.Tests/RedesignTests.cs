@@ -279,7 +279,7 @@ public class RedesignShellTests
 
         Assert.Equal(["Overall"], headset.ShownFigures.Select(f => f.Label));
         Assert.False(headset.ShowsComponentFigures);
-        Assert.Equal("Left, right and case aren't reported for this device.", headset.BatteryReasonText);
+        Assert.Equal("Left, right and case aren't reported for this device", headset.BatteryReasonText);
         Assert.Equal(["Overall", "Left bud", "Right bud", "Case"], pro.ShownFigures.Select(f => f.Label));
         Assert.True(pro.ShowsComponentFigures);
         Assert.Equal([false, true, true, false], pro.ShownFigures.Select(f => f.IsBud));

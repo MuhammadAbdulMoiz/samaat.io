@@ -293,7 +293,7 @@ public sealed partial class NoiseModeOptionViewModel : ObservableObject
     public string IconKey => Mode switch
     {
         NoiseMode.NoiseCancelling => "Icon.NoiseCancelling",
-        NoiseMode.Adaptive => "Icon.Sparkle",
+        NoiseMode.Adaptive => "Icon.Adaptive",
         NoiseMode.Transparency => "Icon.Transparency",
         _ => "Icon.CircleOff",
     };

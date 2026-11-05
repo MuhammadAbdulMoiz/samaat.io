@@ -13,7 +13,7 @@
   </Style>
   <Style Selector="Button.tab">
     <Setter Property="MinHeight" Value="{StaticResource Samaat.Size.Control}" />
-    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Padding" Value="12,0" />
     <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Tab}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
@@ -74,7 +74,7 @@
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="MinHeight" Value="{StaticResource Samaat.Size.OptionRow}" />
-    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="Padding" Value="8" />
     <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
   </Style>
   <Style Selector="Button.option /template/ ContentPresenter#PART_ContentPresenter">
@@ -86,7 +86,7 @@
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
   </Style>
   <Style Selector="Button.option.selected /template/ ContentPresenter#PART_ContentPresenter, Button.option.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
   </Style>
   <Style Selector="Border.optionIcon">
@@ -104,7 +104,7 @@
   <Style Selector="Border.optionIcon.on PathIcon">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.OnAccent}" />
   </Style>
-  <!-- Muted text on accent-soft is 4.45:1 in dark mode, just under AA, so a selected row's description uses the text colour. -->
+  <!-- A selected row's description uses the text colour, so the row reads as chosen without a coloured fill -->
   <Style Selector="Button.option.selected TextBlock.meta">
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Text}" />
   </Style>
@@ -144,7 +144,7 @@
   <Style Selector="Border.featureCell">
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
-    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="Padding" Value="12,8" />
     <Setter Property="MinHeight" Value="{StaticResource Samaat.Size.OptionRow}" />
   </Style>
 
@@ -168,7 +168,7 @@
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Border}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Tile}" />
-    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="Padding" Value="12" />
   </Style>
   <Style Selector="Border.figureTile.unreported">
     <Setter Property="Background" Value="Transparent" />
@@ -187,7 +187,7 @@
   </Style>
 
   <Style Selector="Border.host.active">
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
   </Style>
 
   <!-- Disabled filled buttons dim like a disabled switch, so a pending request reads as "wait", not "broken" -->
@@ -234,10 +234,10 @@
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
     <Setter Property="MinHeight" Value="{StaticResource Samaat.Size.OptionRow}" />
-    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="Padding" Value="8" />
   </Style>
   <Style Selector="Border.shareRow.sharing">
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
   </Style>
   <Style Selector="Border.shareRow.sharing Border.optionIcon">
@@ -298,7 +298,7 @@
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Muted}" />
   </Style>
   <Style Selector="Button.layoutCard.selected /template/ ContentPresenter#PART_ContentPresenter, Button.layoutCard.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Accent}" />
     <Setter Property="BorderThickness" Value="2" />
   </Style>

@@ -34,7 +34,7 @@
 
   <!-- Spacing inside panels -->
   <Thickness x:Key="Samaat.Padding.Panel">16</Thickness>
-  <Thickness x:Key="Samaat.Padding.Strip">8,6</Thickness>
+  <Thickness x:Key="Samaat.Padding.Strip">8</Thickness>
 
   <!-- Elevation: a raised key (selected tab) and a floating overlay (toast) -->
   <BoxShadows x:Key="Samaat.Shadow.Key">0 1 2 0 #40000000</BoxShadows>

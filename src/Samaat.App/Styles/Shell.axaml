@@ -112,13 +112,16 @@
   </Style>
   <Style Selector="Button.nav /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
   </Style>
   <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
   </Style>
   <Style Selector="Button.nav.current /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow.current /template/ ContentPresenter#PART_ContentPresenter, Button.nav.current:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.deviceRow.current:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource Samaat.AccentSoft}" />
+    <!-- The current row is a raised neutral key with a lit edge; its glyph and thumbnail edge carry the accent -->
+    <Setter Property="Background" Value="{DynamicResource Samaat.Key}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Samaat.PanelEdge}" />
   </Style>
   <Style Selector="Button.nav PathIcon">
     <Setter Property="Width" Value="18" />
