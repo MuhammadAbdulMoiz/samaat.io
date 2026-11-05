@@ -65,51 +65,20 @@
       </Panel>
     </Border>
 
-    <!-- Your phone: move these earbuds to a paired phone and back (any earbuds; see docs/modules/phone-handoff.md) -->
-    <Border Classes="panel" IsVisible="{Binding PhoneMove, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <StackPanel Spacing="8" DataContext="{Binding PhoneMove}" x:DataType="phone:PhoneMoveViewModel">
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding ShowProgress}" Margin="-16,-16,-16,0" />
-        <TextBlock Text="Your phone" Classes="panelTitle" />
-
-        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowSetup}">
-          <TextBlock Text="{Binding SetupText}" Classes="meta" TextWrapping="Wrap" VerticalAlignment="Center" />
-          <Button Grid.Column="1" Classes="ghost" Content="Pair a phone" Command="{Binding OpenSettingsCommand}" VerticalAlignment="Center" Margin="12,0,0,0" />
-        </Grid>
-
-        <ItemsControl ItemsSource="{Binding Targets}" IsVisible="{Binding HasPhones}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="phone:PhoneTargetViewModel">
-              <Border Classes="row host" CornerRadius="6" Padding="8">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                  <Border Classes="optionIcon" Classes.on="{Binding IsOnline}" VerticalAlignment="Center">
-                    <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
-                  </Border>
-                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Ellipse Classes="dot" Classes.on="{Binding IsOnline}" VerticalAlignment="Center" />
-                      <TextBlock Text="{Binding StateText}" Classes="meta" TextWrapping="Wrap" />
-                    </StackPanel>
-                  </StackPanel>
-                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button Classes="subtle" Content="Bring back here" Command="{Binding BringHereCommand}" IsVisible="{Binding CanBringHere}" />
-                    <Button Classes="primary" Content="{Binding MoveText}" Command="{Binding MoveCommand}" IsVisible="{Binding CanMoveThere}" />
-                  </StackPanel>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <TextBlock Text="{Binding ProgressText}" Classes="meta" IsVisible="{Binding ShowProgress}" TextWrapping="Wrap" />
-        <TextBlock Text="{Binding ResultText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowSuccess}" />
-        <Border Classes="alert critical" IsVisible="{Binding ShowFailure}" HorizontalAlignment="Left">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding ResultText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
-          </StackPanel>
+    <!-- Phone handoff is not shipped yet: show it as coming soon (full UI lives on feature/ui-redesign) -->
+    <Border Classes="panel">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <Border Classes="optionIcon" VerticalAlignment="Center">
+          <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
         </Border>
-      </StackPanel>
+        <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
+          <TextBlock Text="Your phone" Classes="panelTitle" />
+          <TextBlock Text="Move these earbuds to your Android phone and back." Classes="meta" TextWrapping="Wrap" />
+        </StackPanel>
+        <Border Grid.Column="2" Classes="chip" VerticalAlignment="Center">
+          <TextBlock Text="Coming soon" />
+        </Border>
+      </Grid>
     </Border>
 
     <!-- Devices: multipoint and every host the earbuds report, or an honest empty state -->
