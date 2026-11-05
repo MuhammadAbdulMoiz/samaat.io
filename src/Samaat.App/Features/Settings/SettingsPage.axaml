@@ -45,7 +45,7 @@
         <Border Classes="row" IsVisible="{Binding ShowWaiting}">
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="8" VerticalAlignment="Center">
-              <ProgressBar Classes="busy" IsIndeterminate="True" />
+              <ProgressBar Classes="busy" />
               <TextBlock Text="{Binding WaitingText}" TextWrapping="Wrap" />
             </StackPanel>
             <Button Grid.Column="1" Classes="ghost" Content="Cancel" Command="{Binding CancelPairingCommand}" VerticalAlignment="Center" Margin="12,0,0,0" />

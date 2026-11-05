@@ -12,7 +12,7 @@
     <!-- Mode -->
     <Border Classes="panel">
       <StackPanel Spacing="12">
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
         <TextBlock Text="Noise control" Classes="panelTitle" />
 
         <!-- Several modes: one selectable row per mode -->
@@ -115,7 +115,7 @@
   <!-- Equalizer -->
   <Border Classes="panel" DataContext="{Binding Equalizer}" x:DataType="sound:EqualizerViewModel">
     <StackPanel Spacing="12">
-      <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
+      <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
       <StackPanel>
         <TextBlock Text="Equalizer" Classes="panelTitle" />
         <TextBlock Text="Presets stored on the earbuds" Classes="meta" IsVisible="{Binding !IsUnavailable}" />

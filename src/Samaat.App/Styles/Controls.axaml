@@ -197,6 +197,7 @@
 
   <!-- Thin indeterminate bar while a command is waiting for the device -->
   <Style Selector="ProgressBar.busy">
+    <Setter Property="IsIndeterminate" Value="True" />
     <Setter Property="Height" Value="3" />
     <Setter Property="MinHeight" Value="3" />
     <Setter Property="MinWidth" Value="0" />
@@ -222,7 +223,9 @@
   <Style Selector="ProgressBar.level">
     <Setter Property="Transitions">
       <Transitions>
-        <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
+        <DoubleTransition Property="Value" Duration="0:0:0.26">
+          <DoubleTransition.Easing><SplineEasing X1="0.23" Y1="1" X2="0.32" Y2="1" /></DoubleTransition.Easing>
+        </DoubleTransition>
       </Transitions>
     </Setter>
   </Style>

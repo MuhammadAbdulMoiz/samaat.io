@@ -86,7 +86,7 @@
             </Border>
           </WrapPanel>
         </StackPanel>
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
       </Panel>
     </Border>
 

@@ -219,11 +219,8 @@
                           Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Info}" />
                 </StackPanel>
               </Border>
-              <TransitioningContentControl x:Name="PageHost" Content="{Binding DevicePage}">
-                <TransitioningContentControl.PageTransition>
-                  <CrossFade Duration="0:0:0.18" />
-                </TransitioningContentControl.PageTransition>
-              </TransitioningContentControl>
+              <!-- Tabs switch instantly: they're used dozens of times a session, and a fade overlapped two pages -->
+              <TransitioningContentControl x:Name="PageHost" Content="{Binding DevicePage}" PageTransition="{x:Null}" />
             </StackPanel>
 
             <StackPanel Width="260" Spacing="16" DataContext="{Binding SelectedDevice}" x:DataType="overview:DeviceViewModel">

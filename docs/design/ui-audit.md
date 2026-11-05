@@ -204,3 +204,17 @@ What held up: the sidebar truncates long names and shows them in a tooltip; "2 l
 **Component drawings.** [`drawings/list-row-tile-option.html`](drawings/list-row-tile-option.html) ([preview](drawings/list-row-tile-option.png)) is a dimensional drawing of the device row, the figure tile and the option row, measured from the rendered visual tree: every padding, gap, size and radius as a variable, with the formulas that derive the row heights. It records three facts the styles don't show at a glance: rows are taller than their minimum heights because the border and padding add up (54 against 52, and 50 against 48); the device thumbnail's corners (8) are rounder than its row's (6); and tiles flex from 128 px in one to four columns.
 
 ![Row, tile and option drawing](drawings/list-row-tile-option.png)
+
+## Motion review (2026-11-05)
+
+A review against Emil Kowalski's animation bar (the `review-animations` skill) blocked on two findings; both are fixed, with the follow-ups.
+
+| Before | After | Why |
+|---|---|---|
+| Switching tabs cross-faded the page for 180 ms, linear | Tabs switch instantly (`PageTransition="{x:Null}"`; the control's default is a fade) | Tabs change dozens of times a session, and the cross-fade showed two pages overlapping. Motion on a high-frequency action that explains nothing goes |
+| The battery ring glided from the previous device's level to the new one when you picked another device | `BatteryRing` drops its transition while its data context changes; level changes for the same device still glide | 81 % → 17 % played as a 260 ms drain that never happened |
+| Value glides used the built-in cubic ease-out | A strong ease-out spline (0.23, 1, 0.32, 1), still 260 ms | Lands sooner and crisper, as a dashboard should |
+| The busy bar kept sweeping with Reduce motion on, and the level bars kept gliding (the rule in `Gauges.axaml` was overridden by `Controls.axaml`, which loaded later) | `Gauges.axaml` loads last; under Reduce motion the busy bar holds still at half opacity and the level bars jump | Reduced motion removes movement and keeps comprehension; the "Connecting…" text still says what's happening |
+| No press feedback | Buttons shrink to 0.97 while held, 160 ms on the same ease-out; none under Reduce motion | A press should feel received |
+
+Held up: layout switching (Ctrl+Shift+1–3) and switches never animate, the disclosure chevron rotates instantly, nothing animates size or position, and the only loop is the busy bar during a real wait.

@@ -132,6 +132,19 @@
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
   </Style>
+  <!-- Press feedback: a slight shrink while held, 160 ms on a strong ease-out. Reduce motion drops it (Gauges.axaml). -->
+  <Style Selector="Button.icon, Button.subtle, Button.primary, Button.ghost, Button.option, Button.layoutCard">
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16">
+          <TransformOperationsTransition.Easing><SplineEasing X1="0.23" Y1="1" X2="0.32" Y2="1" /></TransformOperationsTransition.Easing>
+        </TransformOperationsTransition>
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.icon:pressed, Button.subtle:pressed, Button.primary:pressed, Button.ghost:pressed, Button.option:pressed, Button.layoutCard:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.97)" />
+  </Style>
   <Style Selector="Button.icon">
     <Setter Property="Width" Value="32" />
     <Setter Property="Height" Value="32" />

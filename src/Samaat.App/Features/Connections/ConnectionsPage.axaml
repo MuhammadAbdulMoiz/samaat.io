@@ -61,14 +61,14 @@
           </Border>
 </StackPanel>
         <!-- Overlaid on the panel's top edge so it never shifts the content -->
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsLinkBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsLinkBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
       </Panel>
     </Border>
 
     <!-- Your phone: move these earbuds to a paired phone and back (any earbuds; see docs/modules/phone-handoff.md) -->
     <Border Classes="panel" IsVisible="{Binding PhoneMove, Converter={x:Static ObjectConverters.IsNotNull}}">
       <StackPanel Spacing="8" DataContext="{Binding PhoneMove}" x:DataType="phone:PhoneMoveViewModel">
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding ShowProgress}" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding ShowProgress}" Margin="-16,-16,-16,0" />
         <TextBlock Text="Your phone" Classes="panelTitle" />
 
         <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowSetup}">
@@ -213,7 +213,7 @@
           </StackPanel>
 </StackPanel>
         <!-- Overlaid on the panel's top edge so it never shifts the content -->
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
       </Panel>
     </Border>
   </StackPanel>
