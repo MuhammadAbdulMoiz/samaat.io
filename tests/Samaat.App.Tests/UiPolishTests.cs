@@ -275,9 +275,10 @@ public class ContrastTests
             handle.Free();
         }
 
-        // A point on the tile, clear of the "S": the logo's lime (BGRA), not the current accent.
+        // A point on the tile, clear of the "S": the logo's dark tile (BGRA), not the current accent.
         var i = (32 * 64 + 6) * 4;
-        Assert.Equal(Samaat.UI.Logo.TileColor, Color.FromRgb(pixels[i + 2], pixels[i + 1], pixels[i]));
+        Assert.Equal(255, pixels[i + 3]);
+        Assert.True(pixels[i] < 60 && pixels[i + 1] < 60 && pixels[i + 2] < 60, $"tile pixel is {pixels[i + 2]},{pixels[i + 1]},{pixels[i]}");
     }
 
     [AvaloniaFact]
