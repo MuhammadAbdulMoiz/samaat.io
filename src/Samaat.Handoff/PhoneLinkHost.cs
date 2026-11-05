@@ -93,7 +93,9 @@ public sealed class PhoneLinkHost : IAsyncDisposable
     private Task _beaconLoop = Task.CompletedTask;
     private ITimer? _pairingTimer;
     private int? _lastPort;
-    private PairingSession? _pendingPairing;
+    // The one pairing at a time: null, a reservation while a phone's handshake runs, or the PairingSession waiting for answers.
+    // Taken under _gate before the handshake starts, so phones that arrive together can't all get a prompt.
+    private object? _pairingSlot;
     private bool _pairingOpen;
     private bool _started;
 
@@ -412,25 +414,45 @@ public sealed class PhoneLinkHost : IAsyncDisposable
 
     private async Task<bool> HandlePairingAsync(FrameStream frames, HandshakeFrame start, CancellationToken ct)
     {
-        if (!IsPairingOpen)
-        {
-            await Handshake.RefuseAsync(frames, $"Pairing isn't open on {ComputerName}. In Samaat on the computer, open Settings and choose Pair a phone.", ct);
-            return false;
-        }
-
+        // Check and take the slot in one step: checking, then taking it after the handshake let every phone that
+        // arrived during the handshake through, each with its own prompt.
+        var reservation = new object();
+        string? refusal;
         lock (_gate)
         {
-            if (_pendingPairing is not null)
+            refusal = !_pairingOpen
+                ? $"Pairing isn't open on {ComputerName}. In Samaat on the computer, open Settings and choose Pair a phone."
+                : _pairingSlot is not null
+                    ? $"{ComputerName} is already pairing with another phone. Try again in a moment."
+                    : null;
+            if (refusal is null)
             {
-                _ = Handshake.RefuseAsync(frames, $"{ComputerName} is already pairing with another phone. Try again in a moment.", ct);
-                return false;
+                _pairingSlot = reservation;
             }
         }
 
-        var session = await Handshake.PairAsComputerAsync(frames, start, ComputerId, ComputerName, ct);
+        if (refusal is not null)
+        {
+            // Awaited, so the phone gets the reason before the connection closes.
+            await Handshake.RefuseAsync(frames, refusal, ct);
+            return false;
+        }
+
+        PairingSession session;
+        try
+        {
+            session = await Handshake.PairAsComputerAsync(frames, start, ComputerId, ComputerName, ct);
+        }
+        catch
+        {
+            // The phone hung up or sent something wrong: free the slot for the next phone.
+            ReleaseReservation(reservation);
+            throw;
+        }
+
         lock (_gate)
         {
-            _pendingPairing = session;
+            _pairingSlot = session;
         }
 
         _ = session.PeerDecision.ContinueWith(async t =>
@@ -470,16 +492,27 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         return paired;
     }
 
+    private void ReleaseReservation(object reservation)
+    {
+        lock (_gate)
+        {
+            if (ReferenceEquals(_pairingSlot, reservation))
+            {
+                _pairingSlot = null;
+            }
+        }
+    }
+
     private async Task EndPairingAsync(PairingSession session)
     {
         lock (_gate)
         {
-            if (!ReferenceEquals(_pendingPairing, session))
+            if (!ReferenceEquals(_pairingSlot, session))
             {
                 return;
             }
 
-            _pendingPairing = null;
+            _pairingSlot = null;
         }
 
         await session.DisposeAsync();
@@ -550,7 +583,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
 
         await _acceptLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
         await _beaconLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-        if (_pendingPairing is { } pairing)
+        if (_pairingSlot is PairingSession pairing)
         {
             await pairing.DisposeAsync();
         }
