@@ -1,8 +1,13 @@
 # Builds an unsigned x64 .msix for the Microsoft Store (the Store signs it).
 # The Store build compiles with SamaatStoreBuild=true, which turns the phone handoff off by default (AppOptions.PhoneHandoff).
-param([string]$Version = "1.0.0.0")
+# -Version defaults to <Version> in Directory.Build.props, plus the ".0" the Store requires.
+param([string]$Version = "")
 $ErrorActionPreference = 'Stop'
 
+if (-not $Version) {
+    $props = [xml](Get-Content (Join-Path $PSScriptRoot '..\..\Directory.Build.props') -Raw)
+    $Version = "$(@($props.Project.PropertyGroup.Version | Where-Object { $_ })[0]).0"
+}
 if ($Version -notmatch '^\d+\.\d+\.\d+\.0$') { throw "Version must be 4 dotted numbers ending in .0 (Store requirement), got '$Version'." }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $artifacts = Join-Path $repo 'artifacts'

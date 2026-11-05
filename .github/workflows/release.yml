@@ -1,0 +1,57 @@
+name: Release
+
+# Runs when a version tag is pushed: git tag v1.0.0 && git push origin v1.0.0 (see CONTRIBUTING.md, "Branches and
+# releases"). The tag must match <Version> in Directory.Build.props. It builds and tests on Windows, then attaches the
+# Windows app (zip) and, when the runner's Windows SDK can pack it, the unsigned Store package (.msix) to a GitHub release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Check the tag matches Directory.Build.props
+        id: version
+        shell: pwsh
+        run: |
+          $props = [xml](Get-Content Directory.Build.props -Raw)
+          $version = @($props.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          $tag = '${{ github.ref_name }}'
+          if ($tag -ne "v$version") { throw "Tag $tag doesn't match <Version>$version</Version> in Directory.Build.props." }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - run: dotnet build Samaat.slnx -c Release
+      - run: dotnet test Samaat.slnx -c Release --no-build
+
+      - name: Publish the Windows app
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          dotnet publish src/Samaat.App/Samaat.App.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --self-contained -o artifacts/app
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)." }
+          Compress-Archive -Path artifacts/app/* -DestinationPath "artifacts/Samaat-$version-win-x64.zip"
+
+      # The Store signs the package, so it is unsigned here. makeappx comes with the Windows SDK on the runner; if it
+      # isn't there, the release still gets the zip.
+      - name: Pack the Store package
+        id: msix
+        continue-on-error: true
+        shell: pwsh
+        run: ./packaging/msix/build-msix.ps1 -Version '${{ steps.version.outputs.version }}.0'
+
+      - name: Create the GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $files = @(Get-ChildItem artifacts -File -Include *.zip, *.msix -Recurse | ForEach-Object { $_.FullName })
+          gh release create '${{ github.ref_name }}' $files --title 'Samaat ${{ steps.version.outputs.version }}' --generate-notes --verify-tag

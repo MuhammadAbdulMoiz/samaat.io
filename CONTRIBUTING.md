@@ -2,7 +2,7 @@
 
 ## Workflow
 
-We work test-first (see [docs/STATUS.md §4](docs/STATUS.md#4-working-on-samaat-tdd)): write a failing test, make it pass, then refactor. Run `dotnet test Samaat.slnx` before every commit. CI runs it on Ubuntu and Windows.
+We work test-first (see [docs/STATUS.md §4](docs/STATUS.md#4-working-on-samaat-tdd)): write a failing test, make it pass, then refactor. Run `dotnet test Samaat.slnx` before every commit. CI runs it on Ubuntu and Windows (`tests/Samaat.Platform.Windows.Tests` runs on Windows only), and each job's summary shows line coverage per assembly. Dependabot opens weekly pull requests for NuGet packages and GitHub Actions.
 
 ## Branches and releases
 
@@ -14,7 +14,11 @@ We work test-first (see [docs/STATUS.md §4](docs/STATUS.md#4-working-on-samaat-
 | `hotfix/*` | An urgent fix to a released version | Branch from `master`, merge into `master`, then merge `master` back into dev |
 
 - **Start work from dev:** `git switch -c feat/<short-name> origin/feature/ui-redesign`, and open the pull request against `feature/ui-redesign`, not `master`.
-- **Release:** open a pull request from dev into `master`, merge it once CI passes, then tag the merge commit (`git tag v0.x.y && git push origin v0.x.y`).
+- **Release:**
+  1. On dev, set `<Version>` in `Directory.Build.props` to the new version (it starts at `1.0.0`, the Store package's version; the Store only accepts increasing versions).
+  2. Open a pull request from dev into `master` and merge it once CI passes.
+  3. Tag the merge commit with the same version: `git tag v1.0.1 && git push origin v1.0.1`.
+  4. The Release workflow (`.github/workflows/release.yml`) checks that the tag matches `<Version>`, builds and tests on Windows, and attaches the Windows app (zip) and the unsigned Store package (`.msix`) to a GitHub release. Upload the `.msix` to Partner Center yourself; the Store signs it.
 - **Keep dev current:** after a hotfix, or any change made on `master`, merge `master` back into dev so the two don't drift.
 - When dev is renamed to `dev`, GitHub moves open pull requests and the default-branch setting with it. Only this section and the CI trigger mention the old name.
 
