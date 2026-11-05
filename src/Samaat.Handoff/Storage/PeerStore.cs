@@ -181,7 +181,7 @@ public sealed class PeerStore
             }
 
             var file = new PeerStoreFile(SelfId, [.. _peers.Select(p => new PeerStoreEntry(p.Id, p.Name, _protector.Protect(p.Secret), p.PairedAt, p.Endpoint))]);
-            File.WriteAllText(temp, JsonSerializer.Serialize(file, HandoffJson.Default.PeerStoreFile));
+            WriteOwnerOnly(temp, JsonSerializer.Serialize(file, HandoffJson.Default.PeerStoreFile));
             File.Move(temp, _path, overwrite: true);
             LastError = null;
         }
@@ -190,5 +190,28 @@ public sealed class PeerStore
             LastError = $"Paired devices could not be saved: {e.Message}";
             SamaatLog.Warn("Phone link", LastError, e);
         }
+    }
+
+    /// <summary>
+    /// Outside Windows the secrets are stored as they are (<see cref="PlainSecretProtector"/>), so the file is created
+    /// readable and writable by its owner only (0600). The temp file is new each time, and the move keeps its mode.
+    /// </summary>
+    private static void WriteOwnerOnly(string path, string text)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            File.WriteAllText(path, text);
+            return;
+        }
+
+        File.Delete(path);
+        using var stream = new FileStream(path, new FileStreamOptions
+        {
+            Mode = FileMode.CreateNew,
+            Access = FileAccess.Write,
+            UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
+        });
+        using var writer = new StreamWriter(stream);
+        writer.Write(text);
     }
 }
