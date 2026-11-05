@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    # master holds releases; feature/ui-redesign is the integration branch (dev) for now. Keep "dev" listed so
+    # CI keeps running if the branch is renamed. Work branches are covered by pull_request.
+    branches: [master, feature/ui-redesign, dev]
   pull_request:
   # "Run workflow" on the Actions tab, e.g. to build a fresh APK.
   workflow_dispatch:
