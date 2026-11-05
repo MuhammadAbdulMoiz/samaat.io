@@ -64,7 +64,7 @@
           <StackPanel Grid.Column="1" Margin="8,0,0,0">
             <TextBlock Text="{Binding AdapterText}" FontSize="{StaticResource Samaat.FontSize.Meta}" TextWrapping="Wrap" />
             <TextBlock Classes="meta" TextWrapping="Wrap"
-                       Text="Without a vendor adapter, Samaat shows what Windows and standard Bluetooth services report." />
+                       Text="Without a vendor adapter, Samaat shows what Windows and standard Bluetooth services report" />
           </StackPanel>
         </Grid>
       </StackPanel>

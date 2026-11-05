@@ -57,7 +57,7 @@
               <PathIcon Data="{StaticResource Icon.Menu}" />
             </Button>
           </Grid>
-          <StackPanel Classes="compactOnly" Spacing="10" HorizontalAlignment="Center">
+          <StackPanel Classes="compactOnly" Spacing="12" HorizontalAlignment="Center">
             <ContentControl Content="{StaticResource BrandMark}" HorizontalAlignment="Center" />
             <Button Classes="icon sidebarToggle" Command="{Binding ToggleSidebarCommand}" HorizontalAlignment="Center"
                     ToolTip.Tip="{Binding SidebarToggleText}" AutomationProperties.Name="{Binding SidebarToggleText}">
@@ -70,13 +70,13 @@
           <Border Classes="chip" IsVisible="{Binding ModeText, Converter={x:Static ObjectConverters.IsNotNull}}"
                   ToolTip.Tip="{Binding ModeText}" AutomationProperties.Name="Simulation">
             <StackPanel Classes="chipRow" Orientation="Horizontal" Spacing="8">
-              <PathIcon Data="{StaticResource Icon.Sparkle}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Warn}" />
+              <PathIcon Data="{StaticResource Icon.Simulation}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Muted}" />
               <TextBlock Classes="full" Text="Simulation" />
             </StackPanel>
           </Border>
           <Button Classes="alertChip" IsVisible="{Binding HasAlertingDevices}" Command="{Binding ShowAlertingDeviceCommand}"
                   ToolTip.Tip="Show the device with a low battery" AutomationProperties.Name="{Binding AlertCountText}">
-            <StackPanel Orientation="Horizontal" Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="12">
               <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" />
               <TextBlock Classes="full" Text="{Binding AlertCountText}" />
               <TextBlock Classes="compactOnly" Text="{Binding AlertingDeviceCount}" />
@@ -108,7 +108,7 @@
               </Button.Flyout>
             </Button>
             <Button Classes="nav" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh devices" AutomationProperties.Name="Refresh devices">
-              <StackPanel Orientation="Horizontal" Spacing="10">
+              <StackPanel Orientation="Horizontal" Spacing="12">
                 <PathIcon Data="{StaticResource Icon.Refresh}" />
                 <TextBlock Classes="full" Text="Refresh devices" />
               </StackPanel>
@@ -140,7 +140,7 @@
           </Button>
           <Button Classes="nav" Classes.current="{Binding IsSettings}" ToolTip.Tip="Settings" AutomationProperties.Name="Settings"
                   Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Settings}">
-            <StackPanel Orientation="Horizontal" Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="12">
               <PathIcon Data="{StaticResource Icon.Settings}" />
               <TextBlock Classes="full" Text="Settings" />
             </StackPanel>

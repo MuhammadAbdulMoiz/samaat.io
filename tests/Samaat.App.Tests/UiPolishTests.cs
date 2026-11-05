@@ -249,9 +249,15 @@ public class ContrastTests
                 Check("Accent text on Surface", accent, Brush("Samaat.Surface", theme), 4.5);
                 Check("Accent text on Surface2", accent, Brush("Samaat.Surface2", theme), 4.5);
                 Check("Accent fill on Track", accent, Brush("Samaat.Track", theme), 3.0);
-                Check("Accent icon on the active sidebar row", accent, Over(Brush("Samaat.AccentSoft", theme), Brush("Samaat.Rail", theme)), 3.0);
+                // The active sidebar row is a neutral surface step (Key); only its glyph carries the accent.
+                Check("Accent icon on the active sidebar row", accent, Brush("Samaat.Key", theme), 3.0);
+                Check("Text on the active sidebar row", Brush("Samaat.Text", theme), Brush("Samaat.Key", theme), 4.5);
+                Check("Muted text on the active sidebar row", Brush("Samaat.Muted", theme), Brush("Samaat.Key", theme), 4.5);
                 Check("Wave on Surface", Brush("Samaat.Wave", theme), Brush("Samaat.Surface", theme), 3.0);
-                Check("Selected option text on accent-soft", Brush("Samaat.Text", theme), Over(Brush("Samaat.AccentSoft", theme), Brush("Samaat.Surface", theme)), 4.5);
+                // A selected option is a Surface2 step with an accent hairline, an accent icon tile and a check.
+                Check("Selected option text on Surface2", Brush("Samaat.Text", theme), Brush("Samaat.Surface2", theme), 4.5);
+                Check("Selected option meta on Surface2", Brush("Samaat.Muted", theme), Brush("Samaat.Surface2", theme), 4.5);
+                Check("Accent hairline on Surface2", accent, Brush("Samaat.Surface2", theme), 3.0);
             }
         }
         finally

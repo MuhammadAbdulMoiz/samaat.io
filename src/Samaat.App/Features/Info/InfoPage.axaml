@@ -27,13 +27,13 @@
             </StackPanel>
           </Button>
         </Grid>
-        <StackPanel Spacing="6" AutomationProperties.Name="{Binding SummaryText}">
+        <StackPanel Spacing="8" AutomationProperties.Name="{Binding SummaryText}">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Text="Features available" Classes="meta" />
             <TextBlock Grid.Column="1" Text="{Binding FeatureCountText}" Classes="number" FontSize="{StaticResource Samaat.FontSize.Meta}" />
           </Grid>
           <ProgressBar Classes="level" Minimum="0" Maximum="100" Value="{Binding AvailablePercent}" />
-          <TextBlock Text="{Binding SummaryText}" Classes="meta" />
+          <TextBlock Text="{Binding SupportText}" Classes="meta" />
         </StackPanel>
       </StackPanel>
     </Border>
@@ -67,7 +67,7 @@
                 <StackPanel>
                   <ToggleButton x:Name="Toggle" Classes="disclosure" AutomationProperties.Name="{Binding Title}">
                     <Grid ColumnDefinitions="*,Auto,Auto">
-                      <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                      <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <PathIcon Data="{StaticResource Icon.Dash}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Faint}" />
                         <TextBlock Text="{Binding Title}" />
                       </StackPanel>

@@ -94,6 +94,31 @@ public class DesignSystemTests
         Assert.Empty(Violations(file, Attribute("CornerRadius", "(2|6|7|8|10)")));
     }
 
+    /// <summary>The sparkle reads as "AI magic". Samaat has none, so every icon names what it does (unslop audit).</summary>
+    [Theory]
+    [MemberData(nameof(MarkupFiles))]
+    public void Markup_DoesNotUseTheSparkleIcon(string file)
+    {
+        // The geometry stays defined in Samaat.UI for the phone app; this checks that no view uses it.
+        Assert.Empty(Violations(file, new Regex(@"(Static|Dynamic)Resource Icon\.Sparkle\b")));
+    }
+
+    /// <summary>No emoji in anything the app shows or copies: icons come from the Fluent set, words say the rest.</summary>
+    [Fact]
+    public void AppSource_HasNoEmoji()
+    {
+        var emoji = new Regex(@"[\u2600-\u27BF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDEFF]|\uD83E[\uDD00-\uDEFF]");
+        var dir = Path.Combine(Root.FullName, "src", "Samaat.App");
+        var found = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories)
+            .Where(f => f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".axaml", StringComparison.Ordinal))
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                        && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+            .SelectMany(f => Violations(Path.GetRelativePath(Root.FullName, f), emoji))
+            .ToList();
+
+        Assert.Empty(found);
+    }
+
     [AvaloniaTheory]
     [InlineData("Samaat.Radius.Hairline")]
     [InlineData("Samaat.Radius.Control")]

@@ -162,3 +162,25 @@ Until now only colours were tokens. Radii, the type ramp, hit-target sizes, shad
 **Guard rails.** `DesignSystemTests` scans every `.axaml` file in `Samaat.App` and `Samaat.UI`, except the two token dictionaries. A build fails on a hex colour, a literal font size or shadow, or a literal radius that has a token. Round shapes, whose radius is half their size (the 32 px swatch's 16, the hero stage's 14), are geometry, not style, and may stay literal. The test also checks that every metric token resolves in both themes.
 
 **Where values live now.** Theme colours go in `Tokens.axaml`. Anything that doesn't change with the theme goes in `Metrics.axaml`. Component looks are style classes in `Samaat.App/Styles`. Views pick classes and tokens, never raw values.
+
+## Unslop polish pass (2026-11-05)
+
+An audit with the [unslop](https://x.com/heydamir) method (by Damir Sokolovsky, CC BY 4.0) found the app already designed: no gradient surfaces, gradient text, emoji, uppercase labels or looping motion, one icon set, tabular figures and tested contrast. So this was a polish pass inside the existing "Listening room" direction, fixing only what the audit found.
+
+**Direction (unchanged, written down):** a Windows companion that shows battery for each piece, noise control and connections for earbuds from any brand, and says plainly what each pair can't do. Character: exact, candid, quietly technical. World: a listening room at night, ink-black gear with one lime signal light. Moments: the device stage and the battery figures. Signature: the battery ring around each piece.
+
+| Before | After | Why |
+|---|---|---|
+| A sparkle icon on "Simulation", "Adaptive" and "Reduce motion" | Fluent `beaker`, `sound_wave_circle` and `slide_transition` icons. The Simulation chip's icon is muted instead of amber | A sparkle reads as "AI magic" and says nothing here. Simulation isn't a warning |
+| The selected sidebar row and selected options were filled with lime, with a lime border, icon and check on top | The selected row is a raised neutral key with a lit edge, and only its glyph is lime. Selected options, the sharing row, the active host and the chosen layout card are a `Surface2` step with an accent hairline and a check | The accent marks the one thing that matters instead of tinting whole blocks |
+| Page titles and the wordmark at weight 700 | 600 | Size carries the hierarchy |
+| Diagnostics said "16 of 16" twice | The meter keeps the count; the line under it says only the support tier | One fact, once |
+| One-sentence captions ended with a full stop half the time | None do. Text with several sentences keeps its full stops | Captions are labels, not paragraphs |
+| Off-grid spacing: alerts 10×6, feature cells 10×8, battery tiles 12×10, tabs 14×0, option rows 8×6, gaps of 6 and 10 | Alerts 12×8 (one line is now 32 px, the height of the buttons beside it), feature cells 12×8, tiles 12, tabs 12×0, option rows and strips 8, gaps of 8 and 12 | Everything sits on the 4 px grid |
+| A ⚡ emoji marked charging in the copied report | The word "charging" | No emoji anywhere |
+
+The logo keeps its glow: it is the shipped brand mark. `DesignSystemTests` now also fails on emoji anywhere in `Samaat.App` and on any use of the sparkle icon, and `ContrastTests` checks text and the accent on the new neutral selection surfaces.
+
+**Suggested, not done:** the README's lead screenshot shows the simulated Buds Pro as grey silhouettes with three "?" badges, so the one bright element on screen reads as "unknown". Giving the simulator's devices real artwork would let the device stage be the moment it is designed to be. The overall level also appears four times on the Overview (sidebar, artwork, the figure under the artwork, the Overall tile); dropping the figure under the artwork would remove one, but changes the device rail's layout.
+
+![Overview](../images/buds-pro.png) ![Sound](../images/buds-pro-sound.png) ![Settings](../images/settings.png)

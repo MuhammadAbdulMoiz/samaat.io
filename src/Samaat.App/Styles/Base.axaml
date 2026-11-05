@@ -11,12 +11,12 @@
   <!-- Type: page title 22, panel title 15, body 13, meta 12, figures 30 at weight 600 -->
   <Style Selector="TextBlock.display">
     <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
-    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.title">
     <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
     <Setter Property="FontSize" Value="{StaticResource Samaat.FontSize.Title}" />
-    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.panelTitle">
     <Setter Property="FontSize" Value="{StaticResource Samaat.FontSize.PanelTitle}" />
@@ -90,10 +90,11 @@
   <Style Selector="Border.chip TextBlock">
     <Setter Property="FontSize" Value="{StaticResource Samaat.FontSize.Meta}" />
   </Style>
+  <!-- 12,8 makes a one-line alert 32 px tall, the same as the buttons beside it -->
   <Style Selector="Border.alert">
     <Setter Property="Background" Value="{DynamicResource Samaat.WarnSoft}" />
     <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Control}" />
-    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="Padding" Value="12,8" />
   </Style>
   <!-- Alert and error messages: meta size, semibold, in the status colour -->
   <Style Selector="Border.alert TextBlock">

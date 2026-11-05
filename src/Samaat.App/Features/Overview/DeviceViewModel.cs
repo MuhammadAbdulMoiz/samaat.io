@@ -499,10 +499,10 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
         var missing = Figures.Skip(1).Where(f => !f.IsReported).Select(f => f.Label.ToLowerInvariant()).ToList();
         BatteryReasonText = !HasSummary && !components
-            ? IsConnected ? "This device reports no battery level." : "Connect the device to read its battery."
+            ? IsConnected ? "This device reports no battery level" : "Connect the device to read its battery"
             : components
-                ? missing.Count > 0 ? $"The {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device." : "Each level is reported by the earbuds."
-                : "Left, right and case aren't reported for this device.";
+                ? missing.Count > 0 ? $"The {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device" : "Each level is reported by the earbuds"
+                : "Left, right and case aren't reported for this device";
     }
 
     private void Update()

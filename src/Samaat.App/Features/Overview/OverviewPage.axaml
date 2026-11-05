@@ -28,7 +28,7 @@
         </Grid>
 
         <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Left">
-          <StackPanel Orientation="Horizontal" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="8">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
             <TextBlock Text="{Binding AlertText}" />
           </StackPanel>
@@ -61,7 +61,7 @@
                 <DataTemplate x:DataType="sound:NoiseModeOptionViewModel">
                   <Button Classes="tab" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
                           AutomationProperties.Name="{Binding Label}" ToolTip.Tip="{Binding Description}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
                       <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" />
                       <TextBlock Text="{Binding Label}" />
                     </StackPanel>
@@ -79,7 +79,7 @@
           <WrapPanel IsVisible="{Binding !IsUnavailable}">
             <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" Margin="0,0,8,0" />
             <Border Classes="alert critical" IsVisible="{Binding HasError}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="8">
                 <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
                 <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
               </StackPanel>
