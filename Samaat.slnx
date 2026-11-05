@@ -3,6 +3,7 @@
     <Project Path="src/Samaat.App/Samaat.App.csproj" />
     <Project Path="src/Samaat.Cli/Samaat.Cli.csproj" />
     <Project Path="src/Samaat.Core/Samaat.Core.csproj" />
+    <Project Path="src/Samaat.Drivers/Samaat.Drivers.csproj" />
     <Project Path="src/Samaat.Handoff/Samaat.Handoff.csproj" />
     <Project Path="src/Samaat.Platform.Windows/Samaat.Platform.Windows.csproj" />
     <Project Path="src/Samaat.Protocols.FastPair/Samaat.Protocols.FastPair.csproj" />

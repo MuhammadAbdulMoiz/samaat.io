@@ -24,15 +24,9 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
     /// <summary>The simulator is used when asked for, or when this build has no real Bluetooth backend.</summary>
     public bool UsesSimulator => Simulate || !HasRealBluetooth;
 
-    /// <summary>Known models from the <c>devices/</c> folder next to the app. Drivers register here as they're built.</summary>
-    public static DriverRegistry CreateRegistry()
-    {
-        var registry = new DriverRegistry(DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
-        registry.Register(new Samaat.Protocols.Jieli.JieliDriver());
-        registry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
-        registry.Register(new Samaat.Protocols.Bose.BoseBmapDriver());
-        return registry;
-    }
+    /// <summary>Every shipped driver, with the known models from the <c>devices/</c> folder next to the app.</summary>
+    public static DriverRegistry CreateRegistry() =>
+        Samaat.Drivers.BuiltInDrivers.CreateRegistry(Path.Combine(AppContext.BaseDirectory, "devices"));
 
     public IReadOnlyList<IDeviceSource> CreateSources(TimeProvider time)
     {

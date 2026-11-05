@@ -18,11 +18,7 @@ var includeNonAudio = args.Contains("--all-devices");
 
 var sources = new List<IDeviceSource>();
 #if SAMAAT_WINDOWS
-var driverRegistry = new Samaat.Core.Drivers.DriverRegistry(
-    Samaat.Core.Drivers.DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
-driverRegistry.Register(new Samaat.Protocols.Jieli.JieliDriver());
-driverRegistry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
-driverRegistry.Register(new Samaat.Protocols.Bose.BoseBmapDriver());
+var driverRegistry = Samaat.Drivers.BuiltInDrivers.CreateRegistry(Path.Combine(AppContext.BaseDirectory, "devices"));
 sources.Add(new Samaat.Platform.Windows.WindowsDeviceSource(includeNonAudio: includeNonAudio, registry: driverRegistry));
 #else
 if (!simulate)
