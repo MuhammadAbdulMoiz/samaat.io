@@ -89,6 +89,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>The Phone section; set by the shell.</summary>
     public Phone.PhoneLinkViewModel? PhoneLink { get; set; }
 
+    /// <summary>The phone handoff is switched off (<see cref="AppOptions.PhoneHandoff"/>): the Phone panel says it's coming.</summary>
+    public bool ShowPhoneComingSoon { get; set; }
+
     // Doubles because Avalonia's Slider binds to double; values are always whole numbers.
     [ObservableProperty]
     public partial double LowThreshold { get; set; }

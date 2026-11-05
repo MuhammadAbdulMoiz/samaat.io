@@ -179,19 +179,19 @@ public sealed class PhoneLinkFlowTests
     private static async Task PairAsync(MainWindowViewModel viewModel, PhoneLinkClient phone, Action? whilePrompted = null)
     {
         viewModel.Settings.PhoneLink!.PairCommand.Execute(null);
-        Assert.True(viewModel.PhoneLink.ShowWaiting);
+        Assert.True(viewModel.PhoneLink!.ShowWaiting);
         await UntilAsync(() => phone.PairableComputers.Count == 1, "the phone to hear the computer");
         var endpoint = phone.PairableComputers[0].Endpoint;
         var session = await phone.BeginPairingAsync(endpoint);
-        await UntilAsync(() => viewModel.PhoneLink.HasRequest, "the pairing prompt");
-        Assert.Equal(session.Code, viewModel.PhoneLink.Request!.Code);
-        Assert.Equal("Pixel 8 wants to pair", viewModel.PhoneLink.Request.Title);
+        await UntilAsync(() => viewModel.PhoneLink!.HasRequest, "the pairing prompt");
+        Assert.Equal(session.Code, viewModel.PhoneLink!.Request!.Code);
+        Assert.Equal("Pixel 8 wants to pair", viewModel.PhoneLink!.Request.Title);
         whilePrompted?.Invoke();
 
         var phoneSide = phone.FinishPairingAsync(session, true, endpoint: endpoint);
-        await viewModel.PhoneLink.Request.AcceptCommand.ExecuteAsync(null);
+        await viewModel.PhoneLink!.Request.AcceptCommand.ExecuteAsync(null);
         Assert.True(await phoneSide);
-        await UntilAsync(() => viewModel.PhoneLink.Phones.SingleOrDefault()?.IsOnline == true, "the phone to come online");
+        await UntilAsync(() => viewModel.PhoneLink!.Phones.SingleOrDefault()?.IsOnline == true, "the phone to come online");
     }
 
     [AvaloniaFact]
@@ -201,8 +201,8 @@ public sealed class PhoneLinkFlowTests
         try
         {
             await PairAsync(viewModel, phone);
-            Assert.False(viewModel.PhoneLink.HasRequest);
-            Assert.False(viewModel.PhoneLink.IsPairingOpen);
+            Assert.False(viewModel.PhoneLink!.HasRequest);
+            Assert.False(viewModel.PhoneLink!.IsPairingOpen);
             Assert.Contains(viewModel.Alerts, a => a.Contains("Pixel 8 is paired"));
 
             var buds = viewModel.Devices.Single(d => d.Name == "Simulated Buds Pro");
@@ -274,7 +274,7 @@ public sealed class PhoneLinkFlowTests
             Assert.True(move.ShowSetup);
             move.OpenSettingsCommand.Execute(null);
             Assert.Equal(AppSection.Settings, viewModel.Section);
-            Assert.False(viewModel.PhoneLink.Host.IsListening);
+            Assert.False(viewModel.PhoneLink!.Host.IsListening);
         }
         finally
         {
@@ -292,10 +292,10 @@ public sealed class PhoneLinkFlowTests
         {
             await PairAsync(viewModel, phone);
 
-            viewModel.PhoneLink.Phones[0].ForgetCommand.Execute(null);
+            viewModel.PhoneLink!.Phones[0].ForgetCommand.Execute(null);
 
-            Assert.False(viewModel.PhoneLink.HasPhones);
-            Assert.False(viewModel.PhoneLink.Host.IsListening);
+            Assert.False(viewModel.PhoneLink!.HasPhones);
+            Assert.False(viewModel.PhoneLink!.Host.IsListening);
             await UntilAsync(() => phone.State != ComputerLinkState.Online, "the phone to drop");
         }
         finally
@@ -312,13 +312,13 @@ public sealed class PhoneLinkFlowTests
         var (window, viewModel, phone) = await ShowAsync();
         try
         {
-            viewModel.PhoneLink.PairCommand.Execute(null);
-            Assert.True(viewModel.PhoneLink.IsPairingOpen);
+            viewModel.PhoneLink!.PairCommand.Execute(null);
+            Assert.True(viewModel.PhoneLink!.IsPairingOpen);
 
-            await viewModel.PhoneLink.CancelPairingCommand.ExecuteAsync(null);
+            await viewModel.PhoneLink!.CancelPairingCommand.ExecuteAsync(null);
 
-            Assert.False(viewModel.PhoneLink.IsPairingOpen);
-            Assert.True(viewModel.PhoneLink.ShowPairButton);
+            Assert.False(viewModel.PhoneLink!.IsPairingOpen);
+            Assert.True(viewModel.PhoneLink!.ShowPairButton);
         }
         finally
         {

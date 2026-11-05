@@ -120,6 +120,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>The Links page's "Your phone" card; set by the shell.</summary>
     public Phone.PhoneMoveViewModel? PhoneMove { get; set; }
 
+    /// <summary>The phone handoff is switched off (<see cref="AppOptions.PhoneHandoff"/>): the Links page says it's coming.</summary>
+    public bool ShowPhoneComingSoon { get; set; }
+
     public ConnectionsViewModel Connections { get; }
 
     public DeviceInfoViewModel Info { get; }

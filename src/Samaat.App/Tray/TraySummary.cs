@@ -20,4 +20,11 @@ public static class TraySummary
     /// <summary>The one connect-or-disconnect menu item for a device; null when the device has no link feature.</summary>
     public static string? LinkItem(TrayDevice device) =>
         !device.HasLink ? null : device.Connected ? $"Disconnect {device.Name}" : $"Connect {device.Name}";
+
+    /// <summary>The tray's way into pairing; only offered when the phone handoff ships (<see cref="AppOptions.PhoneHandoff"/>).</summary>
+    public const string PairPhoneItem = "Pair a phone…";
+
+    /// <summary>The app-level menu items below the devices, in order.</summary>
+    public static IReadOnlyList<string> AppItems(bool phoneHandoff) =>
+        phoneHandoff ? ["Open Samaat", PairPhoneItem, "Refresh devices", "Quit"] : ["Open Samaat", "Refresh devices", "Quit"];
 }
