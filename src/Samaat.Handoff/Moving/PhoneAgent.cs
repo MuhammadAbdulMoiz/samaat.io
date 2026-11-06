@@ -94,7 +94,7 @@ public sealed class PhoneAgent(IPhoneAudioLink audio)
         try
         {
             OnChanged(null, EventArgs.Empty); // in case it went off before the subscription
-            bluetoothOff.Token.ThrowIfCancellationRequested(); // never start a connect that could land after we said no
+            bluetoothOff.Token.ThrowIfCancellationRequested(); // don't start a connect once Bluetooth is known to be off
             connect = Audio.ConnectAsync(address, PhoneTimeout, bluetoothOff.Token);
             // WaitAsync: don't depend on the platform honouring the token to answer promptly.
             var result = await connect.WaitAsync(bluetoothOff.Token);
