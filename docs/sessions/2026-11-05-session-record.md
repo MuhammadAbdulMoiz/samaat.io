@@ -292,3 +292,123 @@ dotnet run --project src/Samaat.Mobile.Preview                      # phone UI i
 - Test-first.
 - A full test run before pushing.
 - "Create a merge commit" whenever a PR is stacked on another.
+
+---
+
+## End of day: where everything stands (2026-11-05, evening)
+
+**Start here tomorrow.** This section supersedes the PR and branch status in §1.
+
+### What finished since the morning
+
+- **Desktop PRs #2, #4 and #5 merged** into `feature/ui-redesign`, which is now at `473a430`.
+- **Desktop PR #6, "Audit fixes: issues 2–10"** (`claude/audit-fixes`), opened by session `session_01X2PKY3hiFnxUGWkJ1UA4D7`.
+  - Done: issues 3–7, 9 and 10. Issues 2 (licence) and 8 (`.claude/`) are prepared and waiting on the owner.
+  - **1,038 tests pass** (Core 310, Protocols 215, App 406, Handoff 107), plus 25 Windows platform tests that CI runs on `windows-latest`.
+  - The PR **already merged `master`** (the drift is gone) **and an earlier version of this branch**.
+  - Decision record: `docs/decisions/2026-11-05-audit-fixes.md`.
+- **Mobile PR #1, "Mobile: shared foundations, design system and quality passes"** (`samaat-mobile`, `claude/mobile-improvements` → `main`), opened by session `session_01X2PKY5L5KEwvM7pq2gchR2`.
+  - 7 steps, one commit each; **18 → 163 tests**.
+  - The submodule pin moves to `473a430` (it doesn't include #6).
+  - Uses `BuiltInDrivers`, so the phone gains Bose.
+  - Adds phone design tokens (`Styles/Metrics.Mobile.axaml`: 44 px touch targets, body text 15), an unslop polish, a stress test that fixed 7 breaks, Android "Remove animations" support, the `DeviceItemViewModel` split, and `MobileLog`.
+  - Android projects were **not compiled** (no Android SDK in the container); the Android CI job is the first real check.
+  - Decision record: `docs/decisions/2026-11-05-mobile-improvements.md` (in `samaat-mobile`).
+- **Licensing direction chosen by the owner:** reuse GPL, MIT and Apache code, which means **GPL-3.0-or-later for both repos**. The plan is in [`docs/plans/2026-11-05-licensing-and-porting.md`](../plans/2026-11-05-licensing-and-porting.md), on this branch.
+- **Competitive research:**
+  - Verified real: PairFree, BudsLink, QuickBuds, Gadgetbridge, GalaxyBudsClient, OpenSCQ30, SonyHeadphonesClient, LibrePods.
+  - **Not found** (don't benchmark against them): "Earbridge", "OpenPeats", "B4S".
+  - The comparison and porting order are in the plan above.
+
+### Merge order now
+
+1. **samaat.io PR #6** into `feature/ui-redesign`, with **"Create a merge commit"**. It contains merges of `master` and of this branch's earlier commit; a merge commit keeps those intact.
+2. **samaat-mobile PR #1** into `main`, after its Android CI job passes.
+3. **This branch** (`docs/session-2026-11-05`), after #6: open a PR into `feature/ui-redesign` if you want the record and the plan in dev. It was built on #6's version of the record, so it merges cleanly after #6.
+4. **Then a small mobile follow-up:** move the phone's submodule pin to include #6. It brings shared logging (`SamaatLog`, to replace `MobileLog`), the phone-handoff flag and the hardening.
+
+### Branches
+
+| Repo | Branch | State | Next |
+|---|---|---|---|
+| samaat.io | `feature/ui-redesign` | dev, at `473a430` | Receives #6 |
+| samaat.io | `master` | releases, at `88614a0` | Nothing pending once #6 merges (#6 contains `master`). The first release comes from dev with tag `v1.0.0` |
+| samaat.io | `claude/audit-fixes` | PR #6, open | Merge (merge commit) |
+| samaat.io | `docs/session-2026-11-05` | This record and the licensing plan; not in dev | Merge after #6, or keep as reference |
+| samaat.io | `chore/claude-plugins-skills`, `claude/dashboard-views-plan`, `claude/funny-cerf-0f3kyg`, `claude/phone-handoff`, `feature/remaining-modules` | Fully merged, stale | **Delete** (owner; the session proxy refused) |
+| samaat-mobile | `main` | at `6c29407` | Receives mobile #1 |
+| samaat-mobile | `claude/mobile-improvements` | mobile PR #1, open | Merge after Android CI |
+
+Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`, `claude/unslop-polish`, `claude/ui-quality`, `claude/fix-pairing-race`) are already deleted on GitHub.
+
+### Documents to read
+
+| Doc | Where | What |
+|---|---|---|
+| This record | `docs/sessions/2026-11-05-session-record.md` on `docs/session-2026-11-05` | Everything; start here |
+| Merge and release plan | `docs/plans/2026-11-05-merge-and-release.md` on `docs/session-2026-11-05` | Merging the open PRs, preparing v1.0.0, releasing to `master` with a tag, the phone app's release, hotfixes |
+| Launch checklist (tickable) | https://claude.ai/artifact/JXH3HjdC7FiqSXZJMqHRa4 (private to the owner; ticks save themselves) | Every step from merging the PRs to Google Play, the QR code and turning handoff on |
+| Licensing and porting plan | `docs/plans/2026-11-05-licensing-and-porting.md` on `docs/session-2026-11-05` | GPL-3.0-or-later, porting rules, brand order, per-port checklist |
+| Decision records | `docs/decisions/` on `feature/ui-redesign` (PR #1–#5, pairing race) and on `claude/audit-fixes` (audit fixes) | Why each change was made |
+| Mobile decision record | `samaat-mobile`: `docs/decisions/2026-11-05-mobile-improvements.md` on `claude/mobile-improvements` | The phone work |
+| `.claude/` keep-list proposal | `.claude/README.md` on `claude/audit-fixes` | Owner decision 8 |
+| Architecture, UI notes, ideas | `docs/ARCHITECTURE.md`, `docs/design/ui-audit.md`, `docs/FEATURE-IDEAS.md` | Reference |
+| Audit report | Uncommitted in session `session_01X2PKY5Vzd1NvxaL4VoAnQr` | Summary in §4; ask that session to commit it, or skip |
+
+### Owner decisions (consolidated)
+
+- [ ] **Licence:** add `LICENSE` with GPL-3.0-or-later to both repos (direction chosen; follow the plan's §1 checks: contributor rights, Store policy).
+- [ ] **Phone-handoff flag default:** on in normal builds, off in the Store build (`AppOptions.PhoneHandoffDefault`). Decided: it stays off in the Store build until the phone app is on Google Play and the desktop app shows a QR code to download it (merge and release plan, Phase D rule). Then it's switched on in `v1.1.0`.
+- [ ] **Version:** `1.0.0` (matches the MSIX script). Confirm before tagging `v1.0.0`.
+- [ ] **`.claude/` keep-list** from `.claude/README.md` (on `claude/audit-fixes`).
+- [ ] **ECC plugin in samaat-mobile:** add it to `samaat-mobile/.claude/settings.json` yourself; auto mode blocked the session. The JSON is in the mobile decision record.
+- [ ] **"Overall" battery label** (desktop and phone): rename to "lowest bud"?
+- [ ] **Delete the 5 stale branches;** turn on "Automatically delete head branches"; set the default branch to `feature/ui-redesign`; protect `master` and dev.
+- [ ] **On real hardware:** the Windows checklist, phone handoff on a real phone, Bose on the phone, "Remove animations" on Android.
+
+### Follow-ups for the desktop repo (from mobile PR #1)
+
+- `src/Samaat.Handoff/Moving/HandoffCoordinator.cs:102`, `:135`: "… moved to …." messages end with a full stop.
+- `src/Samaat.App/Features/Overview/DeviceViewModel.cs:505-519`: the battery caption rule is duplicated in the phone's `BatterySummary`. Move it to shared presentation code.
+- `src/Samaat.Simulator/WorstCaseDevices.cs:55`, `:63`, `:70`: these worst-case devices have no Bluetooth address, so the phone can't test moves with them.
+- `src/Samaat.UI/Styles/Artwork.axaml:75-83`: no shared reduce-motion rule for the ring glide.
+- `src/Samaat.UI/Styles/Icons.axaml:25`: `Icon.Sparkle` is now unused by both apps.
+- Replace the phone's `MobileLog` with the shared `SamaatLog` once #6 merges.
+
+### Tomorrow, in order
+
+*(The full merge and release steps are in [`docs/plans/2026-11-05-merge-and-release.md`](../plans/2026-11-05-merge-and-release.md). CI is already green on #6 and on mobile #1, including the Android job.)*
+
+1. Check CI on PR #6 (Ubuntu and Windows, including the Windows test project and the coverage summary) and on mobile PR #1 (the Android job).
+2. Merge #6 (merge commit), then mobile #1.
+3. Make the owner decisions above. The licence comes first, because the porting plan depends on it.
+4. Open a branch for the licensing foundations (plan §2), one PR per repo.
+5. Bump the mobile submodule to include #6; replace `MobileLog` with `SamaatLog`.
+6. Start the first port: Samsung Galaxy Buds from GalaxyBudsClient (plan §3, phase 1).
+7. Do the desktop follow-ups above, in a small PR.
+8. Optionally, tag `v1.0.0` once the decisions are made. The release workflow then builds the zip and the MSIX.
+9. After v1.0.0: put the phone app on Google Play, add the QR code to the desktop app, then turn phone handoff on in the Store build and release `v1.1.0` (plan, Phase D rule).
+
+## Licence work (2026-11-06)
+
+Done by session `session_01X2PKY3q149pLosj8ZNQWeT`, following the licensing plan's §1–2.
+
+- **Desktop: [PR #7](https://github.com/MuhammadAbdulMoiz/samaat.io/pull/7), "Licence: GPL-3.0-or-later and porting rules"** (`claude/licence-gpl` → `feature/ui-redesign`).
+  - Stacked on #6. Merge it **after #6**, with "Create a merge commit".
+  - Adds `LICENSE` (the unmodified GPL-3.0 text), `PackageLicenseExpression`, and the legal notice in Settings → About.
+  - Adds the CONTRIBUTING porting rule, the "Ported protocol code" table in `THIRD_PARTY_NOTICES.md`, `ProvenanceTests`, a README Licence section, `docs/COMPETITIVE-LANDSCAPE.md` and the decision record `docs/decisions/2026-11-05-licence-gpl.md`.
+  - Build: 0 warnings. **1,050 tests pass** (Core 320, Protocols 215, App 408, Handoff 107).
+- **Rights check (desktop):** the only authors are the owner and Claude sessions, so nobody else's agreement is needed. Owner to confirm: 89 commits use a `@zixel.cn` company address, so check that no employer holds rights in that work.
+- **Microsoft Store:** no blocker found. The App Developer Agreement §4(c) makes the developer responsible for FOSS compliance, including source availability. Microsoft's pages were blocked from the session, so the owner should read them directly.
+- **Research updates:**
+  - QuickBuds is **GPL-3.0-or-later** (it was unconfirmed).
+  - PairFree now lists **12 brands**.
+  - Each project's licence was re-read from its own `LICENSE` file.
+- **Phone: not done.** Attaching `samaat-mobile` to the session was refused by the session's permission check.
+  - Its licence PR (`claude/licence-gpl` from `claude/mobile-improvements` → `main`, after mobile #1) and its rights check are still open.
+  - Next step: run it in a session that already has `samaat-mobile` attached.
+- **Left:**
+  - the phone PR;
+  - the owner checkboxes in PR #7;
+  - a provenance header for `JlAuthCipher.cs`;
+  - credits for the bundled packages in `THIRD_PARTY_NOTICES.md`.
