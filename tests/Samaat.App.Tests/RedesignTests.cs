@@ -252,7 +252,7 @@ public class RedesignShellTests
         var pro = vm.Devices.Single(d => d.Name == "Simulated Buds Pro");
         var headset = vm.Devices.Single(d => d.Name == "Simulated Headset");
 
-        Assert.Equal(["Overall", "Left bud", "Right bud", "Case"], pro.Figures.Select(f => f.Label));
+        Assert.Equal(["Lowest bud", "Left bud", "Right bud", "Case"], pro.Figures.Select(f => f.Label));
         Assert.All(pro.Figures, f => Assert.Matches(@"^\d+$", f.Value));
         Assert.All(pro.Figures, f => Assert.Equal("%", f.Unit));
 
@@ -277,10 +277,10 @@ public class RedesignShellTests
         var pro = vm.Devices.Single(d => d.Name == "Simulated Buds Pro");
         var headset = vm.Devices.Single(d => d.Name == "Simulated Headset");
 
-        Assert.Equal(["Overall"], headset.ShownFigures.Select(f => f.Label));
+        Assert.Equal(["Lowest bud"], headset.ShownFigures.Select(f => f.Label));
         Assert.False(headset.ShowsComponentFigures);
         Assert.Equal("Left, right and case aren't reported for this device", headset.BatteryReasonText);
-        Assert.Equal(["Overall", "Left bud", "Right bud", "Case"], pro.ShownFigures.Select(f => f.Label));
+        Assert.Equal(["Lowest bud", "Left bud", "Right bud", "Case"], pro.ShownFigures.Select(f => f.Label));
         Assert.True(pro.ShowsComponentFigures);
         Assert.Equal([false, true, true, false], pro.ShownFigures.Select(f => f.IsBud));
         Assert.True(pro.ShownFigures.Single(f => f.Label == "Right bud").IsRightBud);
@@ -289,7 +289,7 @@ public class RedesignShellTests
         vm.SelectDeviceCommand.Execute(headset);
         Pump();
         var visible = All<TextBlock>(window).Where(t => t.IsEffectivelyVisible).Select(t => t.Text).ToList();
-        Assert.Contains("Overall", visible);
+        Assert.Contains("Lowest bud", visible);
         Assert.DoesNotContain("Right bud", visible);
         Assert.DoesNotContain("Case", visible);
 
