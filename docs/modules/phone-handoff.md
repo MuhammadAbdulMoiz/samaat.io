@@ -23,7 +23,7 @@ Computer (coordinator)                      Phone
   Disconnect here (IPcLinkFeature)
   ConnectAudio(address) ──────────────────▶  hidden connect → else ask the user (one tap)
                    ◀─────────────────────── Confirmed once A2DP/HFP is connected
-  if not confirmed in 60 s: connect here again (rollback)
+  if not confirmed in 20 s: ReleaseAudio to the phone (stops its connect) and connect here again (rollback)
 ```
 
 Moving to the computer is the mirror image: the phone releases, the computer connects, and the phone takes them back if that fails. A move started on the phone sends `StartHandoff` to the computer, which runs the same steps. Outcomes: **Moved**, **NotStarted** (refused before anything changed), **RolledBack**, and **Stranded** (the rollback failed too; the message says what to do).

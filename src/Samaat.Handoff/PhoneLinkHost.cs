@@ -594,7 +594,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         return true;
     }
 
-    private async Task<ReplyMessage?> HandleStartHandoffAsync(PhoneSession session, StartHandoffMessage request, CancellationToken ct)
+    private async Task<ReplyMessage?> HandleStartHandoffAsync(PhoneSession session, StartHandoffMessage request)
     {
         var address = MessageCodec.NormalizeAddress(request.Address);
         var device = _devices().FirstOrDefault(d => d.Identity.Details?.Address is { } a && MessageCodec.NormalizeAddress(a) == address);
@@ -604,7 +604,8 @@ public sealed class PhoneLinkHost : IAsyncDisposable
                 $"{ComputerName} doesn't have these earbuds paired.", HandoffOutcome.NotStarted);
         }
 
-        var result = await MoveAsync(device, session.Id, request.Direction, null, ct);
+        // Not the session's token: a move the phone started must finish or roll back here even if the phone drops mid-move.
+        var result = await MoveAsync(device, session.Id, request.Direction, null, _disposed.Token);
         return new ReplyMessage(request.Id, result.Succeeded ? CommandStatus.Confirmed : CommandStatus.Rejected, result.Message, result.Outcome);
     }
 
@@ -689,7 +690,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
                     host.RaiseChanged();
                     return null;
                 case StartHandoffMessage start:
-                    return await host.HandleStartHandoffAsync(this, start, ct);
+                    return await host.HandleStartHandoffAsync(this, start);
                 default:
                     return null;
             }
