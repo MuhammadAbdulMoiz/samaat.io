@@ -236,8 +236,9 @@ public sealed class FastPairBatteryFeature : IBatteryFeature, IDeviceInfoFeature
         if (battery is not null)
         {
             _firstReading.TrySetResult();
-            _nextReading?.TrySetResult();
             Changed?.Invoke(this, battery);
+            // After Changed, so a refresh's caller has seen the reading by the time RefreshAsync returns.
+            _nextReading?.TrySetResult();
         }
 
         if (infoChanged)
