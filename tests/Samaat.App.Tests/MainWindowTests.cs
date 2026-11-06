@@ -160,13 +160,21 @@ public class MainWindowTests
     }
 
     /// <summary>Lets page cross-fades and value transitions finish (headless time only moves when ticked).</summary>
+    /// <summary>Longer than the slowest transition in the styles (0.26 s), with margin.</summary>
+    private static readonly TimeSpan TransitionBudget = TimeSpan.FromMilliseconds(500);
+
     private static void SettleAnimations()
     {
-        for (var i = 0; i < 60; i++)
+        // Transitions (e.g. the 260 ms ProgressBar value glide) run on real time, so a fixed tick count finishes them
+        // only on machines slow enough to take 260 ms over it. Tick until a real-time budget has passed instead.
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        do
         {
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
             Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(2);
         }
+        while (clock.Elapsed < TransitionBudget);
     }
 
     /// <summary>The docs screenshots run on <see cref="ScreenshotClock"/>, so the same frame renders the same every time.</summary>
