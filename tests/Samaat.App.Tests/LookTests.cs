@@ -144,13 +144,13 @@ public sealed class LookTests : IDisposable
         device.ChangeLookCommand.Execute("c"); // a model with part photos
         Assert.All(parts, f => Assert.NotNull(f.Photo));
         Assert.Null(overall.Photo);
-        Assert.False(parts[0].ShowsBudGlyph);
-        Assert.False(parts[2].ShowsCaseGlyph);
+        Assert.False(parts[0].ShowsUnknownBud);
+        Assert.False(parts[2].ShowsUnknownCase);
 
         device.ChangeLookCommand.Execute("b"); // a model with only a full photo
         Assert.All(device.Figures, f => Assert.Null(f.Photo));
-        Assert.True(parts[0].ShowsBudGlyph);
-        Assert.True(parts[2].ShowsCaseGlyph);
+        Assert.True(parts[0].ShowsUnknownBud);
+        Assert.True(parts[2].ShowsUnknownCase);
     }
 
     [AvaloniaFact]

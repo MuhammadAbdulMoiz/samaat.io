@@ -7,21 +7,19 @@ public sealed partial class BatteryFigureViewModel(string label) : ObservableObj
 {
     public string Label { get; } = label;
 
-    /// <summary>Which picture the tile shows next to its label: a bud (mirrored for the right one), the case, or none for Lowest bud.</summary>
+    /// <summary>Which picture the tile shows next to its label: a bud, the case, or none for Lowest bud.</summary>
     public bool IsBud => Label is "Left bud" or "Right bud";
-
-    public bool IsRightBud => Label == "Right bud";
 
     public bool IsCase => Label == "Case";
 
-    /// <summary>The model's own photo of this part, shown instead of the drawn bud or case; null draws the generic glyph.</summary>
+    /// <summary>The model's own photo of this part, shown instead of the mystery piece; null shows the mystery piece.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsBudGlyph), nameof(ShowsCaseGlyph))]
+    [NotifyPropertyChangedFor(nameof(ShowsUnknownBud), nameof(ShowsUnknownCase))]
     public partial Avalonia.Media.Imaging.Bitmap? Photo { get; set; }
 
-    public bool ShowsBudGlyph => IsBud && Photo is null;
+    public bool ShowsUnknownBud => IsBud && Photo is null;
 
-    public bool ShowsCaseGlyph => IsCase && Photo is null;
+    public bool ShowsUnknownCase => IsCase && Photo is null;
 
     [ObservableProperty]
     public partial string Value { get; set; } = "–";
