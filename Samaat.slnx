@@ -8,6 +8,7 @@
     <Project Path="src/Samaat.Platform.Windows/Samaat.Platform.Windows.csproj" />
     <Project Path="src/Samaat.Protocols.FastPair/Samaat.Protocols.FastPair.csproj" />
     <Project Path="src/Samaat.Protocols.Bose/Samaat.Protocols.Bose.csproj" />
+    <Project Path="src/Samaat.Protocols.Samsung/Samaat.Protocols.Samsung.csproj" />
     <Project Path="src/Samaat.Protocols.Jieli/Samaat.Protocols.Jieli.csproj" />
     <Project Path="src/Samaat.Protocols.Standard/Samaat.Protocols.Standard.csproj" />
     <Project Path="src/Samaat.Simulator/Samaat.Simulator.csproj" />

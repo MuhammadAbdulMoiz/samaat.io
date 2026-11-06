@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\Samaat.Protocols.Jieli\Samaat.Protocols.Jieli.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Protocols.FastPair\Samaat.Protocols.FastPair.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Protocols.Bose\Samaat.Protocols.Bose.csproj" />
+    <ProjectReference Include="..\..\src\Samaat.Protocols.Samsung\Samaat.Protocols.Samsung.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Drivers\Samaat.Drivers.csproj" />
   </ItemGroup>
 </Project>

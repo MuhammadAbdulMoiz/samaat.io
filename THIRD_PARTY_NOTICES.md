@@ -46,6 +46,8 @@ Code ported from other open-source projects under the porting rule in [CONTRIBUT
 
 | Project | URL | Commit | Licence | Files |
 |---|---|---|---|---|
-| *None yet* | | | | |
+| GalaxyBudsClient | https://github.com/timschneeb/GalaxyBudsClient | `754b6fdfb1c151b022cece775c8aaad4eb185afa` | GPL-3.0 (Copyright (c) 2019-2026 Tim Schneeberger and contributors) | `src/Samaat.Protocols.Samsung/*` (SPP framing, CRC, status parsing, model table); the test vectors in `tests/Samaat.Protocols.Tests/SamsungTests.cs` come from its `GalaxyBudsClient.Tests/TestData/ExtendedStatusUpdate` |
+
+GalaxyBudsClient is licensed under the GNU General Public License v3 ("GPLv3", no "or later" stated). Its ported code is combined into Samaat under the same licence text as Samaat's own [LICENSE](LICENSE); while that code is in Samaat, the combined program is distributed under GPL-3.0.
 
 The JieLi authentication cipher (above) was ported before this convention and is credited in its own section.
