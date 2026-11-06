@@ -136,6 +136,24 @@ public sealed class LookTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void BatteryTiles_ShowTheChosenModelsOwnPieces_AndGlyphsOtherwise()
+    {
+        var device = Create(Settings(), layout: SimulatedBatteryLayout.BudsAndCase);
+        var (overall, parts) = (device.Figures[0], device.Figures.Skip(1).ToList());
+
+        device.ChangeLookCommand.Execute("c"); // a model with part photos
+        Assert.All(parts, f => Assert.NotNull(f.Photo));
+        Assert.Null(overall.Photo);
+        Assert.False(parts[0].ShowsBudGlyph);
+        Assert.False(parts[2].ShowsCaseGlyph);
+
+        device.ChangeLookCommand.Execute("b"); // a model with only a full photo
+        Assert.All(device.Figures, f => Assert.Null(f.Photo));
+        Assert.True(parts[0].ShowsBudGlyph);
+        Assert.True(parts[2].ShowsCaseGlyph);
+    }
+
+    [AvaloniaFact]
     public void LookOptions_ListAutoUnknownsAndPhotoProfiles_WithCurrentChecked()
     {
         var device = Create(Settings(), Matched);

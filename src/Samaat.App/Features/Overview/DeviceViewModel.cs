@@ -223,6 +223,11 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             }
 
             ShowArtworkParts = look.Kind == LookKind.PartsPhoto;
+            foreach (var figure in Figures)
+            {
+                figure.Photo = ArtworkParts.FirstOrDefault(p => p.Figure == figure)?.Image;
+            }
+
             ShowUnknownSingle = look.Kind == LookKind.UnknownSingle;
             ShowUnknownPieces = look.Kind == LookKind.UnknownPieces;
             DisposeArtwork(oldImage, oldParts); // after the bindings moved on to the new values
