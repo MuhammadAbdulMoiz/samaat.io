@@ -21,6 +21,7 @@ public sealed class ArchitectureTests
     private const string Bose = "Samaat.Protocols.Bose";
     private const string Samsung = "Samaat.Protocols.Samsung";
     private const string Soundcore = "Samaat.Protocols.Soundcore";
+    private const string Nothing = "Samaat.Protocols.Nothing";
     private const string Sony = "Samaat.Protocols.Sony";
     private const string Windows = "Samaat.Platform.Windows";
 
@@ -41,6 +42,7 @@ public sealed class ArchitectureTests
         [Bose] = [Core, Transport],
         [Samsung] = [Core, Transport],
         [Soundcore] = [Core, Transport],
+        [Nothing] = [Core, Transport],
         [Sony] = [Core, Transport],
 
         // Feature modules beside Core.
@@ -48,7 +50,7 @@ public sealed class ArchitectureTests
         [Simulator] = [Core],
 
         // The single list of shipped drivers.
-        [Drivers] = [Core, Transport, Jieli, FastPair, Bose, Samsung, Soundcore, Sony],
+        [Drivers] = [Core, Transport, Jieli, FastPair, Bose, Samsung, Soundcore, Sony, Nothing],
 
         // A platform implements Core, Transport and Handoff contracts, and reads the standard Battery Service.
         [Windows] = [Core, Transport, Handoff, Standard],

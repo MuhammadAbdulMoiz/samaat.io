@@ -14,6 +14,15 @@ public sealed partial class BatteryFigureViewModel(string label) : ObservableObj
 
     public bool IsCase => Label == "Case";
 
+    /// <summary>The model's own photo of this part, shown instead of the drawn bud or case; null draws the generic glyph.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsBudGlyph), nameof(ShowsCaseGlyph))]
+    public partial Avalonia.Media.Imaging.Bitmap? Photo { get; set; }
+
+    public bool ShowsBudGlyph => IsBud && Photo is null;
+
+    public bool ShowsCaseGlyph => IsCase && Photo is null;
+
     [ObservableProperty]
     public partial string Value { get; set; } = "–";
 

@@ -1,0 +1,25 @@
+{
+  // Read by both DeviceCatalog (driver resolution) and DeviceProfileDb (Bluetooth details); keep it valid for each.
+  "id": "nothing.cmf-buds",
+  "displayName": "CMF Buds",
+  "manufacturer": "Nothing",
+  "driver": "nothing-spp",
+  "match": {
+    // Nothing's Bluetooth vendor ID plus its RFCOMM service. Without both, a device named "CMF Buds" is not matched.
+    "deviceId": { "vid": "0x02B0" },
+    "vendorId": "0x02B0",
+    // DeviceCatalog reads serviceUuid, DeviceProfileDb reads sdpUuids.
+    "serviceUuid": "aeac4a03-dff5-498f-843a-34487cf133eb",
+    "sdpUuids": ["aeac4a03-dff5-498f-843a-34487cf133eb"],
+    "namePattern": "^CMF Buds$"
+  },
+  "adapter": "nothing-spp",
+  "verified": true,
+  "features": ["battery.left", "battery.right", "battery.case", "noise.anc", "noise.transparency", "eq.presets"],
+  "verifiedFirmware": ["1.0.5.050"],
+  // Product photo (user-supplied), background removed; shown in the device rail.
+  "image": "cmf-buds.png",
+  // Shown instead of "image", each with its own level, once the buds report left and right.
+  "images": { "left": "cmf-buds-left.png", "right": "cmf-buds-right.png", "case": "cmf-buds-case.png" },
+  "notes": "Battery (left, right, case), noise control (off, noise cancelling, transparency) and EQ presets over Nothing's RFCOMM protocol, with writes. Checked on real CMF Buds, firmware 1.0.5.050; see docs/protocols/nothing.md and docs/hardware-tests/2026-11-06-cmf-buds.md."
+}

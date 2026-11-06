@@ -3,6 +3,7 @@ using Samaat.Protocols.Bose;
 using Samaat.Protocols.FastPair;
 using Samaat.Protocols.Jieli;
 using Samaat.Protocols.Samsung;
+using Samaat.Protocols.Nothing;
 using Samaat.Protocols.Soundcore;
 using Samaat.Protocols.Sony;
 
@@ -23,6 +24,7 @@ public static class BuiltInDrivers
         new SamsungDriver(),
         new SoundcoreDriver(),
         new SonyDriver(),
+        new NothingDriver(),
     ];
 
     /// <summary>

@@ -78,14 +78,25 @@
                        Classes.low="{Binding SummaryIsLow}" Classes.critical="{Binding Figures[0].IsCritical}" />
         <Image IsVisible="{Binding HasArtworkImage}" Source="{Binding ArtworkImage}" Width="118" Height="118"
                Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
-        <!-- Unknown look, single: one faint silhouette with a "?" badge -->
-        <Panel Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownSingle}">
-          <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding HasBuds}">
-            <Viewbox Width="40"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
-            <Viewbox Width="40" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
-          </StackPanel>
+        <!-- Unknown look, single: the mystery earbuds, or a faint headset with a "?" badge -->
+        <Image Source="avares://Samaat.UI/Assets/Unknown/unknown-buds.png" Width="118" Height="118" Stretch="Uniform"
+               RenderOptions.BitmapInterpolationMode="HighQuality">
+          <Image.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <Binding Path="ShowUnknownSingle" />
+              <Binding Path="HasBuds" />
+            </MultiBinding>
+          </Image.IsVisible>
+        </Image>
+        <Panel Width="96" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <Panel.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <Binding Path="ShowUnknownSingle" />
+              <Binding Path="!HasBuds" />
+            </MultiBinding>
+          </Panel.IsVisible>
           <PathIcon Data="{StaticResource Icon.Headphones}" Width="84" Height="84" Foreground="{DynamicResource Samaat.Faint}" Opacity="0.55"
-                    IsVisible="{Binding !HasBuds}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    HorizontalAlignment="Center" VerticalAlignment="Center" />
           <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
         </Panel>
       </Panel>

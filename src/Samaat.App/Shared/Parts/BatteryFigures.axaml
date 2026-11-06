@@ -16,11 +16,12 @@
           <StackPanel Classes="cell" Classes.unreported="{Binding !IsReported}" Spacing="4">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="{Binding Label}" Classes="meta" VerticalAlignment="Center" />
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Height="16" VerticalAlignment="Center">
-                <Viewbox Height="16" IsVisible="{Binding IsBud}" RenderTransform="{Binding IsRightBud, Converter={x:Static shared:Converters.MirrorIf}}">
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" MinHeight="16" VerticalAlignment="Center">
+                <Image Source="{Binding Photo}" Height="24" MaxWidth="32" Stretch="Uniform" IsVisible="{Binding Photo, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <Viewbox Height="16" IsVisible="{Binding ShowsBudGlyph}" RenderTransform="{Binding IsRightBud, Converter={x:Static shared:Converters.MirrorIf}}">
                   <Canvas Width="40" Height="56"><Path Classes="tileGlyph" Data="{StaticResource Glyph.Bud}" /></Canvas>
                 </Viewbox>
-                <Viewbox Height="14" IsVisible="{Binding IsCase}">
+                <Viewbox Height="14" IsVisible="{Binding ShowsCaseGlyph}">
                   <Canvas Width="64" Height="48"><Path Classes="tileGlyph" Data="{StaticResource Glyph.Case}" /></Canvas>
                 </Viewbox>
                 <PathIcon Data="{StaticResource Icon.BatteryCharge}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Accent}"
