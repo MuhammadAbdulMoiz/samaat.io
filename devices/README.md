@@ -32,3 +32,5 @@ A device with both the Jieli vendor ID and the Fast Pair stream gets the Fast Pa
 Models: `audionic/paradox-e.json`, `realme/buds-t200-lite.json`, `zero-lifestyle/quantum-zbuds.json`, `microsoft/modern-wireless-headset.json`, `bose/qc-headphones.json`.
 
 `samsung/` holds 11 Galaxy Buds models for the `samsung-spp` driver. Their names and features come from GalaxyBudsClient's model table, not from our own reports, so they bend the "observed values only" rule on purpose: each file says so, and each stays `verified: false` until someone sends a report from real buds ([decision](../docs/decisions/2026-11-06-samsung-galaxy-buds-port.md)).
+
+`soundcore/` holds 8 Soundcore models for the `soundcore-spp` driver. Their names and features come from OpenSCQ30's model list, not from our own reports, so they bend the "observed values only" rule on purpose: each file says so, and each stays `verified: false` until someone sends a report from real hardware ([decision](../docs/decisions/2026-11-06-soundcore-port.md)).

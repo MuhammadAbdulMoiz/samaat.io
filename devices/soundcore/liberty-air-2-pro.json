@@ -1,0 +1,15 @@
+{
+  // Not observed on hardware: name and features come from OpenSCQ30's model list (https://github.com/Oppzippy/OpenSCQ30 @ e75a68b7, README and lib/src/devices/soundcore/a3951.rs). A lead, not evidence.
+  "id": "soundcore.liberty-air-2-pro",
+  "displayName": "Liberty Air 2 Pro",
+  "manufacturer": "Soundcore",
+  "driver": "soundcore-spp",
+  "match": {
+    // Matched against the Bluetooth name, e.g. "Soundcore Liberty Air 2 Pro".
+    "namePattern": "Liberty Air 2 Pro"
+  },
+  "verified": false,
+  "features": ["battery.left", "battery.right", "eq.presets"],
+  "verifiedFirmware": [],
+  "notes": "Works with Liberty Air 2 Pro over Soundcore's RFCOMM protocol, ported from OpenSCQ30. Battery and EQ preset are read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-soundcore-port.md."
+}
