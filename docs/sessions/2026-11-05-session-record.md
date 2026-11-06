@@ -388,3 +388,27 @@ Merged PR branches (`claude/redesign-improvements`, `claude/branching-workflow`,
 7. Do the desktop follow-ups above, in a small PR.
 8. Optionally, tag `v1.0.0` once the decisions are made. The release workflow then builds the zip and the MSIX.
 9. After v1.0.0: put the phone app on Google Play, add the QR code to the desktop app, then turn phone handoff on in the Store build and release `v1.1.0` (plan, Phase D rule).
+
+## Licence work (2026-11-06)
+
+Done by session `session_01X2PKY3q149pLosj8ZNQWeT`, following the licensing plan's §1–2.
+
+- **Desktop: [PR #7](https://github.com/MuhammadAbdulMoiz/samaat.io/pull/7), "Licence: GPL-3.0-or-later and porting rules"** (`claude/licence-gpl` → `feature/ui-redesign`).
+  - Stacked on #6. Merge it **after #6**, with "Create a merge commit".
+  - Adds `LICENSE` (the unmodified GPL-3.0 text), `PackageLicenseExpression`, and the legal notice in Settings → About.
+  - Adds the CONTRIBUTING porting rule, the "Ported protocol code" table in `THIRD_PARTY_NOTICES.md`, `ProvenanceTests`, a README Licence section, `docs/COMPETITIVE-LANDSCAPE.md` and the decision record `docs/decisions/2026-11-05-licence-gpl.md`.
+  - Build: 0 warnings. **1,050 tests pass** (Core 320, Protocols 215, App 408, Handoff 107).
+- **Rights check (desktop):** the only authors are the owner and Claude sessions, so nobody else's agreement is needed. Owner to confirm: 89 commits use a `@zixel.cn` company address, so check that no employer holds rights in that work.
+- **Microsoft Store:** no blocker found. The App Developer Agreement §4(c) makes the developer responsible for FOSS compliance, including source availability. Microsoft's pages were blocked from the session, so the owner should read them directly.
+- **Research updates:**
+  - QuickBuds is **GPL-3.0-or-later** (it was unconfirmed).
+  - PairFree now lists **12 brands**.
+  - Each project's licence was re-read from its own `LICENSE` file.
+- **Phone: not done.** Attaching `samaat-mobile` to the session was refused by the session's permission check.
+  - Its licence PR (`claude/licence-gpl` from `claude/mobile-improvements` → `main`, after mobile #1) and its rights check are still open.
+  - Next step: run it in a session that already has `samaat-mobile` attached.
+- **Left:**
+  - the phone PR;
+  - the owner checkboxes in PR #7;
+  - a provenance header for `JlAuthCipher.cs`;
+  - credits for the bundled packages in `THIRD_PARTY_NOTICES.md`.
