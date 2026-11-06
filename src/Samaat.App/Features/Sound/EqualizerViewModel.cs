@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Samaat.Core.Commands;
 using Samaat.Core.Devices;
+using Samaat.Core.Drivers;
 using Samaat.Core.Equalizer;
 
 namespace Samaat.App.Features.Sound;
@@ -43,7 +44,9 @@ public sealed partial class EqualizerViewModel : ObservableObject, IDisposable
 
     public bool IsUnavailable => _feature is null;
 
-    public string UnavailableText => "Samaat can't change this device's EQ yet. That needs support for this model's own protocol.";
+    public string UnavailableText => DriverRetry.WaitsForConnection(_device)
+        ? "Connect your earbuds to change their EQ presets."
+        : "Samaat can't change this device's EQ yet. That needs support for this model's own protocol.";
 
     public ObservableCollection<EqPresetOptionViewModel> Presets { get; } = [];
 
@@ -108,6 +111,7 @@ public sealed partial class EqualizerViewModel : ObservableObject, IDisposable
         ShowPreset(_feature?.CurrentPresetId);
         CanControl = _device.Connection == ConnectionState.Connected && Presets.Count > 0;
         UpdateStatus();
+        OnPropertyChanged(nameof(UnavailableText));
     }
 
     private void ShowPreset(int? id)

@@ -12,6 +12,7 @@ using Samaat.Core.Capabilities;
 using Samaat.Core.Commands;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
 using Samaat.Core.Profiles;
 using Samaat.Core.Diagnostics;
@@ -93,9 +94,12 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         && System.Text.RegularExpressions.Regex.IsMatch(text, $@"(?<![\w]){System.Text.RegularExpressions.Regex.Escape(phrase)}(?![\w])",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
-    public string TierText => CapabilityText.Tier(_device.Identity.Tier);
+    // A catalogued model's own driver needs the buds connected; until then "Basic" would undersell it.
+    private bool WaitsForDriver => DriverRetry.WaitsForConnection(_device);
 
-    public string TierDescription => _device.Identity.Tier switch
+    public string TierText => WaitsForDriver ? "Connect for full support" : CapabilityText.Tier(_device.Identity.Tier);
+
+    public string TierDescription => WaitsForDriver ? "Samaat speaks this model's own protocol once the earbuds are connected" : _device.Identity.Tier switch
     {
         SupportTier.Full => "Samaat speaks this model's own protocol",
         SupportTier.Standard => "Standard Bluetooth services only",
@@ -514,7 +518,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         var waiting = noLevel.Count > 0 ? $"No level from the {string.Join(" and ", noLevel)} yet" : null;
         BatteryReasonText = !HasSummary && !components
             ? IsConnected ? "This device reports no battery level" : "Connect the device to read its battery"
-            : !components ? "Left, right and case aren't reported for this device"
+            : !components ? WaitsForDriver ? "Connect the earbuds to read each bud and the case" : "Left, right and case aren't reported for this device"
             : (waiting, notReported) switch
             {
                 ({ } w, { } n) => $"{w}, and {n}",
@@ -589,6 +593,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         BatteryAccessibleText = HasSummary ? $"Battery {summary} percent" : "Battery not reported";
         RowAccessibleText = $"{Name}, {(HasSummary ? $"{summary}%" : "battery not reported")}, {ConnectionText}";
         StatusLineText = $"{ConnectionText} · {TierText}";
+        OnPropertyChanged(nameof(TierText));
+        OnPropertyChanged(nameof(TierDescription));
         UpdateFigures(summary, buds);
 
         UpdateAges();
