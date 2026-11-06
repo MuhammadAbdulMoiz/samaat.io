@@ -3,7 +3,7 @@
     <!-- The one version for every assembly. Release: bump it in a pull request, then tag the merge commit v<Version>;
          the release workflow refuses a tag that doesn't match. 1.0.0 matches the MSIX package's existing default
          (packaging/msix/build-msix.ps1, which now reads this), since the Store only accepts increasing versions. -->
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <!-- Samaat is free software under the GNU GPL v3 or later (LICENSE). Ported files carry their own SPDX header;
          see CONTRIBUTING.md, "Protocol work and licences". -->
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
