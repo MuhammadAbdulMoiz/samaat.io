@@ -42,9 +42,26 @@ Without hardware evidence, entries stay `"verified": false` and the UI marks the
 ## Protocol work and licences
 
 - Learn protocols from **your own captures** (Android HCI snoop log + Wireshark, Windows Bluetooth ETW traces).
-- Projects such as Gadgetbridge (AGPL), GalaxyBudsClient (GPL) and OpenMouse (AGPL) may be read for **behaviour and ideas only**. Don't copy their code into Samaat.
+- Samaat is licensed under **GPL-3.0-or-later** ([LICENSE](LICENSE)), so code from other open-source projects may be reused under these rules:
+
+  | Source | Rule |
+  |---|---|
+  | GPL-3.0, GPL-3.0-or-later, MIT, BSD, Apache-2.0 | **May be ported, with provenance** (below) |
+  | AGPL-3.0 (e.g. Gadgetbridge, OpenMouse), GPL-2.0-only | **Behaviour only**: read it to learn the protocol, then write Samaat's own code. Don't copy it |
+  | Vendor apps, SDKs, firmware, decompiled code | **Never** |
+
+- **No trademarks or assets:** don't copy names, logos, fonts or icons from another project or vendor. Keep "works with <model>" wording.
+- **Provenance:** every ported file starts with this header, and its source gets an entry in the "Ported protocol code" table of [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (project, URL, commit, licence, files). The ported file is licensed GPL-3.0-or-later; the original licence is recorded in the header and the notices.
+
+  ```csharp
+  // SPDX-License-Identifier: GPL-3.0-or-later
+  // Ported from <repo URL> @ <commit>, <path>, Copyright (c) <year> <authors>, <original licence>.
+  // Changes: rewritten onto Samaat.Transport (IRfcommChannel/IGattClient) and Samaat.Core features.
+  ```
+
+  `ProvenanceTests` fails the build if a file under `src/Samaat.Protocols.*` says "Ported from" without an SPDX line or with a source missing from the notices, or uses an SPDX identifier outside GPL-3.0-only, GPL-3.0-or-later, MIT, BSD-2-Clause, BSD-3-Clause and Apache-2.0.
+- Port only the protocol layer (framing, commands, parsing), one main source per brand, and record each port in a decision record. Another project's model list is a lead, not hardware evidence: the rules in "Adding or changing device support" still apply.
 - Never bypass encryption or authentication, and never redistribute vendor firmware.
-- Use "works with <model>" wording, with no vendor logos.
 
 ## Code style
 

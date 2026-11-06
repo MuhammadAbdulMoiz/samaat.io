@@ -39,3 +39,13 @@ The command and attribute layouts used by `src/Samaat.Protocols.Jieli` for noise
 ## NAudio
 
 `src/Samaat.Platform.Windows/WasapiBackend.cs` uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi`, `NAudio.Core`) for WASAPI loopback capture and playback. NAudio is licensed under the MIT License, Copyright (c) Mark Heath & contributors.
+
+## Ported protocol code
+
+Code ported from other open-source projects under the porting rule in [CONTRIBUTING.md](CONTRIBUTING.md#protocol-work-and-licences). Each ported file carries a provenance header naming its source; `ProvenanceTests` checks that every source in a header is listed here. Ported files are licensed GPL-3.0-or-later as part of Samaat; the original licence and copyright notice are kept below.
+
+| Project | URL | Commit | Licence | Files |
+|---|---|---|---|---|
+| *None yet* | | | | |
+
+The JieLi authentication cipher (above) was ported before this convention and is credited in its own section.

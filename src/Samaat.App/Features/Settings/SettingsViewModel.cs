@@ -125,6 +125,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0]
         ?? typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "unknown");
 
+    /// <summary>The GPL-3.0 "Appropriate Legal Notices" (§0, §5(d)) shown in the About section.</summary>
+    public string LicenceNotice => "Free software under the GNU GPL v3 or later. No warranty.";
+
+    /// <summary>The full licence text.</summary>
+    public Uri LicenceUri { get; } = new("https://www.gnu.org/licenses/gpl-3.0.html");
+
+    /// <summary>Where the source code for this build is published.</summary>
+    public Uri SourceUri { get; } = new("https://github.com/MuhammadAbdulMoiz/samaat.io");
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string? ErrorText { get; set; }

@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10" />
   <img src="https://img.shields.io/badge/UI-Avalonia%2011-8B44AC" alt="Avalonia 11" />
   <img src="https://img.shields.io/badge/platform-Windows%20%C2%B7%20any%20OS%20simulated-0B0D10" alt="Windows, or any OS with simulated earbuds" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-GPL--3.0--or--later-blue" alt="Licence: GPL-3.0-or-later" /></a>
 </p>
 
 <p align="center">
@@ -21,7 +22,8 @@
   <a href="#development">Development</a> &nbsp;·&nbsp;
   <a href="docs/STATUS.md">Status</a> &nbsp;·&nbsp;
   <a href="docs/FEATURE-IDEAS.md">Ideas</a> &nbsp;·&nbsp;
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a> &nbsp;·&nbsp;
+  <a href="#licence">Licence</a>
 </p>
 
 <picture>
@@ -181,8 +183,14 @@ Where things go:
 
 ## Contributing
 
-Bug reports with the Diagnostics tab's **Copy report** are the most useful thing you can send. To add earbuds or a protocol, read [CONTRIBUTING.md](CONTRIBUTING.md): protocols are learned from your own captures, and a model is only marked verified with hardware evidence.
+Bug reports with the Diagnostics tab's **Copy report** are the most useful thing you can send. To add earbuds or a protocol, read [CONTRIBUTING.md](CONTRIBUTING.md): protocols come from your own captures or are ported, with credit, from compatible open-source projects, and a model is only marked verified with hardware evidence.
 
 ## Privacy
 
 Samaat needs no account and no server. The phone link stays on your local network over an encrypted connection, and paired phones are stored encrypted on your computer (DPAPI on Windows).
+
+## Licence
+
+Samaat is free software: you can redistribute it and change it under the terms of the [GNU General Public License, version 3 or later](LICENSE). It comes with no warranty. Third-party code and its licences are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+GPL-3.0 lets Samaat reuse protocol work from GPL, MIT and Apache-2.0 projects, with credit to each source (see [CONTRIBUTING.md](CONTRIBUTING.md#protocol-work-and-licences)).
