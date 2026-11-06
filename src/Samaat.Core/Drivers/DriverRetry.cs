@@ -12,6 +12,10 @@ public static class DriverRetry
         device.GetFeature<IDeviceDiagnostics>()?.Resolution is { Kind: DriverResolutionKind.Driver, ProtocolFallback: false }
         && device.Identity.Tier != SupportTier.Full;
 
+    /// <summary>The model's own driver gave nothing because the buds aren't connected; connecting will retry it.</summary>
+    public static bool WaitsForConnection(IEarbudDevice device) =>
+        device.Connection != ConnectionState.Connected && NeedsDriverRetry(device);
+
     public static bool CanReuse(IEarbudDevice device) =>
         device.GetFeature<Battery.IBatteryFeature>() is not null && !NeedsDriverRetry(device);
 

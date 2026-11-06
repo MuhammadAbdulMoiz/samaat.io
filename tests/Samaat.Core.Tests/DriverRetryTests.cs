@@ -40,6 +40,26 @@ public class DriverRetryTests
         Assert.False(DriverRetry.NeedsDriverRetry(Device(new DriverResolution(kind, null, null), SupportTier.Basic)));
 
     [Fact]
+    public void WaitsForConnection_ModelDriverWhileDisconnected_True()
+    {
+        var device = Device(Driver(), SupportTier.Basic);
+        device.Connection = ConnectionState.Disconnected;
+        Assert.True(DriverRetry.WaitsForConnection(device));
+    }
+
+    [Fact]
+    public void WaitsForConnection_Connected_False() =>
+        Assert.False(DriverRetry.WaitsForConnection(Device(Driver(), SupportTier.Basic)));
+
+    [Fact]
+    public void WaitsForConnection_ProtocolFallback_False()
+    {
+        var device = Device(Driver(fallback: true), SupportTier.Basic);
+        device.Connection = ConnectionState.Disconnected;
+        Assert.False(DriverRetry.WaitsForConnection(device));
+    }
+
+    [Fact]
     public void CanReuse_DriverFailed_False() =>
         Assert.False(DriverRetry.CanReuse(Device(Driver(), SupportTier.Basic)));
 
