@@ -137,6 +137,9 @@ internal sealed class FakePhoneAudio : IPhoneAudioLink
     /// <summary>Set to make connect never finish, ignoring cancellation too (the earbuds never show up, the platform call never returns).</summary>
     public bool HangConnect { get; set; }
 
+    /// <summary>When set, connect waits for it (ignoring cancellation), then finishes as usual.</summary>
+    public TaskCompletionSource? ConnectGate { get; set; }
+
     public event EventHandler? Changed;
 
     public void TurnBluetoothOff()
@@ -162,6 +165,11 @@ internal sealed class FakePhoneAudio : IPhoneAudioLink
         if (HangConnect)
         {
             await Task.Delay(Timeout.Infinite, CancellationToken.None);
+        }
+
+        if (ConnectGate is { } gate)
+        {
+            await gate.Task; // ignores cancellation, like a platform call that lands late
         }
 
         var result = ConnectResults.Count > 0 ? ConnectResults.Dequeue() : CommandResult.Confirmed;

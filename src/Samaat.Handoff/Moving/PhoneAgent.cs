@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using Samaat.Core.Commands;
+using Samaat.Core.Diagnostics;
 using Samaat.Handoff.Protocol;
 
 namespace Samaat.Handoff.Moving;
@@ -31,6 +33,8 @@ public interface IPhoneAudioLink
 /// <summary>Answers the computer's move requests on the phone.</summary>
 public sealed class PhoneAgent(IPhoneAudioLink audio)
 {
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _connecting = new(StringComparer.Ordinal);
+
     public IPhoneAudioLink Audio { get; } = audio;
 
     public IReadOnlyList<PeerDevice> ListDevices() =>
@@ -81,6 +85,9 @@ public sealed class PhoneAgent(IPhoneAudioLink audio)
     private async Task<CommandResult> ConnectUnlessBluetoothGoesOffAsync(string address, CancellationToken ct)
     {
         using var bluetoothOff = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var key = MessageCodec.NormalizeAddress(address);
+        _connecting[key] = bluetoothOff; // a ReleaseAudio for these earbuds cancels it
+
         void OnChanged(object? sender, EventArgs e)
         {
             if (!Audio.IsBluetoothOn)
@@ -102,10 +109,24 @@ public sealed class PhoneAgent(IPhoneAudioLink audio)
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            return BluetoothTurnedOff;
+            if (!Audio.IsBluetoothOn)
+            {
+                return BluetoothTurnedOff;
+            }
+
+            // The computer took the earbuds back. If the platform's connect still lands later, undo it so they aren't split.
+            _ = connect is null ? Task.CompletedTask : SamaatLog.Guard("Phone agent", "Undoing a late connect", async () =>
+            {
+                if ((await connect).Succeeded)
+                {
+                    await Audio.DisconnectAsync(address, PhoneTimeout, CancellationToken.None);
+                }
+            });
+            return CommandResult.Rejected("The computer took the earbuds back.");
         }
         finally
         {
+            _connecting.TryRemove(new KeyValuePair<string, CancellationTokenSource>(key, bluetoothOff));
             Audio.Changed -= OnChanged;
             // An abandoned connect may still fault later; observe it so it isn't reported as unobserved.
             _ = connect?.ContinueWith(t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
@@ -116,6 +137,19 @@ public sealed class PhoneAgent(IPhoneAudioLink audio)
 
     private async Task<CommandResult> ReleaseAsync(string address, CancellationToken ct)
     {
+        // The computer gave up on a connect and took the earbuds back: stop that connect first.
+        if (_connecting.TryGetValue(MessageCodec.NormalizeAddress(address), out var connecting))
+        {
+            try
+            {
+                await connecting.CancelAsync();
+            }
+            catch (ObjectDisposedException)
+            {
+                // That connect just finished.
+            }
+        }
+
         var device = Find(address);
         if (device is null || !device.Connected)
         {

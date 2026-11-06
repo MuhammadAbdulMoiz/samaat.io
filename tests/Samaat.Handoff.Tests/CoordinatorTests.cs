@@ -91,17 +91,20 @@ public class CoordinatorTests
     }
 
     [Fact]
-    public async Task ToPhone_PhoneNeverAnswers_TimesOutAndRollsBack()
+    public async Task ToPhone_PhoneNeverAnswers_GivesUpWithin22Seconds_TellsThePhoneToStop_AndRollsBack()
     {
         var time = new FakeTimeProvider();
         _phone.HangConnect = true;
         var run = Run(HandoffDirection.ToPhone, time: time);
         await Eventually.TrueAsync(() => _calls.Contains("phone.connect"), "the phone to be asked");
 
-        time.Advance(HandoffTimeouts.Default.PhoneLink + TimeSpan.FromSeconds(5));
+        // Hardware run 2026-11-06: an old phone app hung 56 s while its Bluetooth was off; the computer must not wait that long.
+        time.Advance(TimeSpan.FromSeconds(22));
         var result = await run;
 
         Assert.Equal(HandoffOutcome.RolledBack, result.Outcome);
+        Assert.Contains("kept them on this computer", result.Message);
+        Assert.Contains("phone.release", _calls);
         Assert.Contains("pc.connect", _device.Calls);
     }
 
@@ -359,6 +362,39 @@ public class PhoneAgentTests
 
     [Fact]
     public async Task OtherMessages_NotHandled() => Assert.Null(await Agent.HandleAsync(new PingMessage(), default));
+
+    [Fact]
+    public async Task Release_WhileConnecting_StopsTheConnect()
+    {
+        _audio.HangConnect = true;
+        var agent = Agent;
+        var connect = agent.HandleAsync(new ConnectAudioMessage(Address) { Id = 1 }, default);
+        await Eventually.TrueAsync(() => _audio.Calls.Count == 1, "the connect to start");
+
+        var release = await agent.HandleAsync(new ReleaseAudioMessage(Address) { Id = 2 }, default);
+
+        Assert.Equal(CommandStatus.Confirmed, release!.Status);
+        var done = await Task.WhenAny(connect, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.Same(connect, done);
+        Assert.Equal(CommandStatus.Rejected, (await connect)!.Status);
+        Assert.Equal("The computer took the earbuds back.", (await connect)!.Message);
+    }
+
+    [Fact]
+    public async Task Release_WhileConnecting_ThenTheConnectLandsLate_DisconnectsIt()
+    {
+        _audio.ConnectGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = Agent;
+        var connect = agent.HandleAsync(new ConnectAudioMessage(Address) { Id = 1 }, default);
+        await Eventually.TrueAsync(() => _audio.Calls.Count == 1, "the connect to start");
+        await agent.HandleAsync(new ReleaseAudioMessage(Address) { Id = 2 }, default);
+        Assert.Equal("The computer took the earbuds back.", (await connect)!.Message);
+
+        _audio.ConnectGate.SetResult();
+
+        await Eventually.TrueAsync(() => _audio.Calls.Contains("disconnect " + Address) && !_audio.Devices.Single().Connected,
+            "the late connection to be undone");
+    }
 
     [Fact]
     public async Task Connect_BluetoothTurnsOffWhileWaiting_FailsFast()

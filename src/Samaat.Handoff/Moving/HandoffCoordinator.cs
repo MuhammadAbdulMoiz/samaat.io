@@ -31,7 +31,13 @@ public sealed record HandoffProgress(HandoffStage Stage, string Text);
 /// <summary>How long each step may take. The phone's steps are long because it may need one tap from the user.</summary>
 public sealed record HandoffTimeouts(TimeSpan Prepare, TimeSpan ComputerLink, TimeSpan PhoneLink)
 {
-    public static HandoffTimeouts Default { get; } = new(TimeSpan.FromSeconds(8), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(60));
+    /// <summary>
+    /// The phone's steps get 20 s: enough for the silent connect and one tap, short enough that a hung phone (seen on hardware,
+    /// 2026-11-06: 56 s with Bluetooth off) doesn't leave the earbuds disconnected everywhere.
+    /// </summary>
+    public static readonly TimeSpan PhoneStepLimit = TimeSpan.FromSeconds(20);
+
+    public static HandoffTimeouts Default { get; } = new(TimeSpan.FromSeconds(8), TimeSpan.FromSeconds(20), PhoneStepLimit);
 }
 
 /// <summary>
@@ -136,7 +142,13 @@ public sealed class HandoffCoordinator(TimeProvider? time = null, HandoffTimeout
 
         SamaatLog.Info(Log, $"{buds}: Rolling back, reconnecting here");
         progress.Report(new HandoffProgress(HandoffStage.RollingBack, "Reconnecting to this computer…"));
+        // A phone that went silent may still be connecting: tell it to stop, so a late connect doesn't split the earbuds.
+        var stopThere = connected.Status is CommandStatus.TimedOut or CommandStatus.Failed
+            ? Step(buds, $"stop connecting on {phone.Name}", c => phone.ReleaseAudioAsync(address, _timeouts.Prepare, c), _timeouts.Prepare,
+                CancellationToken.None)
+            : Task.FromResult(CommandResult.Confirmed);
         var back = await Step(buds, "reconnect here", pcLink.ConnectAsync, _timeouts.ComputerLink, CancellationToken.None);
+        await stopThere;
         return back.Succeeded
             ? Finish(progress, HandoffOutcome.RolledBack, $"Couldn't move {buds} to {phone.Name}; kept them on this computer. ({Reason(connected)})")
             : Finish(progress, HandoffOutcome.Stranded,
