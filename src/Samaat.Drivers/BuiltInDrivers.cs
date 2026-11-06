@@ -2,6 +2,7 @@ using Samaat.Core.Drivers;
 using Samaat.Protocols.Bose;
 using Samaat.Protocols.FastPair;
 using Samaat.Protocols.Jieli;
+using Samaat.Protocols.Samsung;
 
 namespace Samaat.Drivers;
 
@@ -17,6 +18,7 @@ public static class BuiltInDrivers
         new JieliDriver(),
         new FastPairDriver(),
         new BoseBmapDriver(),
+        new SamsungDriver(),
     ];
 
     /// <summary>

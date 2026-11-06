@@ -1,0 +1,16 @@
+{
+  // Not observed on hardware: name and features come from GalaxyBudsClient's model table
+  // (https://github.com/timschneeb/GalaxyBudsClient @ 754b6fdf, GalaxyBudsClient/Model/Specifications). A lead, not evidence.
+  "id": "samsung.galaxy-buds-live",
+  "displayName": "Galaxy Buds Live",
+  "manufacturer": "Samsung",
+  "driver": "samsung-spp",
+  "match": {
+    // Upstream finds the model by this text in the Bluetooth name, e.g. "Galaxy Buds Live (A1B2)".
+    "namePattern": "Buds Live"
+  },
+  "verified": false,
+  "features": ["battery.left", "battery.right", "battery.case", "noise.anc", "eq.presets"],
+  "verifiedFirmware": [],
+  "notes": "Works with Galaxy Buds Live over Samsung's RFCOMM protocol, ported from GalaxyBudsClient. Battery and EQ preset, read-only; noise cancelling isn't ported yet. Not yet verified on hardware; see docs/decisions/2026-11-06-samsung-galaxy-buds-port.md."
+}
