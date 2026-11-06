@@ -3,8 +3,8 @@
   "id": "bose.qc-headphones",
   "displayName": "Bose QC Headphones",
   "manufacturer": "Bose",
-  // Known model with no driver of its own; battery comes from Windows (HFP), shown while connected.
-  "driver": "none",
+  // Current noise mode (Quiet/Aware) is read over BMAP on raw RFCOMM channel 8/9, read-only (no mode switching yet); battery comes from Windows HFP. See docs/protocols/bose-bmap.md.
+  "driver": "bose-bmap",
   "match": {
     // Observed on the paired headset: DeviceID VID 0x009E (Bose), PID 0x4075, name "Bose QC Headphones".
     "deviceId": { "vid": "0x009E", "pid": "0x4075" },
@@ -13,11 +13,11 @@
     "sdpUuids": [],
     "namePattern": "^Bose QC Headphones$"
   },
-  "adapter": null,
+  "adapter": "bose-bmap",
   "verified": false,
-  "features": [],
+  "features": ["noise.anc", "noise.transparency"],
   "verifiedFirmware": [],
   // Product photo (user-supplied), background removed; shown in the device rail.
   "image": "qc-headphones.png",
-  "notes": "Basic tier: one combined battery level from Windows (HFP battery indicator on the Hands-Free AG node), only while connected."
+  "notes": "Current noise mode (Quiet/Aware) is read over BMAP on raw RFCOMM channel 8/9, read-only, no mode switching yet; battery is one combined level from Windows HFP (Hands-Free AG node), only while connected. See docs/protocols/bose-bmap.md."
 }

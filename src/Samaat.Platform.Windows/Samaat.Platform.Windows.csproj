@@ -4,6 +4,9 @@
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Samaat.Platform.Windows.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Samaat.Core\Samaat.Core.csproj" />
     <ProjectReference Include="..\Samaat.Handoff\Samaat.Handoff.csproj" />
     <ProjectReference Include="..\Samaat.Transport\Samaat.Transport.csproj" />

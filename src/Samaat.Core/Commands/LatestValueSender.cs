@@ -1,3 +1,5 @@
+using Samaat.Core.Diagnostics;
+
 namespace Samaat.Core.Commands;
 
 /// <summary>
@@ -60,6 +62,7 @@ public sealed class LatestValueSender<T>(Func<T, CancellationToken, Task<Command
             }
             catch (Exception ex)
             {
+                SamaatLog.Warn("Commands", "Sending the latest value failed", ex);
                 result = new CommandResult(CommandStatus.Failed, ex.Message);
             }
 

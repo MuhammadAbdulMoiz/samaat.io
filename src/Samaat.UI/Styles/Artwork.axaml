@@ -2,6 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="using:Samaat.UI.Controls">
   <!-- The device artwork, shared by the desktop and the phone: the battery ring, the stage, model photos and the "?" looks. -->
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- Merged here too, so a host app that only includes these styles still resolves the metric tokens -->
+        <ResourceInclude Source="avares://Samaat.UI/Styles/Metrics.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
 
   <!-- The ring around the device artwork shows the overall level -->
   <Style Selector="ui|BatteryRing">
@@ -48,7 +56,7 @@
   <Style Selector="Border.unknownBadge">
     <Setter Property="Width" Value="20" />
     <Setter Property="Height" Value="20" />
-    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="CornerRadius" Value="{StaticResource Samaat.Radius.Round20}" />
     <Setter Property="Background" Value="{DynamicResource Samaat.Surface2}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Samaat.Faint}" />
     <Setter Property="BorderThickness" Value="1" />
@@ -56,7 +64,7 @@
   </Style>
   <Style Selector="Border.unknownBadge > TextBlock">
     <Setter Property="Text" Value="?" />
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{StaticResource Samaat.FontSize.Meta}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Muted}" />
     <Setter Property="HorizontalAlignment" Value="Center" />
@@ -67,7 +75,9 @@
   <Style Selector="ui|BatteryRing">
     <Setter Property="Transitions">
       <Transitions>
-        <DoubleTransition Property="Value" Duration="0:0:0.26" Easing="CubicEaseOut" />
+        <DoubleTransition Property="Value" Duration="0:0:0.26">
+          <DoubleTransition.Easing><SplineEasing X1="0.23" Y1="1" X2="0.32" Y2="1" /></DoubleTransition.Easing>
+        </DoubleTransition>
       </Transitions>
     </Setter>
   </Style>

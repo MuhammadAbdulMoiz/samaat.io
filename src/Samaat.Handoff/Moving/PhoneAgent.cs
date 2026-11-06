@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using Samaat.Core.Commands;
+using Samaat.Core.Diagnostics;
 using Samaat.Handoff.Protocol;
 
 namespace Samaat.Handoff.Moving;
@@ -31,6 +33,8 @@ public interface IPhoneAudioLink
 /// <summary>Answers the computer's move requests on the phone.</summary>
 public sealed class PhoneAgent(IPhoneAudioLink audio)
 {
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _connecting = new(StringComparer.Ordinal);
+
     public IPhoneAudioLink Audio { get; } = audio;
 
     public IReadOnlyList<PeerDevice> ListDevices() =>
@@ -74,11 +78,78 @@ public sealed class PhoneAgent(IPhoneAudioLink audio)
             return check;
         }
 
-        return Find(address)!.Connected ? CommandResult.Confirmed : await Audio.ConnectAsync(Find(address)!.Address, PhoneTimeout, ct);
+        return Find(address)!.Connected ? CommandResult.Confirmed : await ConnectUnlessBluetoothGoesOffAsync(Find(address)!.Address, ct);
     }
+
+    /// <summary>Stops waiting as soon as the phone's Bluetooth turns off, so the computer hears why at once and takes the earbuds back.</summary>
+    private async Task<CommandResult> ConnectUnlessBluetoothGoesOffAsync(string address, CancellationToken ct)
+    {
+        using var bluetoothOff = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var key = MessageCodec.NormalizeAddress(address);
+        _connecting[key] = bluetoothOff; // a ReleaseAudio for these earbuds cancels it
+
+        void OnChanged(object? sender, EventArgs e)
+        {
+            if (!Audio.IsBluetoothOn)
+            {
+                bluetoothOff.Cancel();
+            }
+        }
+
+        Task<CommandResult>? connect = null;
+        Audio.Changed += OnChanged;
+        try
+        {
+            OnChanged(null, EventArgs.Empty); // in case it went off before the subscription
+            bluetoothOff.Token.ThrowIfCancellationRequested(); // don't start a connect once Bluetooth is known to be off
+            connect = Audio.ConnectAsync(address, PhoneTimeout, bluetoothOff.Token);
+            // WaitAsync: don't depend on the platform honouring the token to answer promptly.
+            var result = await connect.WaitAsync(bluetoothOff.Token);
+            return Audio.IsBluetoothOn || ct.IsCancellationRequested ? result : BluetoothTurnedOff;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            if (!Audio.IsBluetoothOn)
+            {
+                return BluetoothTurnedOff;
+            }
+
+            // The computer took the earbuds back. If the platform's connect still lands later, undo it so they aren't split.
+            _ = connect is null ? Task.CompletedTask : SamaatLog.Guard("Phone agent", "Undoing a late connect", async () =>
+            {
+                if ((await connect).Succeeded)
+                {
+                    await Audio.DisconnectAsync(address, PhoneTimeout, CancellationToken.None);
+                }
+            });
+            return CommandResult.Rejected("The computer took the earbuds back.");
+        }
+        finally
+        {
+            _connecting.TryRemove(new KeyValuePair<string, CancellationTokenSource>(key, bluetoothOff));
+            Audio.Changed -= OnChanged;
+            // An abandoned connect may still fault later; observe it so it isn't reported as unobserved.
+            _ = connect?.ContinueWith(t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+        }
+    }
+
+    private static CommandResult BluetoothTurnedOff => CommandResult.Rejected("Bluetooth turned off on the phone.");
 
     private async Task<CommandResult> ReleaseAsync(string address, CancellationToken ct)
     {
+        // The computer gave up on a connect and took the earbuds back: stop that connect first.
+        if (_connecting.TryGetValue(MessageCodec.NormalizeAddress(address), out var connecting))
+        {
+            try
+            {
+                await connecting.CancelAsync();
+            }
+            catch (ObjectDisposedException)
+            {
+                // That connect just finished.
+            }
+        }
+
         var device = Find(address);
         if (device is null || !device.Connected)
         {

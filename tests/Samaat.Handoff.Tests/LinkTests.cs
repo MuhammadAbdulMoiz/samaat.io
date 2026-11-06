@@ -378,6 +378,41 @@ public sealed class EndToEndTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task PhoneStartsMove_BluetoothTurnsOffOnPhone_ComputerKeepsTheEarbuds()
+    {
+        await PairAsync();
+        await Eventually.TrueAsync(() => _host.Phones[0].FindDevice(Address) is not null, "the phone's list");
+        _phoneAudio.HangConnect = true;
+
+        var move = _client.RequestMoveAsync(Address, HandoffDirection.ToPhone);
+        await Eventually.TrueAsync(() => _phoneAudio.Calls.Count == 1, "the phone to start connecting");
+        _phoneAudio.TurnBluetoothOff();
+        var result = await move;
+
+        Assert.Equal(HandoffOutcome.RolledBack, result.Outcome);
+        Assert.Contains("kept them on this computer", result.Message);
+        Assert.Contains("Bluetooth turned off", result.Message);
+        Assert.Equal(ConnectionState.Connected, _buds.Connection);
+    }
+
+    [Fact]
+    public async Task PhoneStartsMove_ThenDropsTheSession_ComputerReconnectsTheEarbuds()
+    {
+        await PairAsync();
+        await Eventually.TrueAsync(() => _host.Phones[0].FindDevice(Address) is not null, "the phone's list");
+        _phoneAudio.HangConnect = true;
+        var done = false;
+        _host.Activity += (_, a) => done |= a.Progress.Stage == HandoffStage.Done;
+
+        _ = _client.RequestMoveAsync(Address, HandoffDirection.ToPhone).ContinueWith(t => _ = t.Exception, TaskScheduler.Default);
+        await Eventually.TrueAsync(() => _phoneAudio.Calls.Count == 1, "the phone to start connecting");
+        await _client.DisposeAsync();
+
+        await Eventually.TrueAsync(() => _buds.Connection == ConnectionState.Connected && _buds.Calls.Contains("pc.connect") && done,
+            "the computer to take the earbuds back");
+    }
+
+    [Fact]
     public async Task PhoneAsksForUnknownEarbuds_Refused()
     {
         await PairAsync();

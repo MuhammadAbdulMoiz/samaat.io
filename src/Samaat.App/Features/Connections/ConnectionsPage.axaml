@@ -16,7 +16,7 @@
         <StackPanel Spacing="12">
           <TextBlock Text="This computer" Classes="panelTitle" />
 
-          <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" MinHeight="48">
+          <Border Classes="strip" MinHeight="48">
             <Grid ColumnDefinitions="Auto,*,Auto">
               <Border Classes="optionIcon" Classes.on="{Binding IsConnected}" VerticalAlignment="Center">
                 <PathIcon Data="{StaticResource Icon.Laptop}" Width="16" Height="16" />
@@ -29,7 +29,7 @@
                 <Button Classes="primary" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}"
                         AutomationProperties.Name="{Binding LinkAccessibleName}" AutomationProperties.HelpText="{Binding LinkDisabledReason}"
                         ToolTip.Tip="{Binding LinkDisabledReason}" ToolTip.ShowOnDisabled="True">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="{StaticResource Icon.Link}" Width="14" Height="14" Foreground="{DynamicResource Samaat.OnAccent}" />
                     <TextBlock Text="Connect" />
                   </StackPanel>
@@ -37,14 +37,14 @@
                 <Button Classes="subtle" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}"
                         AutomationProperties.Name="{Binding LinkAccessibleName}" AutomationProperties.HelpText="{Binding LinkDisabledReason}"
                         ToolTip.Tip="{Binding LinkDisabledReason}" ToolTip.ShowOnDisabled="True">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="{StaticResource Icon.Disconnect}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
                     <TextBlock Text="Disconnect" />
                   </StackPanel>
                 </Button>
                 <Button Classes="subtle" Command="{Binding OpenBluetoothSettingsCommand}" IsVisible="{Binding ShowSettingsFallback}"
                         AutomationProperties.Name="Open Bluetooth settings">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="{StaticResource Icon.Settings}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Text}" />
                     <TextBlock Text="Bluetooth settings" />
                   </StackPanel>
@@ -54,19 +54,19 @@
           </Border>
 
           <Border Classes="alert critical" HorizontalAlignment="Left" IsVisible="{Binding Connections.HasError}">
-            <StackPanel Orientation="Horizontal" Spacing="6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
               <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-              <TextBlock Text="{Binding Connections.ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Connections.ErrorText}" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
 </StackPanel>
         <!-- Overlaid on the panel's top edge so it never shifts the content -->
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsLinkBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsLinkBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
       </Panel>
     </Border>
 
-    <!-- Phone handoff is not shipped yet: show it as coming soon (full UI lives on feature/ui-redesign) -->
-    <Border Classes="panel">
+    <!-- Phone handoff switched off (AppOptions.PhoneHandoff, off in the Store build): show it as coming soon -->
+    <Border Classes="panel" IsVisible="{Binding ShowPhoneComingSoon}">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <Border Classes="optionIcon" VerticalAlignment="Center">
           <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
@@ -79,6 +79,53 @@
           <TextBlock Text="Coming soon" />
         </Border>
       </Grid>
+    </Border>
+
+    <!-- Your phone: move these earbuds to a paired phone and back (any earbuds; see docs/modules/phone-handoff.md) -->
+    <Border Classes="panel" IsVisible="{Binding PhoneMove, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="8" DataContext="{Binding PhoneMove}" x:DataType="phone:PhoneMoveViewModel">
+        <ProgressBar Classes="busy" IsVisible="{Binding ShowProgress}" Margin="-16,-16,-16,0" />
+        <TextBlock Text="Your phone" Classes="panelTitle" />
+
+        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowSetup}">
+          <TextBlock Text="{Binding SetupText}" Classes="meta" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="ghost" Content="Pair a phone" Command="{Binding OpenSettingsCommand}" VerticalAlignment="Center" Margin="12,0,0,0" />
+        </Grid>
+
+        <ItemsControl ItemsSource="{Binding Targets}" IsVisible="{Binding HasPhones}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="phone:PhoneTargetViewModel">
+              <Border Classes="row host" CornerRadius="{StaticResource Samaat.Radius.Control}" Padding="8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Classes="optionIcon" Classes.on="{Binding IsOnline}" VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Ellipse Classes="dot" Classes.on="{Binding IsOnline}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding StateText}" Classes="meta" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Classes="subtle" Content="Bring back here" Command="{Binding BringHereCommand}" IsVisible="{Binding CanBringHere}" />
+                    <Button Classes="primary" Content="{Binding MoveText}" Command="{Binding MoveCommand}" IsVisible="{Binding CanMoveThere}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Text="{Binding ProgressText}" Classes="meta" IsVisible="{Binding ShowProgress}" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding ResultText}" Classes="meta" TextWrapping="Wrap" IsVisible="{Binding ShowSuccess}" />
+        <Border Classes="alert critical" IsVisible="{Binding ShowFailure}" HorizontalAlignment="Left">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+            <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
     </Border>
 
     <!-- Devices: multipoint and every host the earbuds report, or an honest empty state -->
@@ -129,9 +176,9 @@
                     </Border>
                     <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
-                      <StackPanel Orientation="Horizontal" Spacing="6">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
                         <Border Classes="chip" Padding="5,0" VerticalAlignment="Center" IsVisible="{Binding IsThisHost}">
-                          <TextBlock Text="This computer" FontSize="11" />
+                          <TextBlock Text="This computer" FontSize="{StaticResource Samaat.FontSize.Label}" />
                         </Border>
                         <TextBlock Text="{Binding StateText}" Classes="meta" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                       </StackPanel>
@@ -139,16 +186,16 @@
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                       <Button Classes="ghost" Command="{Binding DisconnectCommand}" IsVisible="{Binding CanDisconnect}"
                               AutomationProperties.Name="{Binding DisconnectLabel}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
                           <PathIcon Data="{StaticResource Icon.Disconnect}" Width="14" Height="14" />
-                          <TextBlock Text="Disconnect" FontSize="12" />
+                          <TextBlock Text="Disconnect" FontSize="{StaticResource Samaat.FontSize.Meta}" />
                         </StackPanel>
                       </Button>
                       <Button Classes="ghost" Command="{Binding SwitchCommand}" IsVisible="{Binding CanSwitch}"
                               AutomationProperties.Name="{Binding SwitchLabel}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
                           <PathIcon Data="{Binding SwitchIconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="14" Height="14" />
-                          <TextBlock Text="{Binding SwitchText}" FontSize="12" />
+                          <TextBlock Text="{Binding SwitchText}" FontSize="{StaticResource Samaat.FontSize.Meta}" />
                         </StackPanel>
                       </Button>
                     </StackPanel>
@@ -164,7 +211,7 @@
             </Border>
             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
               <TextBlock Text="No other devices yet" FontWeight="SemiBold" />
-              <TextBlock Text="Devices you pair these earbuds with appear here." Classes="meta" TextWrapping="Wrap" />
+              <TextBlock Text="Devices you pair these earbuds with appear here" Classes="meta" TextWrapping="Wrap" />
             </StackPanel>
           </Grid>
 
@@ -182,7 +229,7 @@
           </StackPanel>
 </StackPanel>
         <!-- Overlaid on the panel's top edge so it never shifts the content -->
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" VerticalAlignment="Top" Margin="-16,-16,-16,0" />
       </Panel>
     </Border>
   </StackPanel>

@@ -49,15 +49,15 @@
           <Grid Classes="full" ColumnDefinitions="Auto,*,Auto">
             <ContentControl Content="{StaticResource BrandMark}" />
             <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-              <TextBlock Classes="display" Text="Samaat" FontSize="18" />
-              <TextBlock Classes="meta" Text="Earbud companion" FontSize="11" />
+              <TextBlock Classes="display" Text="Samaat" FontSize="{StaticResource Samaat.FontSize.Brand}" />
+              <TextBlock Classes="meta" Text="Earbud companion" FontSize="{StaticResource Samaat.FontSize.Label}" />
             </StackPanel>
             <Button Grid.Column="2" Classes="icon sidebarToggle" Command="{Binding ToggleSidebarCommand}" VerticalAlignment="Center"
                     ToolTip.Tip="{Binding SidebarToggleText}" AutomationProperties.Name="{Binding SidebarToggleText}">
               <PathIcon Data="{StaticResource Icon.Menu}" />
             </Button>
           </Grid>
-          <StackPanel Classes="compactOnly" Spacing="10" HorizontalAlignment="Center">
+          <StackPanel Classes="compactOnly" Spacing="12" HorizontalAlignment="Center">
             <ContentControl Content="{StaticResource BrandMark}" HorizontalAlignment="Center" />
             <Button Classes="icon sidebarToggle" Command="{Binding ToggleSidebarCommand}" HorizontalAlignment="Center"
                     ToolTip.Tip="{Binding SidebarToggleText}" AutomationProperties.Name="{Binding SidebarToggleText}">
@@ -70,13 +70,13 @@
           <Border Classes="chip" IsVisible="{Binding ModeText, Converter={x:Static ObjectConverters.IsNotNull}}"
                   ToolTip.Tip="{Binding ModeText}" AutomationProperties.Name="Simulation">
             <StackPanel Classes="chipRow" Orientation="Horizontal" Spacing="8">
-              <PathIcon Data="{StaticResource Icon.Sparkle}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Warn}" />
+              <PathIcon Data="{StaticResource Icon.Simulation}" Width="14" Height="14" Foreground="{DynamicResource Samaat.Muted}" />
               <TextBlock Classes="full" Text="Simulation" />
             </StackPanel>
           </Border>
           <Button Classes="alertChip" IsVisible="{Binding HasAlertingDevices}" Command="{Binding ShowAlertingDeviceCommand}"
                   ToolTip.Tip="Show the device with a low battery" AutomationProperties.Name="{Binding AlertCountText}">
-            <StackPanel Orientation="Horizontal" Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="12">
               <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" />
               <TextBlock Classes="full" Text="{Binding AlertCountText}" />
               <TextBlock Classes="compactOnly" Text="{Binding AlertingDeviceCount}" />
@@ -108,7 +108,7 @@
               </Button.Flyout>
             </Button>
             <Button Classes="nav" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh devices" AutomationProperties.Name="Refresh devices">
-              <StackPanel Orientation="Horizontal" Spacing="10">
+              <StackPanel Orientation="Horizontal" Spacing="12">
                 <PathIcon Data="{StaticResource Icon.Refresh}" />
                 <TextBlock Classes="full" Text="Refresh devices" />
               </StackPanel>
@@ -140,7 +140,7 @@
           </Button>
           <Button Classes="nav" Classes.current="{Binding IsSettings}" ToolTip.Tip="Settings" AutomationProperties.Name="Settings"
                   Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Settings}">
-            <StackPanel Orientation="Horizontal" Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="12">
               <PathIcon Data="{StaticResource Icon.Settings}" />
               <TextBlock Classes="full" Text="Settings" />
             </StackPanel>
@@ -172,7 +172,7 @@
                           <Grid ColumnDefinitions="Auto,*,Auto">
                             <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="1" Classes="meta" Text="{Binding ConnectionText}" Margin="6,0,0,0" TextTrimming="CharacterEllipsis" />
-                            <TextBlock Grid.Column="2" Classes="number" Text="{Binding SummaryShort}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Classes="number" Text="{Binding SummaryShort}" FontSize="{StaticResource Samaat.FontSize.Meta}" Margin="8,0,0,0" VerticalAlignment="Center" />
                           </Grid>
                         </StackPanel>
                       </Grid>
@@ -192,7 +192,8 @@
 
     <Grid Grid.Column="1">
       <ScrollViewer>
-        <Panel Margin="24">
+        <!-- Bottom margin leaves room to scroll the last panel clear of a toast -->
+        <Panel Margin="24,24,24,96">
 
           <!-- Empty state -->
           <StackPanel IsVisible="{Binding ShowEmptyState}" HorizontalAlignment="Center" Margin="0,80,0,0" Spacing="12" MaxWidth="420">
@@ -218,22 +219,20 @@
                           Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Info}" />
                 </StackPanel>
               </Border>
-              <TransitioningContentControl x:Name="PageHost" Content="{Binding DevicePage}">
-                <TransitioningContentControl.PageTransition>
-                  <CrossFade Duration="0:0:0.18" />
-                </TransitioningContentControl.PageTransition>
-              </TransitioningContentControl>
+              <!-- Tabs switch instantly: they're used dozens of times a session, and a fade overlapped two pages -->
+              <TransitioningContentControl x:Name="PageHost" Content="{Binding DevicePage}" PageTransition="{x:Null}" />
             </StackPanel>
 
             <StackPanel Width="260" Spacing="16" DataContext="{Binding SelectedDevice}" x:DataType="overview:DeviceViewModel">
               <StackPanel Spacing="4">
+                <!-- Wraps in full: with MaxLines, Avalonia drops the overflow without an ellipsis, so a cut name would look complete -->
                 <TextBlock Text="{Binding Name}" Classes="title" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding Subtitle}" Classes="muted" TextWrapping="Wrap" />
               </StackPanel>
 
               <!-- The artwork sits on the canvas: no card -->
               <parts:DeviceStage />
-              <Button Classes="ghost" Content="Change look" HorizontalAlignment="Center" Margin="0,-10,0,0" FontSize="12" Foreground="{DynamicResource Samaat.Muted}"
+              <Button Classes="ghost" Content="Change look" HorizontalAlignment="Center" Margin="0,-10,0,0" FontSize="{StaticResource Samaat.FontSize.Meta}" Foreground="{DynamicResource Samaat.Muted}"
                       AutomationProperties.Name="Change look" ToolTip.Tip="Change the artwork for this device">
                 <Button.Flyout>
                   <MenuFlyout Placement="Bottom" ItemsSource="{Binding LookOptions}">
@@ -290,25 +289,22 @@
         </Panel>
       </ScrollViewer>
 
-      <!-- Toasts: battery alerts from any device -->
-      <ItemsControl ItemsSource="{Binding Alerts}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    Margin="0,0,24,24" Width="340">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="x:String">
-            <Border Classes="toast" Margin="0,8,0,0">
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Classes="ghost" MinWidth="32" MinHeight="32" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
-                        Command="{Binding $parent[ItemsControl].((shell:MainWindowViewModel)DataContext).DismissAlertCommand}"
-                        CommandParameter="{Binding}">
-                  <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
-                </Button>
-              </Grid>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
+      <!-- Toast: the newest battery alert or message; older ones wait behind it ("+2 more") -->
+      <Border Classes="toast" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,24" Width="340"
+              IsVisible="{Binding CurrentAlert, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <PathIcon Data="{StaticResource Icon.Warning}" Width="16" Height="16" Foreground="{DynamicResource Samaat.Warn}" VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding CurrentAlert}" TextWrapping="Wrap" />
+            <TextBlock Classes="meta" Text="{Binding MoreAlertsText}"
+                       IsVisible="{Binding MoreAlertsText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </StackPanel>
+          <Button Grid.Column="2" Classes="ghost" MinWidth="32" MinHeight="32" ToolTip.Tip="Dismiss" AutomationProperties.Name="Dismiss alert"
+                  Command="{Binding DismissAlertCommand}" CommandParameter="{Binding CurrentAlert}">
+            <PathIcon Data="{StaticResource Icon.Dismiss}" Width="12" Height="12" Foreground="{DynamicResource Samaat.Muted}" />
+          </Button>
+        </Grid>
+      </Border>
     </Grid>
   </Grid>
 </Window>

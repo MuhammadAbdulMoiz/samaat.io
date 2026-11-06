@@ -1,0 +1,16 @@
+{
+  // Not observed on hardware: name and features come from GalaxyBudsClient's model table
+  // (https://github.com/timschneeb/GalaxyBudsClient @ 754b6fdf, GalaxyBudsClient/Model/Specifications). A lead, not evidence.
+  "id": "samsung.galaxy-buds-core",
+  "displayName": "Galaxy Buds Core",
+  "manufacturer": "Samsung",
+  "driver": "samsung-spp",
+  "match": {
+    // Upstream finds the model by this text in the Bluetooth name, e.g. "Galaxy Buds Core (A1B2)".
+    "namePattern": "Buds Core"
+  },
+  "verified": false,
+  "features": ["battery.left", "battery.right", "battery.case", "noise.anc", "noise.transparency", "eq.presets"],
+  "verifiedFirmware": [],
+  "notes": "Works with Galaxy Buds Core over Samsung's RFCOMM protocol, ported from GalaxyBudsClient. Battery, noise mode and EQ preset are read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-samsung-galaxy-buds-port.md."
+}

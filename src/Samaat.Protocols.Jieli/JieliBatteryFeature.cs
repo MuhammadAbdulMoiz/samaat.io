@@ -16,6 +16,10 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
     private readonly TimeProvider _time;
     private readonly Lock _gate = new();
     private readonly TaskCompletionSource _firstReading = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    // How long a refresh waits for the push that follows re-authentication.
+    private static readonly TimeSpan PushWait = TimeSpan.FromSeconds(3);
+
+    private TaskCompletionSource _nextPush = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private BatteryState _current = BatteryState.Empty;
 
     private JieliBatteryFeature(RcspSession session, TimeProvider time)
@@ -80,16 +84,24 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
     /// <summary>Completes with the first valid battery push; throws if <paramref name="cancellationToken"/> expires first.</summary>
     public Task FirstReadingAsync(CancellationToken cancellationToken) => _firstReading.Task.WaitAsync(cancellationToken);
 
-    /// <summary>Re-runs the session; the buds push their battery again after authentication.</summary>
+    /// <summary>
+    /// Re-runs the session and waits up to <see cref="PushWait"/> for the battery push the buds send after
+    /// authentication, so callers see the new reading when this returns. No push keeps the last values.
+    /// </summary>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
+        // Taken before the restart so a push during auth counts; shared, so overlapping refreshes all end on it.
+        var nextPush = Volatile.Read(ref _nextPush).Task;
         try
         {
-            await _session.RestartAsync(cancellationToken);
+            if (await _session.RestartAsync(cancellationToken))
+            {
+                await nextPush.WaitAsync(PushWait, _time, cancellationToken);
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Keep the last values; the next refresh tries again.
+            // Auth failed or the buds didn't push in time: keep the last values; the next refresh tries again.
         }
     }
 
@@ -132,7 +144,10 @@ public sealed class JieliBatteryFeature : IBatteryFeature, IAsyncDisposable
         }
 
         _firstReading.TrySetResult();
+        var waiting = Interlocked.Exchange(ref _nextPush, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
         Changed?.Invoke(this, updated);
+        // After Changed, so a refresh's caller has seen the reading by the time RefreshAsync returns.
+        waiting.TrySetResult();
     }
 
     public async ValueTask DisposeAsync()

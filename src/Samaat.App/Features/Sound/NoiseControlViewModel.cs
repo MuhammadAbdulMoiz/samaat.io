@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Samaat.Core.Capabilities;
 using Samaat.Core.Commands;
 using Samaat.Core.Devices;
+using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
 
 namespace Samaat.App.Features.Sound;
@@ -64,7 +66,13 @@ public sealed partial class NoiseControlViewModel : ObservableObject, IDisposabl
 
     public bool HasExtras => ShowWind || ShowConversation;
 
-    public string UnavailableText => _feature is null
+    public string UnavailableTitle => DriverRetry.WaitsForConnection(_device)
+        ? "Connect to use noise control"
+        : "Not available for this model yet";
+
+    public string UnavailableText => DriverRetry.WaitsForConnection(_device)
+        ? "Connect your earbuds and Samaat will read noise control from them."
+        : _feature is null
         ? "Samaat can't control noise cancelling on this device yet. That needs support for this model's own protocol."
         : "This model doesn't have noise control.";
 
@@ -220,8 +228,11 @@ public sealed partial class NoiseControlViewModel : ObservableObject, IDisposabl
                 ConversationAwareness = state.ConversationAwareness ?? false;
             }
 
-            CanControl = _device.Connection == ConnectionState.Connected && Layout != NoiseControlLayout.None;
+            CanControl = _device.Connection == ConnectionState.Connected && Layout != NoiseControlLayout.None
+                && _feature?.Access != CapabilityAccess.ReadOnly;
         });
+        OnPropertyChanged(nameof(UnavailableTitle));
+        OnPropertyChanged(nameof(UnavailableText));
         UpdateStatus();
     }
 
@@ -247,6 +258,7 @@ public sealed partial class NoiseControlViewModel : ObservableObject, IDisposabl
             : _device.Connection != ConnectionState.Connected ? "Connect your earbuds to change noise control."
             : IsBusy ? "Applying…"
             : SelectedMode == NoiseMode.Off ? "Noise control is off"
+            : _feature?.Access == CapabilityAccess.ReadOnly ? $"{SelectedModeLabel} is on. Change it on your headphones."
             : $"{SelectedModeLabel} is on";
     }
 
@@ -290,7 +302,7 @@ public sealed partial class NoiseModeOptionViewModel : ObservableObject
     public string IconKey => Mode switch
     {
         NoiseMode.NoiseCancelling => "Icon.NoiseCancelling",
-        NoiseMode.Adaptive => "Icon.Sparkle",
+        NoiseMode.Adaptive => "Icon.Adaptive",
         NoiseMode.Transparency => "Icon.Transparency",
         _ => "Icon.CircleOff",
     };

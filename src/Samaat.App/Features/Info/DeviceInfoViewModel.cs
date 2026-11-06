@@ -10,6 +10,7 @@ using Samaat.Core.Bluetooth;
 using Samaat.Core.Capabilities;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
 using Samaat.Core.Profiles;
@@ -52,8 +53,16 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
     private readonly TimeProvider _time;
     private string? _lastBattery;
 
-    public DeviceInfoViewModel(IEarbudDevice device, Action<Action>? post = null, TimeProvider? time = null, DeviceProfile? profile = null)
+    /// <summary>How many log lines "Copy report" includes.</summary>
+    public const int ReportLogLines = 40;
+
+    private readonly Func<int, IReadOnlyList<string>>? _recentLog;
+
+    /// <param name="recentLog">The newest log lines for the report; defaults to the installed log sink's, if it keeps any.</param>
+    public DeviceInfoViewModel(IEarbudDevice device, Action<Action>? post = null, TimeProvider? time = null, DeviceProfile? profile = null,
+        Func<int, IReadOnlyList<string>>? recentLog = null)
     {
+        _recentLog = recentLog ?? (SamaatLog.Sink is IRecentLog log ? log.Tail : null);
         _device = device;
         _diagnostics = device.GetFeature<IDeviceDiagnostics>();
         _battery = device.GetFeature<IBatteryFeature>();
@@ -157,6 +166,10 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial double AvailablePercent { get; set; }
 
+    /// <summary>The support tier under the Diagnostics meter, which already shows the feature count.</summary>
+    [ObservableProperty]
+    public partial string SupportText { get; set; } = "";
+
     /// <summary>"14 of 15": the figure next to the meter.</summary>
     [ObservableProperty]
     public partial string FeatureCountText { get; set; } = "";
@@ -220,7 +233,30 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
             sb.AppendLine(CultureInfo.InvariantCulture, $"{e.Time} {e.Text}");
         }
 
+        AppendRecentLog(sb);
         return sb.ToString();
+    }
+
+    private void AppendRecentLog(StringBuilder sb)
+    {
+        if (_recentLog is null)
+        {
+            return;
+        }
+
+        var lines = _recentLog(ReportLogLines);
+        sb.AppendLine();
+        if (lines.Count == 0)
+        {
+            sb.AppendLine("Recent log: nothing logged");
+            return;
+        }
+
+        sb.AppendLine("Recent log:");
+        foreach (var line in lines)
+        {
+            sb.AppendLine(line);
+        }
     }
 
     private static readonly (string Module, string Prefix)[] Modules =
@@ -259,6 +295,7 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
         SummaryText = $"{available.Count} of {all.Count} features available · {CapabilityText.Tier(_device.Identity.Tier)}";
         AvailablePercent = all.Count == 0 ? 0 : 100.0 * available.Count / all.Count;
         FeatureCountText = $"{available.Count} of {all.Count}";
+        SupportText = CapabilityText.Tier(_device.Identity.Tier);
         AvailableRows = available
             .Select(c => new CapabilityRow(CapabilityText.Name(c.Feature),
                 $"{CapabilityText.Source(c.Source)} · {CapabilityText.Access(c.Access)}{(c.Verified == Verification.Verified ? " · verified" : "")}"))
@@ -336,7 +373,7 @@ public sealed partial class DeviceInfoViewModel : ObservableObject, IDisposable
 
     private static string Describe(BatteryState state) => string.Join(" · ", state.Readings
         .OrderBy(r => r.Component)
-        .Select(r => $"{r.Component} {(r.Percent is { } p ? $"{p}%" : "?")}{(r.IsCharging ? " ⚡" : "")}"));
+        .Select(r => $"{r.Component} {(r.Percent is { } p ? $"{p}%" : "?")}{(r.IsCharging ? " charging" : "")}"));
 
     public void Dispose()
     {

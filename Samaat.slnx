@@ -3,9 +3,14 @@
     <Project Path="src/Samaat.App/Samaat.App.csproj" />
     <Project Path="src/Samaat.Cli/Samaat.Cli.csproj" />
     <Project Path="src/Samaat.Core/Samaat.Core.csproj" />
+    <Project Path="src/Samaat.Drivers/Samaat.Drivers.csproj" />
     <Project Path="src/Samaat.Handoff/Samaat.Handoff.csproj" />
     <Project Path="src/Samaat.Platform.Windows/Samaat.Platform.Windows.csproj" />
     <Project Path="src/Samaat.Protocols.FastPair/Samaat.Protocols.FastPair.csproj" />
+    <Project Path="src/Samaat.Protocols.Bose/Samaat.Protocols.Bose.csproj" />
+    <Project Path="src/Samaat.Protocols.Samsung/Samaat.Protocols.Samsung.csproj" />
+    <Project Path="src/Samaat.Protocols.Soundcore/Samaat.Protocols.Soundcore.csproj" />
+    <Project Path="src/Samaat.Protocols.Sony/Samaat.Protocols.Sony.csproj" />
     <Project Path="src/Samaat.Protocols.Jieli/Samaat.Protocols.Jieli.csproj" />
     <Project Path="src/Samaat.Protocols.Standard/Samaat.Protocols.Standard.csproj" />
     <Project Path="src/Samaat.Simulator/Samaat.Simulator.csproj" />
@@ -16,6 +21,7 @@
     <Project Path="tests/Samaat.App.Tests/Samaat.App.Tests.csproj" />
     <Project Path="tests/Samaat.Core.Tests/Samaat.Core.Tests.csproj" />
     <Project Path="tests/Samaat.Handoff.Tests/Samaat.Handoff.Tests.csproj" />
+    <Project Path="tests/Samaat.Platform.Windows.Tests/Samaat.Platform.Windows.Tests.csproj" />
     <Project Path="tests/Samaat.Protocols.Tests/Samaat.Protocols.Tests.csproj" />
   </Folder>
 </Solution>

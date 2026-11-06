@@ -1,0 +1,15 @@
+{
+  // Not observed on hardware: name and features come from OpenSCQ30's model list (https://github.com/Oppzippy/OpenSCQ30 @ e75a68b7, README and lib/src/devices/soundcore/a3029.rs). A lead, not evidence.
+  "id": "soundcore.life-tune",
+  "displayName": "Life Tune",
+  "manufacturer": "Soundcore",
+  "driver": "soundcore-spp",
+  "match": {
+    // Matched against the Bluetooth name, e.g. "Soundcore Life Tune".
+    "namePattern": "Life Tune(?! Pro)"
+  },
+  "verified": false,
+  "features": ["battery.combined", "noise.anc", "noise.transparency", "eq.presets"],
+  "verifiedFirmware": [],
+  "notes": "Works with Life Tune over Soundcore's RFCOMM protocol, ported from OpenSCQ30. Battery, noise mode and EQ preset are read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-soundcore-port.md."
+}

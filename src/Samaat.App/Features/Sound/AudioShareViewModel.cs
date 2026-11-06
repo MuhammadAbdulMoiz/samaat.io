@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Samaat.App.Features.Settings;
 using Samaat.Core.Audio;
 using Samaat.Core.Platform;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App.Features.Sound;
 
@@ -128,6 +129,7 @@ public sealed partial class AudioShareViewModel : ObservableObject, IAsyncDispos
         catch (Exception e)
         {
             Status = $"Couldn't switch: {e.Message}";
+            SamaatLog.Warn("Audio share", "Switching the default output failed", e);
         }
     }
 

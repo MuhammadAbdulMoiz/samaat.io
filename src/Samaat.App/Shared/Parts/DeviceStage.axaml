@@ -13,7 +13,7 @@
       <ItemsControl Classes="artworkParts" ItemsSource="{Binding ArtworkParts}" IsVisible="{Binding ShowArtworkParts}"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
         <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate><Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6" /></ItemsPanelTemplate>
+          <ItemsPanelTemplate><Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="8" /></ItemsPanelTemplate>
         </ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="overview:ArtworkPartViewModel">
@@ -31,7 +31,7 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
       <!-- Unknown look, separate pieces: faint left bud, right bud and case, same layout as the split photo -->
-      <Grid Classes="unknownPieces" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="6"
+      <Grid Classes="unknownPieces" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="8"
             HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownPieces}">
         <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figures[1].HasLevel}" Spacing="2"
                     AutomationProperties.Name="{Binding Figures[1].AccessibleText}" ToolTip.Tip="{Binding Figures[1].AccessibleText}">

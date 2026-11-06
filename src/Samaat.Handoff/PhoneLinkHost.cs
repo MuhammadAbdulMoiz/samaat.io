@@ -10,6 +10,7 @@ using Samaat.Handoff.Moving;
 using Samaat.Handoff.Pairing;
 using Samaat.Handoff.Protocol;
 using Samaat.Handoff.Storage;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff;
 
@@ -30,6 +31,11 @@ public sealed record PhoneLinkHostOptions(string ComputerName)
     public TimeSpan PairingAnswerTimeout { get; init; } = TimeSpan.FromMinutes(2);
 
     public TimeSpan KeepAlive { get; init; } = PeerChannel.DefaultKeepAlive;
+
+    public const int DefaultMaxPendingHandshakes = 4;
+
+    /// <summary>Connections still in their handshake (not yet a paired session or a pairing prompt) at once; more are refused.</summary>
+    public int MaxPendingHandshakes { get; init; } = DefaultMaxPendingHandshakes;
 }
 
 /// <summary>A paired phone and what it last reported.</summary>
@@ -93,8 +99,13 @@ public sealed class PhoneLinkHost : IAsyncDisposable
     private Task _beaconLoop = Task.CompletedTask;
     private ITimer? _pairingTimer;
     private int? _lastPort;
-    private PairingSession? _pendingPairing;
+    // The one pairing at a time: null, a reservation while a phone's handshake runs, or the PairingSession waiting for answers.
+    // Taken under _gate before the handshake starts, so phones that arrive together can't all get a prompt.
+    private object? _pairingSlot;
     private bool _pairingOpen;
+    // Counts pairing windows, so a handshake that began in a window that has since closed can't raise a prompt.
+    private int _pairingWindow;
+    private int _pendingHandshakes;
     private bool _started;
 
     public PhoneLinkHost(
@@ -123,6 +134,9 @@ public sealed class PhoneLinkHost : IAsyncDisposable
     public int? Port { get; private set; }
 
     public bool IsListening => Port is not null;
+
+    /// <summary>Connections currently in their handshake.</summary>
+    public int PendingHandshakes => Volatile.Read(ref _pendingHandshakes);
 
     /// <summary>Why listening failed (port blocked, no network), or null.</summary>
     public string? ListenError { get; private set; }
@@ -163,6 +177,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         lock (_gate)
         {
             _pairingOpen = true;
+            _pairingWindow++;
             _pairingTimer?.Dispose();
             _pairingTimer = _time.CreateTimer(_ => ClosePairing(), null, _options.PairingWindow, Timeout.InfiniteTimeSpan);
         }
@@ -294,6 +309,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
             catch (SocketException ex)
             {
                 ListenError = $"Samaat couldn't listen for your phone: {ex.Message}";
+                SamaatLog.Error("Phone link", "Couldn't listen for phones", ex);
                 return;
             }
         }
@@ -328,7 +344,13 @@ public sealed class PhoneLinkHost : IAsyncDisposable
     {
         while (!ct.IsCancellationRequested)
         {
-            await SendBeaconAsync();
+            // The beacon carries the computer's name in the clear, so it only goes out while pairing is open. Paired
+            // phones dial the address and port they stored when they paired or last connected.
+            if (IsPairingOpen)
+            {
+                await SendBeaconAsync();
+            }
+
             try
             {
                 await Task.Delay(_options.BeaconInterval, _time, ct);
@@ -377,6 +399,15 @@ public sealed class PhoneLinkHost : IAsyncDisposable
 
     private async Task HandleClientAsync(TcpClient client, CancellationToken ct)
     {
+        // Cap connections that haven't finished a handshake, so a flood of silent connections can't tie the host up.
+        // The rest are closed at once; that isn't logged, or the flood would fill the log too.
+        if (Interlocked.Increment(ref _pendingHandshakes) > _options.MaxPendingHandshakes)
+        {
+            Interlocked.Decrement(ref _pendingHandshakes);
+            client.Dispose();
+            return;
+        }
+
         client.NoDelay = true;
         var frames = new FrameStream(client.GetStream());
         var handedOff = false;
@@ -398,10 +429,15 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         }
         catch (Exception ex) when (ex is HandshakeException or IOException or OperationCanceledException or SocketException or ObjectDisposedException)
         {
-            // A failed or abandoned handshake just closes the connection.
+            // A failed or abandoned handshake just closes the connection; a refused or broken one is worth a line.
+            if (ex is HandshakeException or InvalidDataException)
+            {
+                SamaatLog.Info("Phone link", "A phone's handshake failed", ex);
+            }
         }
         finally
         {
+            Interlocked.Decrement(ref _pendingHandshakes);
             if (!handedOff)
             {
                 await frames.DisposeAsync();
@@ -412,25 +448,57 @@ public sealed class PhoneLinkHost : IAsyncDisposable
 
     private async Task<bool> HandlePairingAsync(FrameStream frames, HandshakeFrame start, CancellationToken ct)
     {
-        if (!IsPairingOpen)
-        {
-            await Handshake.RefuseAsync(frames, $"Pairing isn't open on {ComputerName}. In Samaat on the computer, open Settings and choose Pair a phone.", ct);
-            return false;
-        }
-
+        // Check and take the slot in one step: checking, then taking it after the handshake let every phone that
+        // arrived during the handshake through, each with its own prompt.
+        var reservation = new object();
+        string? refusal;
+        int window;
         lock (_gate)
         {
-            if (_pendingPairing is not null)
+            window = _pairingWindow;
+            refusal = !_pairingOpen
+                ? $"Pairing isn't open on {ComputerName}. In Samaat on the computer, open Settings and choose Pair a phone."
+                : _pairingSlot is not null
+                    ? $"{ComputerName} is already pairing with another phone. Try again in a moment."
+                    : null;
+            if (refusal is null)
             {
-                _ = Handshake.RefuseAsync(frames, $"{ComputerName} is already pairing with another phone. Try again in a moment.", ct);
-                return false;
+                _pairingSlot = reservation;
             }
         }
 
-        var session = await Handshake.PairAsComputerAsync(frames, start, ComputerId, ComputerName, ct);
+        if (refusal is not null)
+        {
+            // Awaited, so the phone gets the reason before the connection closes.
+            await Handshake.RefuseAsync(frames, refusal, ct);
+            return false;
+        }
+
+        PairingSession session;
+        try
+        {
+            session = await Handshake.PairAsComputerAsync(frames, start, ComputerId, ComputerName, ct);
+        }
+        catch
+        {
+            // The phone hung up or sent something wrong: free the slot for the next phone.
+            ReleaseReservation(reservation);
+            throw;
+        }
+
+        // Pairing may have closed while the handshake ran (the user cancelled, or the window ran out): no prompt then.
+        bool stillOpen;
         lock (_gate)
         {
-            _pendingPairing = session;
+            stillOpen = _pairingOpen && _pairingWindow == window && ReferenceEquals(_pairingSlot, reservation);
+            _pairingSlot = stillOpen ? session : ReferenceEquals(_pairingSlot, reservation) ? null : _pairingSlot;
+        }
+
+        if (!stillOpen)
+        {
+            SamaatLog.Info("Phone link", $"Dropped {session.PeerName}'s pairing: pairing closed during its handshake");
+            await session.DisposeAsync();
+            return false;
         }
 
         _ = session.PeerDecision.ContinueWith(async t =>
@@ -470,16 +538,27 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         return paired;
     }
 
+    private void ReleaseReservation(object reservation)
+    {
+        lock (_gate)
+        {
+            if (ReferenceEquals(_pairingSlot, reservation))
+            {
+                _pairingSlot = null;
+            }
+        }
+    }
+
     private async Task EndPairingAsync(PairingSession session)
     {
         lock (_gate)
         {
-            if (!ReferenceEquals(_pendingPairing, session))
+            if (!ReferenceEquals(_pairingSlot, session))
             {
                 return;
             }
 
-            _pendingPairing = null;
+            _pairingSlot = null;
         }
 
         await session.DisposeAsync();
@@ -515,7 +594,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
         return true;
     }
 
-    private async Task<ReplyMessage?> HandleStartHandoffAsync(PhoneSession session, StartHandoffMessage request, CancellationToken ct)
+    private async Task<ReplyMessage?> HandleStartHandoffAsync(PhoneSession session, StartHandoffMessage request)
     {
         var address = MessageCodec.NormalizeAddress(request.Address);
         var device = _devices().FirstOrDefault(d => d.Identity.Details?.Address is { } a && MessageCodec.NormalizeAddress(a) == address);
@@ -525,7 +604,8 @@ public sealed class PhoneLinkHost : IAsyncDisposable
                 $"{ComputerName} doesn't have these earbuds paired.", HandoffOutcome.NotStarted);
         }
 
-        var result = await MoveAsync(device, session.Id, request.Direction, null, ct);
+        // Not the session's token: a move the phone started must finish or roll back here even if the phone drops mid-move.
+        var result = await MoveAsync(device, session.Id, request.Direction, null, _disposed.Token);
         return new ReplyMessage(request.Id, result.Succeeded ? CommandStatus.Confirmed : CommandStatus.Rejected, result.Message, result.Outcome);
     }
 
@@ -550,7 +630,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
 
         await _acceptLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
         await _beaconLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-        if (_pendingPairing is { } pairing)
+        if (_pairingSlot is PairingSession pairing)
         {
             await pairing.DisposeAsync();
         }
@@ -610,7 +690,7 @@ public sealed class PhoneLinkHost : IAsyncDisposable
                     host.RaiseChanged();
                     return null;
                 case StartHandoffMessage start:
-                    return await host.HandleStartHandoffAsync(this, start, ct);
+                    return await host.HandleStartHandoffAsync(this, start);
                 default:
                     return null;
             }

@@ -35,7 +35,7 @@ public sealed partial class BluetoothDetailsViewModel : ObservableObject, IDispo
         // Connection and battery source change over time; the rest is fixed for the device.
         device.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(DeviceViewModel.ConnectionText) or nameof(DeviceViewModel.SourceText))
+            if (e.PropertyName is nameof(DeviceViewModel.ConnectionText) or nameof(DeviceViewModel.SourceText) or nameof(DeviceViewModel.TierText))
             {
                 Rebuild();
             }
@@ -114,5 +114,7 @@ public sealed partial class BluetoothDetailsViewModel : ObservableObject, IDispo
             new("Battery source", Or(_device.SourceText)),
         ];
         Rows = [.. DeviceRows, new("Support", $"{_device.TierText}: {_device.TierDescription}"), .. ConnectionRows];
+        OnPropertyChanged(nameof(TierText));
+        OnPropertyChanged(nameof(TierDescription));
     }
 }

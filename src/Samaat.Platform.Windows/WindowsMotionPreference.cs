@@ -1,5 +1,6 @@
 using Samaat.Core.Platform;
 using Windows.UI.ViewManagement;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -14,8 +15,9 @@ public sealed class WindowsMotionPreference : IMotionPreference
             {
                 return !new UISettings().AnimationsEnabled;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                SamaatLog.Warn("Windows", "Couldn't read the animation setting", ex);
                 return false;
             }
         }

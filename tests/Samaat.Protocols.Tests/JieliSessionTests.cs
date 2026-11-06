@@ -114,6 +114,91 @@ public sealed class JieliBatteryFeatureTests
     }
 
     [Fact]
+    public async Task Refresh_WaitsForThePushThatFollowsReauth()
+    {
+        var buds = new FakeBuds();
+        await using var feature = (await Create(buds))!;
+        buds.Mode = BudsMode.NoPush;
+
+        var refresh = feature.RefreshAsync();
+        await WaitUntil(() => buds.AuthStarts == 2 && buds.Notify.IsSubscribed);
+        await Task.Delay(50);
+        Assert.False(refresh.IsCompleted);
+
+        buds.Push(Captured.AdvInfoWith(50, 40, 0));
+        await refresh.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(50, feature.Current.Get(BatteryComponent.Left)!.Percent);
+    }
+
+    [Fact]
+    public async Task Refresh_NoPush_GivesUpAfterTheWaitAndKeepsTheLastValues()
+    {
+        var buds = new FakeBuds();
+        var time = new FakeTimeProvider();
+        await using var feature = (await Create(buds, time))!;
+        buds.Mode = BudsMode.NoPush;
+
+        var refresh = feature.RefreshAsync();
+        for (var i = 0; i < 100 && !refresh.IsCompleted; i++)
+        {
+            await Task.Delay(20);
+            time.Advance(TimeSpan.FromSeconds(1));
+        }
+
+        await refresh.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(100, feature.Current.Get(BatteryComponent.Left)!.Percent);
+    }
+
+    [Fact]
+    public async Task OverlappingRefreshes_BothEndWithTheNextPush()
+    {
+        var buds = new FakeBuds();
+        await using var feature = (await Create(buds))!;
+        buds.Mode = BudsMode.NoPush;
+
+        var first = feature.RefreshAsync();
+        var second = feature.RefreshAsync();
+        await WaitUntil(() => buds.AuthStarts == 3 && buds.Notify.IsSubscribed);
+        await Task.Delay(50);
+
+        buds.Push(Captured.AdvInfoWith(50, 40, 0));
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public async Task Refresh_RaisesChangedBeforeItReturns()
+    {
+        var buds = new FakeBuds();
+        await using var feature = (await Create(buds))!;
+        buds.Mode = BudsMode.NoPush;
+        var raised = false;
+        feature.Changed += (_, _) =>
+        {
+            Thread.Sleep(200); // a slow subscriber must still finish before the refresh returns
+            raised = true;
+        };
+
+        var refresh = feature.RefreshAsync();
+        await WaitUntil(() => buds.AuthStarts == 2 && buds.Notify.IsSubscribed);
+        await Task.Delay(50);
+        _ = Task.Run(() => buds.Push(Captured.AdvInfoWith(50, 40, 0)));
+        await refresh.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.True(raised);
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (var i = 0; i < 200 && !condition(); i++)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.True(condition());
+    }
+
+    [Fact]
     public async Task Refresh_AfterAuthFailureDoesNotThrow()
     {
         var buds = new FakeBuds();

@@ -30,3 +30,9 @@ Every field given in `match` must agree. The highest score wins: vendor + produc
 A device with both the Jieli vendor ID and the Fast Pair stream gets the Fast Pair driver: an advertised service outranks a chip vendor's ID.
 
 Models: `audionic/paradox-e.json`, `realme/buds-t200-lite.json`, `zero-lifestyle/quantum-zbuds.json`, `microsoft/modern-wireless-headset.json`, `bose/qc-headphones.json`.
+
+`samsung/` holds 11 Galaxy Buds models for the `samsung-spp` driver. Their names and features come from GalaxyBudsClient's model table, not from our own reports, so they bend the "observed values only" rule on purpose: each file says so, and each stays `verified: false` until someone sends a report from real buds ([decision](../docs/decisions/2026-11-06-samsung-galaxy-buds-port.md)).
+
+`soundcore/` holds 8 Soundcore models for the `soundcore-spp` driver. Their names and features come from OpenSCQ30's model list, not from our own reports, so they bend the "observed values only" rule on purpose: each file says so, and each stays `verified: false` until someone sends a report from real hardware ([decision](../docs/decisions/2026-11-06-soundcore-port.md)).
+
+`sony/` holds 4 Sony models for the `sony-mdr` driver. Their names and features come from SonyHeadphonesClient's headset reports and Gadgetbridge's device list (behaviour reference), not from our own reports, so they bend the "observed values only" rule on purpose: each file says so, and each stays `verified: false` until someone sends a report from real hardware ([decision](../docs/decisions/2026-11-06-sony-port.md)).

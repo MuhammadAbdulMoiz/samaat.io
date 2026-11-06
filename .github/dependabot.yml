@@ -1,0 +1,16 @@
+# Weekly update pull requests for NuGet packages (versions live in Directory.Packages.props) and GitHub Actions.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      avalonia:
+        patterns: ['Avalonia*']
+      test:
+        patterns: ['xunit*', 'Microsoft.NET.Test.Sdk', 'coverlet.*', 'Microsoft.Extensions.TimeProvider.Testing']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

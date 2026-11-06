@@ -2,6 +2,8 @@ using Samaat.App.Features.Connections;
 using Samaat.App.Features.Overview;
 using Samaat.App.Features.Sound;
 using Samaat.App.Shell;
+using Samaat.Core.Capabilities;
+using Samaat.Core.Commands;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
 using Samaat.Simulator;
@@ -133,4 +135,42 @@ public class NoiseControlViewModelTests
         Assert.False(vm.CanControl);
         Assert.Equal("Connect your earbuds to change noise control.", vm.StatusText);
     }
-}
+
+    [Fact]
+    public void ReadOnlyFeature_CannotBeControlled_AndSaysWhere()
+    {
+        var feature = new ReadOnlyNoiseControl();
+        var device = new SimulatedEarbudDevice(new DeviceIdentity("d", "Headphones"), SimulatedBatteryLayout.CombinedOnly, extraFeatures: [feature]);
+
+        var vm = new NoiseControlViewModel(device, post: a => a());
+
+        Assert.False(vm.CanControl);
+        Assert.Equal("Noise cancelling is on. Change it on your headphones.", vm.StatusText);
+    }
+
+    private sealed class ReadOnlyNoiseControl : INoiseControlFeature
+    {
+        public NoiseControlOptions Options { get; } = new([NoiseMode.NoiseCancelling, NoiseMode.Transparency]);
+
+        public bool OptionsAreExhaustive => false;
+
+        public CapabilitySource Source => CapabilitySource.RuntimeQuery;
+
+        public Verification Verification => Verification.Unverified;
+
+        public CapabilityAccess Access => CapabilityAccess.ReadOnly;
+
+        public NoiseControlState Current { get; } = new(NoiseMode.NoiseCancelling);
+
+        public event EventHandler<NoiseControlState>? Changed { add { } remove { } }
+
+        public Task<CommandResult> SetModeAsync(NoiseMode mode, CancellationToken cancellationToken = default) => Task.FromResult(CommandResult.Unsupported());
+
+        public Task<CommandResult> SetAncLevelAsync(int level, CancellationToken cancellationToken = default) => Task.FromResult(CommandResult.Unsupported());
+
+        public Task<CommandResult> SetAmbientLevelAsync(int level, CancellationToken cancellationToken = default) => Task.FromResult(CommandResult.Unsupported());
+
+        public Task<CommandResult> SetWindReductionAsync(bool enabled, CancellationToken cancellationToken = default) => Task.FromResult(CommandResult.Unsupported());
+
+        public Task<CommandResult> SetConversationAwarenessAsync(bool enabled, CancellationToken cancellationToken = default) => Task.FromResult(CommandResult.Unsupported());
+    }}

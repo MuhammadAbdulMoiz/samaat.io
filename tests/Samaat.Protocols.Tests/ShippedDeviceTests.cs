@@ -29,13 +29,7 @@ public sealed class ShippedDeviceTests
         return dir!.FullName;
     }
 
-    private static DriverRegistry Registry()
-    {
-        var registry = new DriverRegistry(DeviceCatalog.FromDirectory(Devices));
-        registry.Register(new JieliDriver());
-        registry.Register(new FastPairDriver());
-        return registry;
-    }
+    private static DriverRegistry Registry() => Samaat.Drivers.BuiltInDrivers.CreateRegistry(Devices);
 
     private static DeviceSignals T200(IReadOnlySet<Guid>? services) =>
         new("realme Buds T200 Lite", VendorId: 0x05D6, ProductId: 0x000A, ServiceUuids: services);

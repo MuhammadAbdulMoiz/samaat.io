@@ -1,6 +1,7 @@
 using Samaat.Core.Battery;
 using Samaat.Core.Devices;
 using Windows.Devices.Bluetooth;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -30,21 +31,16 @@ internal sealed class WindowsEarbudDevice : IEarbudDevice, IAsyncDisposable
 
     public event EventHandler? ConnectionChanged;
 
-    private async void OnConnectionStatusChanged(BluetoothDevice sender, object args)
-    {
-        ConnectionChanged?.Invoke(this, EventArgs.Empty);
-        if (Connection == ConnectionState.Connected && _battery is not null)
+    // A failed refresh leaves the previous (now stale) reading; the UI shows its age, and the log says why.
+    private void OnConnectionStatusChanged(BluetoothDevice sender, object args) =>
+        _ = SamaatLog.Guard("Windows Bluetooth", $"Refreshing the battery of {Identity.Name} after it connected", async () =>
         {
-            try
+            ConnectionChanged?.Invoke(this, EventArgs.Empty);
+            if (Connection == ConnectionState.Connected && _battery is not null)
             {
                 await _battery.RefreshAsync();
             }
-            catch (Exception)
-            {
-                // A failed refresh leaves the previous (now stale) reading; the UI shows its age.
-            }
-        }
-    }
+        });
 
     public async ValueTask DisposeAsync()
     {

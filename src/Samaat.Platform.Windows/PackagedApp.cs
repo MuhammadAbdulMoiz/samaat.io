@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Windows.ApplicationModel.Activation;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -30,8 +31,9 @@ public static class PackagedApp
             {
                 return global::Windows.ApplicationModel.AppInstance.GetActivatedEventArgs() is StartupTaskActivatedEventArgs;
             }
-            catch
+            catch (Exception ex)
             {
+                SamaatLog.Warn("Store", "Couldn't read how the packaged app was activated", ex);
                 return false;
             }
         }

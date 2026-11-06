@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -6,6 +5,7 @@ using NAudio.CoreAudioApi;
 using Samaat.Core.Commands;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -21,15 +21,12 @@ internal static class BluetoothAudioLink
     internal const uint OneShotReconnect = 0;
     internal const uint OneShotDisconnect = 1;
 
-    private const uint KspropertyTypeGet = 1;
     private const uint ClsctxAll = 23;
-    private const uint IoctlKsProperty = 0x2F0003;
+    private const int EFail = unchecked((int)0x80004005);
     private const uint GenericReadWrite = 0xC0000000;
     private const uint ShareReadWrite = 3;
     private const uint OpenExisting = 3;
-    private const int EFail = unchecked((int)0x80004005);
 
-    private static readonly Guid KsPropSetBtAudio = new("7FA06C40-B8F6-4C7E-8556-E8C33A12E54D");
     private static readonly Guid IidDeviceTopology = new("2A07407E-6497-4A18-9787-32F79BD0D98F");
     private static readonly PropertyKey ContainerIdKey = new(new Guid("8c7ed206-3f8a-4827-b3ab-ae9e1faefc6c"), 2);
 
@@ -83,7 +80,7 @@ internal static class BluetoothAudioLink
         }
         catch (Exception ex)
         {
-            Trace.TraceWarning($"PC link probe failed: {ex.Message}");
+            SamaatLog.Warn("PC link", "Probing the audio endpoints failed", ex);
             return 0;
         }
     });
@@ -98,6 +95,7 @@ internal static class BluetoothAudioLink
         }
         catch (Exception ex)
         {
+            SamaatLog.Warn("PC link", "Listing the audio endpoints failed", ex);
             var hr = Marshal.GetHRForException(ex);
             return new PcLinkSendResult(false, 1, hr < 0 ? hr : EFail);
         }
@@ -114,6 +112,7 @@ internal static class BluetoothAudioLink
                 }
                 catch (Exception ex) when (ex is COMException or InvalidCastException or InvalidOperationException)
                 {
+                    SamaatLog.Warn("PC link", $"Couldn't find the audio filter of endpoint {index}", ex);
                     var hr = Marshal.GetHRForException(ex);
                     targets.Add(new PcLinkTarget($"endpoint-{index}", () => hr < 0 ? hr : EFail));
                 }
@@ -172,13 +171,13 @@ internal static class BluetoothAudioLink
             return HResultFromWin32(Marshal.GetLastWin32Error());
         }
 
-        var request = new KsPropertyRequest { Set = KsPropSetBtAudio, Id = property, Flags = KspropertyTypeGet };
-        return DeviceIoControl(handle, IoctlKsProperty, ref request, Marshal.SizeOf<KsPropertyRequest>(), IntPtr.Zero, 0, out _, IntPtr.Zero)
+        var request = KsProperty.BtAudio(property);
+        return DeviceIoControl(handle, KsProperty.Ioctl, ref request, Marshal.SizeOf<KsProperty.Request>(), IntPtr.Zero, 0, out _, IntPtr.Zero)
             ? 0
             : HResultFromWin32(Marshal.GetLastWin32Error());
     }
 
-    private static int HResultFromWin32(int error) => error <= 0 ? EFail : unchecked((int)(0x80070000 | (uint)(error & 0xFFFF)));
+    private static int HResultFromWin32(int error) => KsProperty.HResultFromWin32(error);
 
     private static void Check(int hr)
     {
@@ -188,20 +187,11 @@ internal static class BluetoothAudioLink
         }
     }
 
-    // KSPROPERTY: the property set, the id within it and the request type.
-    [StructLayout(LayoutKind.Sequential)]
-    private struct KsPropertyRequest
-    {
-        public Guid Set;
-        public uint Id;
-        public uint Flags;
-    }
-
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern SafeFileHandle CreateFileW(string name, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool DeviceIoControl(SafeFileHandle handle, uint code, ref KsPropertyRequest input, int inputLength, IntPtr output, int outputLength, out int returned, IntPtr overlapped);
+    private static extern bool DeviceIoControl(SafeFileHandle handle, uint code, ref KsProperty.Request input, int inputLength, IntPtr output, int outputLength, out int returned, IntPtr overlapped);
 
     // Vtable orders below were checked against the Windows SDK's mmdeviceapi.h and devicetopology.h.
     [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -252,6 +242,35 @@ internal static class BluetoothAudioLink
         [PreserveSig] int GetConnectorIdConnectedTo([MarshalAs(UnmanagedType.LPWStr)] out string id);
 
         [PreserveSig] int GetDeviceIdConnectedTo([MarshalAs(UnmanagedType.LPWStr)] out string id);
+    }
+}
+
+/// <summary>Builds the KSPROPERTY request <see cref="BluetoothAudioLink"/> sends with <c>IOCTL_KS_PROPERTY</c>.</summary>
+internal static class KsProperty
+{
+    /// <summary>KSPROPERTY_TYPE_GET: the one-shots are "get" requests with no output buffer.</summary>
+    internal const uint TypeGet = 1;
+
+    /// <summary>IOCTL_KS_PROPERTY: CTL_CODE(FILE_DEVICE_KS, 0x000, METHOD_NEITHER, FILE_ANY_ACCESS).</summary>
+    internal const uint Ioctl = 0x2F0003;
+
+    private const int EFail = unchecked((int)0x80004005);
+
+    /// <summary>KSPROPSETID_BtAudio: the property set Windows Settings uses to connect and disconnect Bluetooth audio.</summary>
+    internal static readonly Guid BtAudioSet = new("7FA06C40-B8F6-4C7E-8556-E8C33A12E54D");
+
+    internal static Request BtAudio(uint property) => new() { Set = BtAudioSet, Id = property, Flags = TypeGet };
+
+    /// <summary>HRESULT_FROM_WIN32, except that "no error code" is a failure (E_FAIL): the call already failed.</summary>
+    internal static int HResultFromWin32(int error) => error <= 0 ? EFail : unchecked((int)(0x80070000 | (uint)(error & 0xFFFF)));
+
+    /// <summary>KSPROPERTY: the property set, the id within it and the request type.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Request
+    {
+        public Guid Set;
+        public uint Id;
+        public uint Flags;
     }
 }
 

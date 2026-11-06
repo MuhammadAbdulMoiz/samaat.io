@@ -3,7 +3,7 @@
 > **Samaat** (سماعت, "hearing") is one app to control Bluetooth earbuds and headphones from any brand.
 > It identifies the connected device, works out what it can do, and shows only the controls that actually work.
 
-Status: **draft for iteration**. It merges the two earlier plans ("Universal Bluetooth Earbuds Control Center" and "Universal Earbuds Hub Blueprint"), fixes the gaps found while reviewing them, and lists the decisions still open (§13).
+Status: **draft for iteration**, kept for its reasoning. Where it differs from what was built, [ARCHITECTURE.md](ARCHITECTURE.md) and [STATUS.md](STATUS.md) are current; the stack in §6 is superseded. It merges the two earlier plans ("Universal Bluetooth Earbuds Control Center" and "Universal Earbuds Hub Blueprint"), fixes the gaps found while reviewing them, and lists the decisions still open (§13).
 
 ---
 
@@ -209,7 +209,12 @@ Rules:
 | macOS | ⚠️ IOBluetooth (native interop, Apple tightening) | ✅ | ⚠️ | Fourth |
 | iOS | ❌ no RFCOMM without MFi | ✅ | ❌ | BLE-only devices; low priority |
 
-**Stack:** .NET 10, Avalonia 11 (desktop now, Android later from the same UI code), CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection/Hosting, System.Reactive (state streams), System.Text.Json, SQLite (preferences and history only; profiles stay JSON), Serilog, xUnit + Verify (snapshot tests for decoded traces).
+> **Superseded (2026-11-05).** The stack below is the draft's plan, not what was built. The real projects, layers and
+> dependencies are in [ARCHITECTURE.md](ARCHITECTURE.md): no DI container, System.Reactive, SQLite, Serilog or Verify;
+> preferences are a JSON file, logging is the small `SamaatLog` in Core, and recorded bytes are replayed by plain xUnit
+> tests. The platform table above still describes the reasoning.
+
+**Stack (draft):** .NET 10, Avalonia 11 (desktop now, Android later from the same UI code), CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection/Hosting, System.Reactive (state streams), System.Text.Json, SQLite (preferences and history only; profiles stay JSON), Serilog, xUnit + Verify (snapshot tests for decoded traces).
 
 Alternative if we go Android-first: Kotlin + Jetpack Compose, with Kotlin Multiplatform for the protocol core and Compose Desktop for Windows. The catch is that Windows Bluetooth access from the JVM needs a native shim. Decide in §13.
 
@@ -280,6 +285,8 @@ Navigation: **Dashboard · Sound · Controls · Connections · Info · Settings*
 ---
 
 ## 12. Repository layout
+
+> **Superseded (2026-11-05).** The draft layout below isn't what was built; see [ARCHITECTURE.md](ARCHITECTURE.md#projects-and-layers). There is no `traces/` folder: recorded bytes live in `tests/Samaat.Protocols.Tests` (see CONTRIBUTING, "Adding or changing device support").
 
 ```
 samaat.io/

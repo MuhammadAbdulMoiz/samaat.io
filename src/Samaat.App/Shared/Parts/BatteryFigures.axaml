@@ -5,7 +5,7 @@
              xmlns:c="using:Samaat.App.Shared.Controls"
              x:Class="Samaat.App.Shared.Parts.BatteryFigures"
              x:DataType="overview:DeviceViewModel">
-  <!-- Overall, left, right and case as tiles; "–" where the device reports nothing. Overview and Focus both use it. -->
+  <!-- Lowest bud, left, right and case as tiles; "–" where the device reports nothing. Overview and Focus both use it. -->
   <ItemsControl Classes="figures" Classes.single="{Binding !ShowsComponentFigures}" ItemsSource="{Binding ShownFigures}">
     <ItemsControl.ItemsPanel>
       <ItemsPanelTemplate><c:AdaptiveColumns MinColumnWidth="128" MaxColumns="4" Spacing="8" /></ItemsPanelTemplate>

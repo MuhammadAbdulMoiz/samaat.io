@@ -7,13 +7,42 @@ using Samaat.Simulator;
 
 namespace Samaat.App;
 
-public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimized = false, bool TestNotification = false)
+/// <param name="PhoneHandoff">
+/// The phone-handoff feature flag: whether the phone panels (Settings, Links), the tray's pairing item and the phone
+/// link itself exist. Off, nothing pairs, listens or broadcasts. Defaults to <see cref="PhoneHandoffDefault"/>.
+/// </param>
+public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimized = false, bool TestNotification = false,
+    SimulatorScenario Scenario = SimulatorScenario.Demo, bool PhoneHandoff = AppOptions.PhoneHandoffDefault)
 {
-    public static AppOptions Parse(string[] args) => new(
-        Simulate: args.Contains("--simulate"),
-        IncludeNonAudio: args.Contains("--all-devices"),
-        Minimized: args.Contains("--minimized") || LaunchedAtStartup(),
-        TestNotification: args.Contains("--test-notification"));
+    /// <summary>
+    /// On for normal and Debug builds; off for the Microsoft Store (MSIX) build, which packaging/msix/build-msix.ps1
+    /// compiles with <c>-p:SamaatStoreBuild=true</c>, until the handoff has run on a real phone.
+    /// </summary>
+#if SAMAAT_STORE
+    public const bool PhoneHandoffDefault = false;
+#else
+    public const bool PhoneHandoffDefault = true;
+#endif
+
+    public static AppOptions Parse(string[] args)
+    {
+        // --simulate, or --simulate=worst / --simulate=empty for the stress-test data sets (dev only).
+        var simulate = args.FirstOrDefault(a => a == "--simulate" || a.StartsWith("--simulate=", StringComparison.Ordinal));
+        var scenario = simulate?.Split('=', 2) is [_, var name] ? ParseScenario(name) : SimulatorScenario.Demo;
+        return new(
+            Simulate: simulate is not null,
+            IncludeNonAudio: args.Contains("--all-devices"),
+            Minimized: args.Contains("--minimized") || LaunchedAtStartup(),
+            TestNotification: args.Contains("--test-notification"),
+            Scenario: scenario);
+    }
+
+    private static SimulatorScenario ParseScenario(string name) => name switch
+    {
+        "worst" => SimulatorScenario.WorstCase,
+        "empty" => SimulatorScenario.Empty,
+        _ => SimulatorScenario.Demo,
+    };
 
     // The packaged startup task launches the exe without arguments.
     private static bool LaunchedAtStartup() =>
@@ -32,14 +61,9 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
     /// <summary>The simulator is used when asked for, or when this build has no real Bluetooth backend.</summary>
     public bool UsesSimulator => Simulate || !HasRealBluetooth;
 
-    /// <summary>Known models from the <c>devices/</c> folder next to the app. Drivers register here as they're built.</summary>
-    public static DriverRegistry CreateRegistry()
-    {
-        var registry = new DriverRegistry(DeviceCatalog.FromDirectory(Path.Combine(AppContext.BaseDirectory, "devices")));
-        registry.Register(new Samaat.Protocols.Jieli.JieliDriver());
-        registry.Register(new Samaat.Protocols.FastPair.FastPairDriver());
-        return registry;
-    }
+    /// <summary>Every shipped driver, with the known models from the <c>devices/</c> folder next to the app.</summary>
+    public static DriverRegistry CreateRegistry() =>
+        Samaat.Drivers.BuiltInDrivers.CreateRegistry(Path.Combine(AppContext.BaseDirectory, "devices"));
 
     public IReadOnlyList<IDeviceSource> CreateSources(TimeProvider time)
     {
@@ -49,7 +73,7 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
 #endif
         if (UsesSimulator)
         {
-            sources.Add(new SimulatorDeviceSource(TimeSpan.FromSeconds(2), time));
+            sources.Add(new SimulatorDeviceSource(TimeSpan.FromSeconds(2), time, scenario: Scenario));
         }
 
         return sources;

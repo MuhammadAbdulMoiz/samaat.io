@@ -28,6 +28,20 @@ public sealed class BatteryRing : Control
         AffectsRender<BatteryRing>(ValueProperty, HasValueProperty, ThicknessProperty, TrackBrushProperty, ValueBrushProperty);
     }
 
+    // A new data context is a different device: jump to its level, because gliding from the previous device's level
+    // would read as a battery change that never happened. Value updates for the same device still glide.
+    protected override void OnDataContextBeginUpdate()
+    {
+        base.OnDataContextBeginUpdate();
+        SetValue(TransitionsProperty, null);
+    }
+
+    protected override void OnDataContextEndUpdate()
+    {
+        base.OnDataContextEndUpdate();
+        ClearValue(TransitionsProperty);
+    }
+
     public double Value
     {
         get => GetValue(ValueProperty);

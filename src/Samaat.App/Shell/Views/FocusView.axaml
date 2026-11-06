@@ -15,7 +15,7 @@
     <!-- Hero -->
     <StackPanel Classes="focusColumn" IsVisible="{Binding ShowFocusHero}" Spacing="20">
       <StackPanel Spacing="20" DataContext="{Binding SelectedDevice}" x:DataType="overview:DeviceViewModel">
-        <StackPanel Spacing="6" HorizontalAlignment="Center">
+        <StackPanel Spacing="8" HorizontalAlignment="Center">
           <TextBlock Classes="title" Text="{Binding Name}" TextAlignment="Center" TextWrapping="Wrap" />
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" ToolTip.Tip="{Binding TierDescription}">
             <Ellipse Classes="dot" Classes.on="{Binding IsConnected}" VerticalAlignment="Center" />
@@ -29,9 +29,9 @@
         </Viewbox>
 
         <Border Classes="alert" Classes.critical="{Binding AlertIsCritical}" IsVisible="{Binding HasAlert}" HorizontalAlignment="Center">
-          <StackPanel Orientation="Horizontal" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="8">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding AlertText}" FontSize="12" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding AlertText}" />
           </StackPanel>
         </Border>
 
@@ -43,14 +43,14 @@
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="2" VerticalAlignment="Center">
                 <TextBlock Classes="panelTitle" Text="Quick controls" />
-                <TextBlock Classes="meta" Text="{Binding LastUpdatedText, StringFormat='Battery updated {0}'}" />
+                <TextBlock Classes="meta" Text="{Binding LastUpdatedText, StringFormat='Battery updated {0}'}" IsVisible="{Binding HasLastUpdate}" />
               </StackPanel>
               <WrapPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <Button Classes="primary" Content="Connect" Command="{Binding ConnectCommand}" IsVisible="{Binding ShowConnect}" Margin="8,0,0,0"
                         AutomationProperties.Name="{Binding LinkAccessibleName}" ToolTip.Tip="{Binding LinkDisabledReason}" />
                 <Button Classes="subtle" Command="{Binding DisconnectCommand}" IsVisible="{Binding ShowDisconnect}" Margin="8,0,0,0"
                         AutomationProperties.Name="{Binding LinkAccessibleName}" ToolTip.Tip="{Binding LinkDisabledReason}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="{StaticResource Icon.Disconnect}" Width="14" Height="14" />
                     <TextBlock Text="Disconnect" />
                   </StackPanel>
@@ -70,7 +70,7 @@
                     <DataTemplate x:DataType="sound:NoiseModeOptionViewModel">
                       <Button Classes="tab" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
                               AutomationProperties.Name="{Binding Label}" ToolTip.Tip="{Binding Description}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
                           <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" />
                           <TextBlock Text="{Binding Label}" />
                         </StackPanel>
@@ -83,12 +83,12 @@
                 <TextBlock Text="Noise cancelling" VerticalAlignment="Center" />
                 <ToggleSwitch Grid.Column="1" Classes="share" IsChecked="{Binding IsAncOn}" IsEnabled="{Binding CanControl}" AutomationProperties.Name="Noise cancelling" />
               </Grid>
-              <TextBlock Classes="meta" Text="Noise control isn't available for these earbuds yet." IsVisible="{Binding IsUnavailable}" TextWrapping="Wrap" />
+              <TextBlock Classes="meta" Text="Noise control isn't available for these earbuds yet" IsVisible="{Binding IsUnavailable}" TextWrapping="Wrap" />
               <TextBlock Classes="meta" Text="{Binding StatusText}" IsVisible="{Binding !IsUnavailable}" TextWrapping="Wrap" />
               <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
-                <StackPanel Orientation="Horizontal" Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="8">
                   <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-                  <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -102,19 +102,19 @@
         <WrapPanel HorizontalAlignment="Center">
           <Button Classes="subtle focusMore" Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Sound}"
                   AutomationProperties.Name="Sound: equalizer and share audio">
-            <StackPanel Orientation="Horizontal" Spacing="6"><PathIcon Data="{StaticResource Icon.Sound}" Width="14" Height="14" /><TextBlock Text="Sound" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Sound}" Width="14" Height="14" /><TextBlock Text="Sound" /></StackPanel>
           </Button>
           <Button Classes="subtle focusMore" Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Connections}"
                   AutomationProperties.Name="Links: this computer and other devices">
-            <StackPanel Orientation="Horizontal" Spacing="6"><PathIcon Data="{StaticResource Icon.Link}" Width="14" Height="14" /><TextBlock Text="Links" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Link}" Width="14" Height="14" /><TextBlock Text="Links" /></StackPanel>
           </Button>
           <Button Classes="subtle focusMore" Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Details}"
                   AutomationProperties.Name="Details: Bluetooth address and IDs">
-            <StackPanel Orientation="Horizontal" Spacing="6"><PathIcon Data="{StaticResource Icon.Tag}" Width="14" Height="14" /><TextBlock Text="Details" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Tag}" Width="14" Height="14" /><TextBlock Text="Details" /></StackPanel>
           </Button>
           <Button Classes="subtle focusMore" Command="{Binding NavigateCommand}" CommandParameter="{x:Static shell:AppSection.Info}"
                   AutomationProperties.Name="Diagnostics: supported features and event log">
-            <StackPanel Orientation="Horizontal" Spacing="6"><PathIcon Data="{StaticResource Icon.Code}" Width="14" Height="14" /><TextBlock Text="Diagnostics" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Code}" Width="14" Height="14" /><TextBlock Text="Diagnostics" /></StackPanel>
           </Button>
         </WrapPanel>
       </StackPanel>
@@ -126,15 +126,15 @@
         <Button x:Name="FocusBack" Classes="subtle" VerticalAlignment="Center"
                 Command="{Binding $parent[UserControl].((shell:MainWindowViewModel)DataContext).NavigateCommand}"
                 CommandParameter="{x:Static shell:AppSection.Overview}" AutomationProperties.Name="{Binding Name, StringFormat='Back to {0}'}">
-          <StackPanel Orientation="Horizontal" Spacing="6"><PathIcon Data="{StaticResource Icon.Back}" Width="14" Height="14" /><TextBlock Text="Back" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Back}" Width="14" Height="14" /><TextBlock Text="Back" /></StackPanel>
         </Button>
         <ContentControl Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource DeviceThumb}" VerticalAlignment="Center" Margin="12,0,0,0" />
         <StackPanel Grid.Column="2" Margin="10,0,0,0" VerticalAlignment="Center">
-          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
           <TextBlock Classes="meta" Text="{Binding StatusLineText}" TextTrimming="CharacterEllipsis" />
         </StackPanel>
         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" AutomationProperties.Name="{Binding BatteryAccessibleText}">
-          <TextBlock Classes="number" Text="{Binding SummaryFigure}" FontSize="20" />
+          <TextBlock Classes="number" Text="{Binding SummaryFigure}" FontSize="{StaticResource Samaat.FontSize.FigureMedium}" />
           <TextBlock Classes="unit" Text="{Binding SummaryUnit}" />
         </StackPanel>
       </Grid>

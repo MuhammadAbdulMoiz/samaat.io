@@ -1,5 +1,8 @@
 using System.Net;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.VisualTree;
+using Avalonia.Automation;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
@@ -138,10 +141,13 @@ public sealed class PhoneLinkFlowTests
     private readonly InMemoryBeaconBus _bus = new();
     private readonly FakePhoneAudio _phoneAudio = new FakePhoneAudio().With(BudsProAddress, connected: false);
 
-    private async Task<(MainWindow Window, MainWindowViewModel ViewModel, PhoneLinkClient Phone)> ShowAsync()
+    /// <param name="screenshots">Run the window on <see cref="ScreenshotClock"/>, so its frames are the same on every run.</param>
+    private async Task<(MainWindow Window, MainWindowViewModel ViewModel, PhoneLinkClient Phone)> ShowAsync(bool screenshots = false)
     {
         var dir = Path.Combine(Path.GetTempPath(), "samaat-tests-" + Guid.NewGuid().ToString("N"));
+        var clock = screenshots ? ScreenshotClock.Create() : null;
         var viewModel = new MainWindowViewModel(new AppOptions(Simulate: true, IncludeNonAudio: false),
+            time: clock, sources: clock is null ? null : ScreenshotClock.Sources(clock),
             settings: new SettingsStore(Path.Combine(dir, "settings.json")),
             phoneLinkFactory: devices => new PhoneLinkHost(new PeerStore(Path.Combine(dir, "phones.json")),
                 new PhoneLinkHostOptions("Desk PC") { BindAddress = IPAddress.Loopback, Port = 0, BeaconInterval = TimeSpan.FromMilliseconds(100) },
@@ -167,6 +173,26 @@ public sealed class PhoneLinkFlowTests
         }
     }
 
+    /// <summary>
+    /// A move or a theme switch starts transitions that run on the real clock, and the phone link posts to the UI from its
+    /// own threads; so wait a real second, then redraw the whole window (a frame stitched from partial redraws can differ by
+    /// a pixel along a seam) before taking the frame. That keeps the docs pictures the same from run to run.
+    /// </summary>
+    private static Avalonia.Media.Imaging.WriteableBitmap SettledFrame(Window window)
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(1));
+        Settle();
+        foreach (var visual in window.GetVisualDescendants().Prepend(window))
+        {
+            visual.InvalidateVisual();
+        }
+
+        Settle();
+        var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        return frame!;
+    }
+
     private static void Settle()
     {
         for (var i = 0; i < 60; i++)
@@ -179,19 +205,19 @@ public sealed class PhoneLinkFlowTests
     private static async Task PairAsync(MainWindowViewModel viewModel, PhoneLinkClient phone, Action? whilePrompted = null)
     {
         viewModel.Settings.PhoneLink!.PairCommand.Execute(null);
-        Assert.True(viewModel.PhoneLink.ShowWaiting);
+        Assert.True(viewModel.PhoneLink!.ShowWaiting);
         await UntilAsync(() => phone.PairableComputers.Count == 1, "the phone to hear the computer");
         var endpoint = phone.PairableComputers[0].Endpoint;
         var session = await phone.BeginPairingAsync(endpoint);
-        await UntilAsync(() => viewModel.PhoneLink.HasRequest, "the pairing prompt");
-        Assert.Equal(session.Code, viewModel.PhoneLink.Request!.Code);
-        Assert.Equal("Pixel 8 wants to pair", viewModel.PhoneLink.Request.Title);
+        await UntilAsync(() => viewModel.PhoneLink!.HasRequest, "the pairing prompt");
+        Assert.Equal(session.Code, viewModel.PhoneLink!.Request!.Code);
+        Assert.Equal("Pixel 8 wants to pair", viewModel.PhoneLink!.Request.Title);
         whilePrompted?.Invoke();
 
         var phoneSide = phone.FinishPairingAsync(session, true, endpoint: endpoint);
-        await viewModel.PhoneLink.Request.AcceptCommand.ExecuteAsync(null);
+        await viewModel.PhoneLink!.Request.AcceptCommand.ExecuteAsync(null);
         Assert.True(await phoneSide);
-        await UntilAsync(() => viewModel.PhoneLink.Phones.SingleOrDefault()?.IsOnline == true, "the phone to come online");
+        await UntilAsync(() => viewModel.PhoneLink!.Phones.SingleOrDefault()?.IsOnline == true, "the phone to come online");
     }
 
     [AvaloniaFact]
@@ -201,8 +227,8 @@ public sealed class PhoneLinkFlowTests
         try
         {
             await PairAsync(viewModel, phone);
-            Assert.False(viewModel.PhoneLink.HasRequest);
-            Assert.False(viewModel.PhoneLink.IsPairingOpen);
+            Assert.False(viewModel.PhoneLink!.HasRequest);
+            Assert.False(viewModel.PhoneLink!.IsPairingOpen);
             Assert.Contains(viewModel.Alerts, a => a.Contains("Pixel 8 is paired"));
 
             var buds = viewModel.Devices.Single(d => d.Name == "Simulated Buds Pro");
@@ -251,7 +277,7 @@ public sealed class PhoneLinkFlowTests
             await move.PendingMove;
 
             Assert.True(move.ResultIsError);
-            Assert.Contains("back on this computer", move.ResultText);
+            Assert.Contains("kept them on this computer", move.ResultText);
             Assert.Equal(ConnectionState.Connected, buds.Device.Connection);
             Assert.Contains(viewModel.Alerts, a => a.Contains("You didn't pick the earbuds."));
         }
@@ -274,7 +300,7 @@ public sealed class PhoneLinkFlowTests
             Assert.True(move.ShowSetup);
             move.OpenSettingsCommand.Execute(null);
             Assert.Equal(AppSection.Settings, viewModel.Section);
-            Assert.False(viewModel.PhoneLink.Host.IsListening);
+            Assert.False(viewModel.PhoneLink!.Host.IsListening);
         }
         finally
         {
@@ -292,10 +318,10 @@ public sealed class PhoneLinkFlowTests
         {
             await PairAsync(viewModel, phone);
 
-            viewModel.PhoneLink.Phones[0].ForgetCommand.Execute(null);
+            viewModel.PhoneLink!.Phones[0].ForgetCommand.Execute(null);
 
-            Assert.False(viewModel.PhoneLink.HasPhones);
-            Assert.False(viewModel.PhoneLink.Host.IsListening);
+            Assert.False(viewModel.PhoneLink!.HasPhones);
+            Assert.False(viewModel.PhoneLink!.Host.IsListening);
             await UntilAsync(() => phone.State != ComputerLinkState.Online, "the phone to drop");
         }
         finally
@@ -312,13 +338,13 @@ public sealed class PhoneLinkFlowTests
         var (window, viewModel, phone) = await ShowAsync();
         try
         {
-            viewModel.PhoneLink.PairCommand.Execute(null);
-            Assert.True(viewModel.PhoneLink.IsPairingOpen);
+            viewModel.PhoneLink!.PairCommand.Execute(null);
+            Assert.True(viewModel.PhoneLink!.IsPairingOpen);
 
-            await viewModel.PhoneLink.CancelPairingCommand.ExecuteAsync(null);
+            await viewModel.PhoneLink!.CancelPairingCommand.ExecuteAsync(null);
 
-            Assert.False(viewModel.PhoneLink.IsPairingOpen);
-            Assert.True(viewModel.PhoneLink.ShowPairButton);
+            Assert.False(viewModel.PhoneLink!.IsPairingOpen);
+            Assert.True(viewModel.PhoneLink!.ShowPairButton);
         }
         finally
         {
@@ -332,8 +358,11 @@ public sealed class PhoneLinkFlowTests
     [AvaloniaFact]
     public async Task RendersPhoneScreenshots()
     {
-        var (window, viewModel, phone) = await ShowAsync();
+        var (window, viewModel, phone) = await ShowAsync(screenshots: true);
         var directory = Environment.GetEnvironmentVariable("SAMAAT_SCREENSHOTS");
+        // Reduce motion: no transitions and a still busy bar, so a move finishing just before a capture can't leave a
+        // frame mid-fade. Still frames look the same either way.
+        viewModel.Settings.ReduceMotion = true;
 
         void Capture(string name)
         {
@@ -341,8 +370,13 @@ public sealed class PhoneLinkFlowTests
             {
                 Application.Current!.RequestedThemeVariant = variant;
                 Settle();
-                var frame = window.CaptureRenderedFrame();
-                Assert.NotNull(frame);
+                // The pairing code comes from fresh random keys; the docs picture shows a fixed one so it doesn't churn.
+                foreach (var code in window.GetVisualDescendants().OfType<TextBlock>().Where(t => AutomationProperties.GetName(t) == "Pairing code"))
+                {
+                    code.Text = "482 913";
+                }
+
+                var frame = SettledFrame(window);
                 if (directory is not null)
                 {
                     Directory.CreateDirectory(directory);

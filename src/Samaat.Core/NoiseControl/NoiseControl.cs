@@ -65,6 +65,9 @@ public interface INoiseControlFeature : IFeature
 
     NoiseControlState Current { get; }
 
+    /// <summary>ReadOnly when the device's mode can be read but Samaat can't change it yet.</summary>
+    CapabilityAccess Access => CapabilityAccess.ReadWrite;
+
     /// <summary>Raised whenever the device reports new settings, including changes made on the buds. Any thread.</summary>
     event EventHandler<NoiseControlState>? Changed;
 
@@ -95,7 +98,7 @@ public static class NoiseControlCapabilities
             device.Connection,
             feature?.Source ?? CapabilitySource.Profile,
             feature?.Verification ?? Verification.Unverified,
-            CapabilityAccess.ReadWrite);
+            feature?.Access ?? CapabilityAccess.ReadWrite);
 
         yield return Make(FeatureId.NoiseCancelling, options?.Supports(NoiseMode.NoiseCancelling) == true);
         yield return Make(FeatureId.Transparency, options?.Supports(NoiseMode.Transparency) == true);

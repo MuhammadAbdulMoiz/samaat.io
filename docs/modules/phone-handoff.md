@@ -23,7 +23,7 @@ Computer (coordinator)                      Phone
   Disconnect here (IPcLinkFeature)
   ConnectAudio(address) ──────────────────▶  hidden connect → else ask the user (one tap)
                    ◀─────────────────────── Confirmed once A2DP/HFP is connected
-  if not confirmed in 60 s: connect here again (rollback)
+  if not confirmed in 20 s: ReleaseAudio to the phone (stops its connect) and connect here again (rollback)
 ```
 
 Moving to the computer is the mirror image: the phone releases, the computer connects, and the phone takes them back if that fails. A move started on the phone sends `StartHandoff` to the computer, which runs the same steps. Outcomes: **Moved**, **NotStarted** (refused before anything changed), **RolledBack**, and **Stranded** (the rollback failed too; the message says what to do).
@@ -41,8 +41,11 @@ Each attempt is recorded (`AndroidPhoneAudio.LastAttempt`), so the hardware chec
 
 - Pairing is ECDH P-256 with a commitment, compared with a 6-digit code (Bluetooth's numeric comparison). A man in the middle gets different codes on the two screens unless he guesses one in a million.
 - Every session derives fresh AES-256-GCM keys (one per direction) from the paired secret and two nonces. Frames use counter nonces, so tampered, replayed or reordered frames close the connection.
-- The computer stores secrets in `phones.json` next to `settings.json`, encrypted with DPAPI. The phone keeps them in the app's private storage.
-- The computer listens (TCP 47821, UDP beacon 47820) only while a phone is paired or pairing is open. Windows asks once to let Samaat through the firewall.
+- The computer stores secrets in `phones.json` next to `settings.json`, encrypted with DPAPI. Outside Windows (the simulator build) they are stored as they are, in a file only its owner can read or write (0600). The phone keeps them in the app's private storage.
+- The computer listens on TCP 47821 only while a phone is paired or pairing is open. Windows asks once to let Samaat through the firewall.
+- The UDP beacon (port 47820), which carries the computer's name in the clear, goes out **only while pairing is open**. A paired phone dials the address and port it stored when it paired or last connected. If the computer's address changes, opening "Pair a phone" on the computer for a moment lets the phone find it again without pairing again.
+- At most 4 connections may be in their handshake at once (`PhoneLinkHostOptions.MaxPendingHandshakes`); more are closed straight away.
+- A pairing whose handshake was still running when pairing closed is dropped, with no prompt on the computer.
 
 Full protocol: [docs/plans/2026-11-04-phone-handoff.md](../plans/2026-11-04-phone-handoff.md).
 

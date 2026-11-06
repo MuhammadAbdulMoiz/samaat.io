@@ -12,8 +12,10 @@ using Samaat.Core.Capabilities;
 using Samaat.Core.Commands;
 using Samaat.Core.Connections;
 using Samaat.Core.Devices;
+using Samaat.Core.Drivers;
 using Samaat.Core.NoiseControl;
 using Samaat.Core.Profiles;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App.Features.Overview;
 
@@ -92,9 +94,12 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         && System.Text.RegularExpressions.Regex.IsMatch(text, $@"(?<![\w]){System.Text.RegularExpressions.Regex.Escape(phrase)}(?![\w])",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
-    public string TierText => CapabilityText.Tier(_device.Identity.Tier);
+    // A catalogued model's own driver needs the buds connected; until then "Basic" would undersell it.
+    private bool WaitsForDriver => DriverRetry.WaitsForConnection(_device);
 
-    public string TierDescription => _device.Identity.Tier switch
+    public string TierText => WaitsForDriver ? "Connect for full support" : CapabilityText.Tier(_device.Identity.Tier);
+
+    public string TierDescription => WaitsForDriver ? "Samaat speaks this model's own protocol once the earbuds are connected" : _device.Identity.Tier switch
     {
         SupportTier.Full => "Samaat speaks this model's own protocol",
         SupportTier.Standard => "Standard Bluetooth services only",
@@ -120,6 +125,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>The Links page's "Your phone" card; set by the shell.</summary>
     public Phone.PhoneMoveViewModel? PhoneMove { get; set; }
 
+    /// <summary>The phone handoff is switched off (<see cref="AppOptions.PhoneHandoff"/>): the Links page says it's coming.</summary>
+    public bool ShowPhoneComingSoon { get; set; }
+
     public ConnectionsViewModel Connections { get; }
 
     public DeviceInfoViewModel Info { get; }
@@ -143,8 +151,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         {
             return path is null ? null : new Avalonia.Media.Imaging.Bitmap(path);
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            SamaatLog.Warn("Artwork", $"Couldn't load {path}; drawing the artwork instead", e);
             return null; // a broken image file falls back to the drawn artwork
         }
     }
@@ -262,7 +271,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
     /// <summary>The four numbers of the battery panel: overall, left, right, case.</summary>
     public ObservableCollection<BatteryFigureViewModel> Figures { get; } =
-        [new("Overall"), new("Left bud"), new("Right bud"), new("Case")];
+        [new("Lowest bud"), new("Left bud"), new("Right bud"), new("Case")];
 
     /// <summary>The figures the battery panel shows: all four for earbuds, only the overall level otherwise.</summary>
     public ObservableCollection<BatteryFigureViewModel> ShownFigures { get; } = [];
@@ -414,6 +423,10 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string LastUpdatedText { get; set; } = "–";
 
+    /// <summary>False until some piece has reported a level, so "Updated …" never shows next to "Waiting for a reading".</summary>
+    [ObservableProperty]
+    public partial bool HasLastUpdate { get; set; }
+
     /// <summary>The most urgent battery problem on this device right now, if any.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAlert))]
@@ -430,9 +443,27 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RefreshAsync()
     {
-        if (_battery is not null)
+        if (_battery is null)
+        {
+            return;
+        }
+
+        // Watch for a reading during the refresh rather than comparing timestamps: equal levels and clocks still count.
+        var answered = false;
+        void OnReading(object? sender, BatteryState state) => answered = true;
+        _battery.Changed += OnReading;
+        try
         {
             await _battery.RefreshAsync();
+        }
+        finally
+        {
+            _battery.Changed -= OnReading;
+        }
+
+        if (!answered)
+        {
+            _onMessage?.Invoke($"{Name} sent no new battery reading. Samaat shows its next update as soon as it arrives.");
         }
     }
 
@@ -444,7 +475,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
             tile.UpdateAge(now);
         }
 
-        LastUpdatedText = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "") ?? "–";
+        var updated = HeroTiles.FirstOrDefault(t => t.UpdatedText != "")?.UpdatedText.Replace("Updated ", "");
+        LastUpdatedText = updated ?? "–";
+        HasLastUpdate = updated is not null;
     }
 
     private BatteryTileViewModel Tile(BatteryComponent component) => Tiles.Single(t => t.Component == component);
@@ -484,7 +517,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
                 : string.Join(" · ", new[] { tile.IsLow || tile.IsCritical ? tile.StateText : "", tile.DetailText }.Where(t => t.Length > 0));
         }
 
-        // Collapse to Overall only when no component (left, right or case) is reported.
+        // Collapse to Lowest bud only when no component (left, right or case) is reported.
         var components = Figures.Skip(1).Any(f => f.IsReported);
         var shown = components ? Figures.ToList() : [overall];
         ShowsComponentFigures = components;
@@ -498,11 +531,19 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         }
 
         var missing = Figures.Skip(1).Where(f => !f.IsReported).Select(f => f.Label.ToLowerInvariant()).ToList();
+        var noLevel = Figures.Skip(1).Where(f => f.IsReported && !f.HasLevel).Select(f => f.Label.ToLowerInvariant()).ToList();
+        var notReported = missing.Count > 0 ? $"the {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device" : null;
+        var waiting = noLevel.Count > 0 ? $"No level from the {string.Join(" and ", noLevel)} yet" : null;
         BatteryReasonText = !HasSummary && !components
-            ? IsConnected ? "This device reports no battery level." : "Connect the device to read its battery."
-            : components
-                ? missing.Count > 0 ? $"The {string.Join(" and ", missing)} {(missing.Count == 1 ? "isn't" : "aren't")} reported by this device." : "Each level is reported by the earbuds."
-                : "Left, right and case aren't reported for this device.";
+            ? IsConnected ? "This device reports no battery level" : "Connect the device to read its battery"
+            : !components ? WaitsForDriver ? "Connect the earbuds to read each bud and the case" : "Left, right and case aren't reported for this device"
+            : (waiting, notReported) switch
+            {
+                ({ } w, { } n) => $"{w}, and {n}",
+                ({ } w, null) => w,
+                (null, { } n) => char.ToUpperInvariant(n[0]) + n[1..],
+                _ => "Each level is reported by the earbuds",
+            };
     }
 
     private void Update()
@@ -559,7 +600,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         SummaryFigure = summary is { } figure ? figure.ToString() : "–";
         SummaryUnit = HasSummary ? "%" : "";
         SummaryShort = HasSummary ? $"{summary}%" : "–";
-        BatterySourceMeta = _battery?.Source switch
+        BatterySourceMeta = !HasSummary ? (IsConnected ? "not reported" : "waiting for a reading") : _battery?.Source switch
         {
             CapabilitySource.OperatingSystem => "from Windows",
             CapabilitySource.StandardService => "from Bluetooth Battery Service",
@@ -570,6 +611,8 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         BatteryAccessibleText = HasSummary ? $"Battery {summary} percent" : "Battery not reported";
         RowAccessibleText = $"{Name}, {(HasSummary ? $"{summary}%" : "battery not reported")}, {ConnectionText}";
         StatusLineText = $"{ConnectionText} · {TierText}";
+        OnPropertyChanged(nameof(TierText));
+        OnPropertyChanged(nameof(TierDescription));
         UpdateFigures(summary, buds);
 
         UpdateAges();

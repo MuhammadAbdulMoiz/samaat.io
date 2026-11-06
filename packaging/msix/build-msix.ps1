@@ -1,7 +1,13 @@
 # Builds an unsigned x64 .msix for the Microsoft Store (the Store signs it).
-param([string]$Version = "1.0.0.0")
+# The Store build compiles with SamaatStoreBuild=true, which turns the phone handoff off by default (AppOptions.PhoneHandoff).
+# -Version defaults to <Version> in Directory.Build.props, plus the ".0" the Store requires.
+param([string]$Version = "")
 $ErrorActionPreference = 'Stop'
 
+if (-not $Version) {
+    $props = [xml](Get-Content (Join-Path $PSScriptRoot '..\..\Directory.Build.props') -Raw)
+    $Version = "$(@($props.Project.PropertyGroup.Version | Where-Object { $_ })[0]).0"
+}
 if ($Version -notmatch '^\d+\.\d+\.\d+\.0$') { throw "Version must be 4 dotted numbers ending in .0 (Store requirement), got '$Version'." }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $artifacts = Join-Path $repo 'artifacts'
@@ -13,7 +19,7 @@ New-Item -ItemType Directory -Path $layout | Out-Null
 if (Test-Path $msix) { Remove-Item $msix -Force }
 
 $short = ($Version -split '\.')[0..2] -join '.'
-dotnet publish (Join-Path $repo 'src\Samaat.App\Samaat.App.csproj') -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --self-contained "-p:Version=$short" -o $layout
+dotnet publish (Join-Path $repo 'src\Samaat.App\Samaat.App.csproj') -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --self-contained "-p:Version=$short" -p:SamaatStoreBuild=true -o $layout
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)." }
 
 $manifestPath = Join-Path $layout 'AppxManifest.xml'

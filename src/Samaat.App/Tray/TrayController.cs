@@ -55,6 +55,12 @@ public sealed class TrayController : IDisposable
         _window.Activate();
     }
 
+    private void OpenPhoneSettings()
+    {
+        _viewModel.Section = AppSection.Settings;
+        Open();
+    }
+
     public void Quit()
     {
         Quitting = true;
@@ -105,9 +111,17 @@ public sealed class TrayController : IDisposable
             menu.Add(new NativeMenuItemSeparator());
         }
 
-        menu.Add(Item("Open Samaat", Open));
-        menu.Add(Item("Refresh devices", () => _ = _viewModel.RefreshDevicesAsync()));
-        menu.Add(Item("Quit", Quit));
+        foreach (var header in TraySummary.AppItems(_viewModel.PhoneHandoff))
+        {
+            menu.Add(Item(header, header switch
+            {
+                "Open Samaat" => Open,
+                TraySummary.PairPhoneItem => OpenPhoneSettings,
+                "Refresh devices" => () => _ = _viewModel.RefreshDevicesAsync(),
+                _ => Quit,
+            }));
+        }
+
         _tray.Menu = menu;
     }
 

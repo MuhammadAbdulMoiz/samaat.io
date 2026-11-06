@@ -86,9 +86,21 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         Settings.PropertyChanged += OnSettingsChanged;
         AudioShare = new AudioShareViewModel(audioShareFactory ?? options.CreateAudioShare, outputSwitcher ?? options.CreateDefaultOutputSwitcher(), Settings);
         // Paired phones live next to the settings, so tests with a temp settings file never see real pairings.
-        var phoneStore = Path.Combine(Path.GetDirectoryName(settings.Path) ?? ".", "phones.json");
-        PhoneLink = new PhoneLinkViewModel(phoneLinkFactory ?? (devices => options.CreatePhoneLinkHost(phoneStore, devices)), onMessage: ShowMessage);
+        // With the phone handoff switched off the link is never created: nothing pairs, listens or broadcasts.
+        PhoneHandoff = options.PhoneHandoff;
+        if (PhoneHandoff)
+        {
+            var phoneStore = Path.Combine(Path.GetDirectoryName(settings.Path) ?? ".", "phones.json");
+            PhoneLink = new PhoneLinkViewModel(phoneLinkFactory ?? (devices => options.CreatePhoneLinkHost(phoneStore, devices)), onMessage: ShowMessage);
+        }
+
         Settings.PhoneLink = PhoneLink;
+        Settings.ShowPhoneComingSoon = !PhoneHandoff;
+        Alerts.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(CurrentAlert));
+            OnPropertyChanged(nameof(MoreAlertsText));
+        };
         _registry = new DeviceRegistry(sources ?? options.CreateSources(_time));
         _registry.DevicesChanged += (_, _) => Dispatcher.UIThread.Post(SyncDevices);
         _registry.SourceFailed += (_, failure) => Dispatcher.UIThread.Post(() =>
@@ -115,12 +127,22 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
 
     public AudioShareViewModel AudioShare { get; }
 
-    /// <summary>Pairing with phones and moving earbuds to them.</summary>
-    public PhoneLinkViewModel PhoneLink { get; }
+    /// <summary>Pairing with phones and moving earbuds to them; null when <see cref="PhoneHandoff"/> is off.</summary>
+    public PhoneLinkViewModel? PhoneLink { get; }
+
+    /// <summary>The phone-handoff feature flag, from <see cref="AppOptions.PhoneHandoff"/>.</summary>
+    public bool PhoneHandoff { get; }
 
     public ObservableCollection<DeviceViewModel> Devices { get; } = [];
 
+    /// <summary>Queued toasts, newest first. Only the newest shows, so stacked toasts never cover the page's own buttons.</summary>
     public ObservableCollection<string> Alerts { get; } = [];
+
+    /// <summary>The toast on screen, or null when there is none.</summary>
+    public string? CurrentAlert => Alerts.Count > 0 ? Alerts[0] : null;
+
+    /// <summary>"+2 more" under the toast when others are queued behind it.</summary>
+    public string? MoreAlertsText => Alerts.Count > 1 ? $"+{Alerts.Count - 1} more" : null;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
@@ -316,7 +338,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         {
             var vm = new DeviceViewModel(device, _alerts, _time, OnAlert, _profiles.Match(device.Identity), _profiles.Profiles, Settings, ShowMessage);
             vm.Share = AudioShare;
-            vm.PhoneMove = PhoneLink.CreateMove(device, () => Section = AppSection.Settings);
+            vm.PhoneMove = PhoneLink?.CreateMove(device, () => Section = AppSection.Settings);
+            vm.ShowPhoneComingSoon = !PhoneHandoff;
             vm.PropertyChanged += OnDevicePropertyChanged;
             Devices.Add(vm);
             added.Add(vm);
@@ -329,7 +352,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         }
 
         UpdateVisibleDevices();
-        PhoneLink.SetDevices(current);
+        PhoneLink?.SetDevices(current);
 
         UpdateAlertCount();
         UpdateCurrent();
@@ -396,7 +419,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
             device.Dispose();
         }
 
-        await PhoneLink.DisposeAsync();
+        if (PhoneLink is not null)
+        {
+            await PhoneLink.DisposeAsync();
+        }
+
         await _registry.DisposeAsync();
     }
 }

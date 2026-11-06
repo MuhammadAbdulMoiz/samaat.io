@@ -12,7 +12,7 @@
     <!-- Mode -->
     <Border Classes="panel">
       <StackPanel Spacing="12">
-        <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
+        <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
         <TextBlock Text="Noise control" Classes="panelTitle" />
 
         <!-- Several modes: one selectable row per mode -->
@@ -42,7 +42,7 @@
         <Grid ColumnDefinitions="*,Auto" MinHeight="40" IsVisible="{Binding IsToggle}">
           <StackPanel VerticalAlignment="Center">
             <TextBlock Text="Noise cancelling" />
-            <TextBlock Text="This model has a single on/off switch for noise cancelling." Classes="meta" TextWrapping="Wrap" />
+            <TextBlock Text="This model has a single on/off switch for noise cancelling" Classes="meta" TextWrapping="Wrap" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsAncOn}" IsEnabled="{Binding CanControl}" AutomationProperties.Name="Noise cancelling" />
         </Grid>
@@ -56,9 +56,9 @@
         <WrapPanel IsVisible="{Binding !IsUnavailable}">
           <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" Margin="0,0,8,0" />
           <Border Classes="alert critical" IsVisible="{Binding HasError}">
-            <StackPanel Orientation="Horizontal" Spacing="6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
               <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-              <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
         </WrapPanel>
@@ -74,7 +74,7 @@
         </Grid>
         <Slider Minimum="{Binding AncMin}" Maximum="{Binding AncMax}" Value="{Binding AncLevel}" IsEnabled="{Binding CanControl}"
                 TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="Noise cancelling strength" />
-        <TextBlock Text="Lower it if you hear pressure or hiss in quiet rooms." Classes="meta" />
+        <TextBlock Text="Lower it if you hear pressure or hiss in quiet rooms" Classes="meta" />
       </StackPanel>
     </Border>
     <Border Classes="panel" IsVisible="{Binding ShowAmbientLevel}">
@@ -85,7 +85,7 @@
         </Grid>
         <Slider Minimum="{Binding AmbientMin}" Maximum="{Binding AmbientMax}" Value="{Binding AmbientLevel}" IsEnabled="{Binding CanControl}"
                 TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="Ambient sound level" />
-        <TextBlock Text="How much of your surroundings passes through." Classes="meta" />
+        <TextBlock Text="How much of your surroundings passes through" Classes="meta" />
       </StackPanel>
     </Border>
 
@@ -96,14 +96,14 @@
         <Grid ColumnDefinitions="*,Auto" MinHeight="40" IsVisible="{Binding ShowWind}">
           <StackPanel VerticalAlignment="Center">
             <TextBlock Text="Wind noise reduction" />
-            <TextBlock Text="Cuts the rumble of wind on the microphones." Classes="meta" TextWrapping="Wrap" />
+            <TextBlock Text="Cuts the rumble of wind on the microphones" Classes="meta" TextWrapping="Wrap" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding WindReduction}" IsEnabled="{Binding CanControl}" AutomationProperties.Name="Wind noise reduction" />
         </Grid>
         <Grid ColumnDefinitions="*,Auto" MinHeight="40" IsVisible="{Binding ShowConversation}">
           <StackPanel VerticalAlignment="Center">
             <TextBlock Text="Conversation awareness" />
-            <TextBlock Text="Lowers your audio and lets voices through when you start talking." Classes="meta" TextWrapping="Wrap" />
+            <TextBlock Text="Lowers your audio and lets voices through when you start talking" Classes="meta" TextWrapping="Wrap" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding ConversationAwareness}" IsEnabled="{Binding CanControl}" AutomationProperties.Name="Conversation awareness" />
         </Grid>
@@ -115,7 +115,7 @@
   <!-- Equalizer -->
   <Border Classes="panel" DataContext="{Binding Equalizer}" x:DataType="sound:EqualizerViewModel">
     <StackPanel Spacing="12">
-      <ProgressBar Classes="busy" IsIndeterminate="True" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
+      <ProgressBar Classes="busy" IsVisible="{Binding IsBusy}" Margin="-16,-16,-16,0" />
       <StackPanel>
         <TextBlock Text="Equalizer" Classes="panelTitle" />
         <TextBlock Text="Presets stored on the earbuds" Classes="meta" IsVisible="{Binding !IsUnavailable}" />
@@ -145,9 +145,9 @@
       <WrapPanel IsVisible="{Binding !IsUnavailable}">
         <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" Margin="0,0,8,0" />
         <Border Classes="alert critical" IsVisible="{Binding HasError}">
-          <StackPanel Orientation="Horizontal" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="8">
             <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-            <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
           </StackPanel>
         </Border>
       </WrapPanel>
@@ -165,16 +165,16 @@
       </Grid>
 
       <!-- The source: everything shared is a copy of this output -->
-      <Border Background="{DynamicResource Samaat.Surface2}" CornerRadius="6" Padding="8,6" IsVisible="{Binding IsSupported}">
+      <Border Classes="strip" IsVisible="{Binding IsSupported}">
         <Grid ColumnDefinitions="Auto,*,Auto">
           <Border Classes="optionIcon on">
             <PathIcon Data="{Binding DefaultIconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
           </Border>
           <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
             <TextBlock Text="Playing on" Classes="meta" />
-            <TextBlock Text="{Binding DefaultName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding DefaultName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DefaultName}" />
           </StackPanel>
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding IsLive}">
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsVisible="{Binding IsLive}">
             <Ellipse Classes="liveDot" />
             <TextBlock Text="Live" Classes="meta" Foreground="{DynamicResource Samaat.Accent}" FontWeight="SemiBold" />
           </StackPanel>
@@ -192,7 +192,7 @@
         <Border Classes="optionIcon">
           <PathIcon Data="{StaticResource Icon.Headphones}" Width="16" Height="16" />
         </Border>
-        <TextBlock Grid.Column="1" Text="Connect another audio device to share to it or switch to it." Classes="meta" TextWrapping="Wrap"
+        <TextBlock Grid.Column="1" Text="Connect another audio device to share to it or switch to it" Classes="meta" TextWrapping="Wrap"
                    VerticalAlignment="Center" Margin="12,0,0,0" />
       </Grid>
 
@@ -207,14 +207,14 @@
                     <PathIcon Data="{Binding IconKey, Converter={x:Static shared:Converters.IconByKey}}" Width="16" Height="16" />
                   </Border>
                   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
                     <TextBlock Text="{Binding StateText}" Classes="meta" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                   <Button Grid.Column="2" Classes="ghost" Command="{Binding SwitchHereCommand}" AutomationProperties.Name="{Binding SwitchLabel}"
                           IsVisible="{Binding $parent[ItemsControl].((sound:AudioShareViewModel)DataContext).CanSwitch}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
                       <PathIcon Data="{StaticResource Icon.Switch}" Width="14" Height="14" />
-                      <TextBlock Text="Switch here" FontSize="12" />
+                      <TextBlock Text="Switch here" FontSize="{StaticResource Samaat.FontSize.Meta}" />
                     </StackPanel>
                   </Button>
                   <ToggleSwitch Grid.Column="3" Classes="share" IsChecked="{Binding IsSharing}" IsEnabled="{Binding CanToggle}"
@@ -231,9 +231,9 @@
                   <TextBlock Text="Add delay if this device plays ahead" Classes="meta" />
                 </StackPanel>
                 <Border Classes="alert" HorizontalAlignment="Left" IsVisible="{Binding HasStatus}">
-                  <StackPanel Orientation="Horizontal" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-                    <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
               </StackPanel>
@@ -245,9 +245,9 @@
       <TextBlock Text="Up to 3 devices at once" Classes="meta" IsVisible="{Binding IsAtLimit}" />
 
       <Border Classes="alert" HorizontalAlignment="Left" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-        <StackPanel Orientation="Horizontal" Spacing="6">
+        <StackPanel Orientation="Horizontal" Spacing="8">
           <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-          <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
 

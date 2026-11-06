@@ -36,6 +36,36 @@ public class CommandRunnerTests
         Assert.Equal(CommandStatus.TimedOut, result.Status);
     }
 
+    /// <summary>A timed-out command must stop waiting, so a stuck request doesn't block the next one on the same channel.</summary>
+    [Fact]
+    public async Task Timeout_CancelsTheCommandsToken()
+    {
+        var time = new FakeTimeProvider();
+        var never = new TaskCompletionSource<CommandResult>();
+        CancellationToken seen = default;
+
+        var run = CommandRunner.RunAsync(ct => { seen = ct; return never.Task; }, TimeSpan.FromSeconds(2), time);
+        time.Advance(TimeSpan.FromSeconds(3));
+        await run;
+
+        Assert.True(seen.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task CommandThatStopsOnTimeout_IsTimedOut_NotCancelled()
+    {
+        var time = new FakeTimeProvider();
+
+        var run = CommandRunner.RunAsync(async ct =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            return CommandResult.Confirmed;
+        }, TimeSpan.FromSeconds(2), time);
+        time.Advance(TimeSpan.FromSeconds(3));
+
+        Assert.Equal(CommandStatus.TimedOut, (await run).Status);
+    }
+
     [Fact]
     public async Task Exception_IsReportedAsFailed()
     {

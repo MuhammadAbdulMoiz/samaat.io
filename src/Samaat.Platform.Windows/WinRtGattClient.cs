@@ -2,6 +2,7 @@ using Samaat.Transport;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -77,6 +78,7 @@ internal sealed class WinRtGattClient(BluetoothLEDevice device) : IGattClient, I
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                SamaatLog.Warn("GATT", "A write failed", ex);
                 return false;
             }
         }

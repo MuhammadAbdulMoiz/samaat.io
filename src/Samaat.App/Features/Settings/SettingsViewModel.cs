@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Samaat.Core.Battery;
 using Samaat.Core.Platform;
 using Samaat.Core.Settings;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App.Features.Settings;
 
@@ -89,6 +90,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>The Phone section; set by the shell.</summary>
     public Phone.PhoneLinkViewModel? PhoneLink { get; set; }
 
+    /// <summary>The phone handoff is switched off (<see cref="AppOptions.PhoneHandoff"/>): the Phone panel says it's coming.</summary>
+    public bool ShowPhoneComingSoon { get; set; }
+
     // Doubles because Avalonia's Slider binds to double; values are always whole numbers.
     [ObservableProperty]
     public partial double LowThreshold { get; set; }
@@ -120,6 +124,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
         .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0]
         ?? typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "unknown");
+
+    /// <summary>The GPL-3.0 "Appropriate Legal Notices" (§0, §5(d)) shown in the About section.</summary>
+    public string LicenceNotice => "Free software under the GNU GPL v3 or later. No warranty.";
+
+    /// <summary>The full licence text.</summary>
+    public Uri LicenceUri { get; } = new("https://www.gnu.org/licenses/gpl-3.0.html");
+
+    /// <summary>Where the source code for this build is published.</summary>
+    public Uri SourceUri { get; } = new("https://github.com/MuhammadAbdulMoiz/samaat.io");
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
@@ -203,6 +216,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             Show(Current with { StartWithWindows = !value });
             ErrorText = $"Couldn't change start with Windows: {e.Message}";
+            SamaatLog.Warn("Settings", "Changing start with Windows failed", e);
             return;
         }
 

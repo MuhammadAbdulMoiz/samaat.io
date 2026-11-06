@@ -43,6 +43,7 @@ public class DeviceInfoViewModelTests
 
         Assert.Equal("1 of 16 features available · Basic support", vm.SummaryText);
         Assert.Equal("1 of 16", vm.FeatureCountText);
+        Assert.Equal("Basic support", vm.SupportText);
         Assert.Equal(100.0 / 16, vm.AvailablePercent, 3);
         Assert.Equal("Overall battery", Assert.Single(vm.AvailableRows).Name);
         Assert.Equal(["Battery", "Noise control", "Equalizer", "Connections"], vm.UnavailableGroups.Select(g => g.Module));
@@ -208,5 +209,37 @@ public class DeviceInfoViewModelTests
         Assert.Contains("Resolution:", report);
         Assert.Contains("noise.anc", report);
         Assert.Contains("Samaat ", report);
+    }
+
+    [Fact]
+    public async Task Report_EndsWithTheRecentLog()
+    {
+        await using var source = new SimulatorDeviceSource(TimeSpan.FromHours(1), commandLatency: TimeSpan.Zero);
+        var pro = source.Devices.Single(d => d.Identity.Id == "sim-buds-pro");
+        int? asked = null;
+        var vm = new DeviceInfoViewModel(pro, post: a => a(), recentLog: lines =>
+        {
+            asked = lines;
+            return ["2026-11-05T09:00:00.000Z WARN  Settings: Couldn't save settings", "2026-11-05T09:00:01.000Z ERROR Phone link: Listener stopped"];
+        });
+
+        var report = vm.BuildReport();
+
+        Assert.Equal(DeviceInfoViewModel.ReportLogLines, asked);
+        Assert.EndsWith(
+            "Recent log:" + Environment.NewLine +
+            "2026-11-05T09:00:00.000Z WARN  Settings: Couldn't save settings" + Environment.NewLine +
+            "2026-11-05T09:00:01.000Z ERROR Phone link: Listener stopped" + Environment.NewLine, report);
+    }
+
+    [Fact]
+    public async Task Report_SaysWhenTheLogIsEmpty()
+    {
+        await using var source = new SimulatorDeviceSource(TimeSpan.FromHours(1), commandLatency: TimeSpan.Zero);
+        var pro = source.Devices.Single(d => d.Identity.Id == "sim-buds-pro");
+
+        var report = new DeviceInfoViewModel(pro, post: a => a(), recentLog: _ => []).BuildReport();
+
+        Assert.EndsWith("Recent log: nothing logged" + Environment.NewLine, report);
     }
 }

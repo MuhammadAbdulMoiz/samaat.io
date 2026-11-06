@@ -123,4 +123,7 @@ internal sealed class WinRtDeviceTransports(BluetoothDevice device, Samaat.Trans
 
     public async Task<IRfcommChannel?> OpenRfcommAsync(Guid serviceUuid, CancellationToken cancellationToken = default) =>
         await WinRtRfcommChannel.OpenAsync(device, serviceUuid, cancellationToken);
+
+    public Task<IRfcommChannel?> OpenRfcommChannelAsync(byte channel, CancellationToken cancellationToken = default) =>
+        WinsockRfcommChannel.OpenAsync(device.BluetoothAddress, channel, cancellationToken);
 }

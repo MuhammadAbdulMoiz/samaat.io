@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Samaat.Handoff.Protocol;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff.Storage;
 
@@ -151,6 +152,7 @@ public sealed class PeerStore
                 catch (System.Security.Cryptography.CryptographicException)
                 {
                     LastError = $"The pairing with {entry.Name} can't be read on this account; pair it again.";
+                    SamaatLog.Warn("Phone link", LastError);
                 }
             }
 
@@ -159,6 +161,7 @@ public sealed class PeerStore
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
             LastError = $"Paired devices could not be read ({e.Message}); starting unpaired.";
+            SamaatLog.Warn("Phone link", LastError, e);
         }
     }
 
@@ -178,13 +181,37 @@ public sealed class PeerStore
             }
 
             var file = new PeerStoreFile(SelfId, [.. _peers.Select(p => new PeerStoreEntry(p.Id, p.Name, _protector.Protect(p.Secret), p.PairedAt, p.Endpoint))]);
-            File.WriteAllText(temp, JsonSerializer.Serialize(file, HandoffJson.Default.PeerStoreFile));
+            WriteOwnerOnly(temp, JsonSerializer.Serialize(file, HandoffJson.Default.PeerStoreFile));
             File.Move(temp, _path, overwrite: true);
             LastError = null;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Security.Cryptography.CryptographicException)
         {
             LastError = $"Paired devices could not be saved: {e.Message}";
+            SamaatLog.Warn("Phone link", LastError, e);
         }
+    }
+
+    /// <summary>
+    /// Outside Windows the secrets are stored as they are (<see cref="PlainSecretProtector"/>), so the file is created
+    /// readable and writable by its owner only (0600). The temp file is new each time, and the move keeps its mode.
+    /// </summary>
+    private static void WriteOwnerOnly(string path, string text)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            File.WriteAllText(path, text);
+            return;
+        }
+
+        File.Delete(path);
+        using var stream = new FileStream(path, new FileStreamOptions
+        {
+            Mode = FileMode.CreateNew,
+            Access = FileAccess.Write,
+            UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
+        });
+        using var writer = new StreamWriter(stream);
+        writer.Write(text);
     }
 }

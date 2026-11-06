@@ -12,18 +12,18 @@
 
     <StackPanel Spacing="4">
       <TextBlock Text="Settings" Classes="title" />
-      <TextBlock Text="Changes apply and save straight away." Classes="muted" />
+      <TextBlock Text="Changes apply and save straight away" Classes="muted" />
     </StackPanel>
 
     <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
-      <StackPanel Orientation="Horizontal" Spacing="6">
+      <StackPanel Orientation="Horizontal" Spacing="8">
         <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
-        <TextBlock Text="{Binding ErrorText}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
 
-    <!-- Phone handoff is not shipped yet: show it as coming soon (full UI lives on feature/ui-redesign) -->
-    <Border Classes="panel">
+    <!-- Phone handoff switched off (AppOptions.PhoneHandoff, off in the Store build): show it as coming soon -->
+    <Border Classes="panel" IsVisible="{Binding ShowPhoneComingSoon}">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <Border Classes="optionIcon" VerticalAlignment="Center">
           <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
@@ -36,6 +36,77 @@
           <TextBlock Text="Coming soon" />
         </Border>
       </Grid>
+    </Border>
+
+    <!-- Phone: pair phones running Samaat, to move earbuds between them and this computer -->
+    <Border Classes="panel" IsVisible="{Binding PhoneLink, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="8" DataContext="{Binding PhoneLink}" x:DataType="phone:PhoneLinkViewModel">
+        <Grid ColumnDefinitions="*,Auto" MinHeight="40">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Phone" Classes="panelTitle" />
+            <TextBlock Text="Move your earbuds between this computer and your Android phone from either one" Classes="meta" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="primary" Content="Pair a phone" Command="{Binding PairCommand}" IsVisible="{Binding ShowPairButton}"
+                  VerticalAlignment="Center" Margin="12,0,0,0" />
+        </Grid>
+
+        <Border Classes="alert critical" IsVisible="{Binding HasError}" HorizontalAlignment="Left">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <PathIcon Data="{StaticResource Icon.Warning}" Width="14" Height="14" />
+            <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- Waiting for the phone to dial in -->
+        <Border Classes="row" IsVisible="{Binding ShowWaiting}">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+              <ProgressBar Classes="busy" />
+              <TextBlock Text="{Binding WaitingText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="ghost" Content="Cancel" Command="{Binding CancelPairingCommand}" VerticalAlignment="Center" Margin="12,0,0,0" />
+          </Grid>
+        </Border>
+
+        <!-- A phone asked: compare the code -->
+        <Border Classes="row" IsVisible="{Binding HasRequest}">
+          <StackPanel Spacing="8" DataContext="{Binding Request}" x:DataType="phone:PairingPromptViewModel">
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Code}" Classes="number" FontSize="{StaticResource Samaat.FontSize.Code}" FontWeight="SemiBold" LetterSpacing="2"
+                       AutomationProperties.Name="Pairing code" />
+            <TextBlock Text="{Binding Hint}" Classes="meta" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" Content="Pair" Command="{Binding AcceptCommand}" IsEnabled="{Binding !IsAnswering}" />
+              <Button Classes="ghost" Content="Cancel" Command="{Binding DeclineCommand}" IsEnabled="{Binding !IsAnswering}" />
+              <TextBlock Text="{Binding StatusText}" Classes="meta" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Paired phones -->
+        <ItemsControl ItemsSource="{Binding Phones}" IsVisible="{Binding HasPhones}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="phone:PairedPhoneViewModel">
+              <Border Classes="row">
+                <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
+                  <Border Classes="optionIcon" Classes.on="{Binding IsOnline}" VerticalAlignment="Center">
+                    <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Ellipse Classes="dot" Classes.on="{Binding IsOnline}" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding StatusText}" Classes="meta" />
+                    </StackPanel>
+                  </StackPanel>
+                  <Button Grid.Column="2" Classes="subtle" Content="Forget" Command="{Binding ForgetCommand}"
+                          AutomationProperties.Name="{Binding ForgetAccessibleName}" VerticalAlignment="Center" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
     </Border>
 
 <Border Classes="panel">
@@ -72,32 +143,32 @@
     <TextBlock Text="Accent" />
     <TextBlock Text="Used for charge, selection and focus" Classes="meta" TextWrapping="Wrap" />
   </StackPanel>
-  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
 <Button Classes="swatch" Classes.selected="{Binding IsLimeAccent}" AutomationProperties.Name="Lime" ToolTip.Tip="Lime"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Lime}">
   <Panel>
-    <Ellipse Fill="#C8F169" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Lime}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsLimeAccent}" />
   </Panel>
 </Button>
 <Button Classes="swatch" Classes.selected="{Binding IsEmeraldAccent}" AutomationProperties.Name="Emerald" ToolTip.Tip="Emerald"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Emerald}">
   <Panel>
-    <Ellipse Fill="#3DDC97" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Emerald}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsEmeraldAccent}" />
   </Panel>
 </Button>
 <Button Classes="swatch" Classes.selected="{Binding IsIceAccent}" AutomationProperties.Name="Ice" ToolTip.Tip="Ice"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Ice}">
   <Panel>
-    <Ellipse Fill="#6CC4FF" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Ice}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsIceAccent}" />
   </Panel>
 </Button>
 <Button Classes="swatch" Classes.selected="{Binding IsMonoAccent}" AutomationProperties.Name="Mono" ToolTip.Tip="Mono"
         Command="{Binding SetAccentCommand}" CommandParameter="{x:Static set:AccentChoice.Mono}">
   <Panel>
-    <Ellipse Fill="#E6E9EC" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
+    <Ellipse Fill="{StaticResource Samaat.Swatch.Mono}" Stroke="{DynamicResource Samaat.Border}" StrokeThickness="1" />
     <PathIcon Classes="swatchCheck" Data="{StaticResource Icon.Check}" IsVisible="{Binding IsMonoAccent}" />
   </Panel>
 </Button>
@@ -107,7 +178,7 @@
 <Border Classes="row">
 <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="40">
   <Border Classes="optionIcon" VerticalAlignment="Center">
-    <PathIcon Data="{StaticResource Icon.Sparkle}" Width="16" Height="16" />
+    <PathIcon Data="{StaticResource Icon.Motion}" Width="16" Height="16" />
   </Border>
   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
     <TextBlock Text="Reduce motion" />
@@ -251,7 +322,7 @@
   </Border>
   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
     <TextBlock Text="Include the charging case" />
-    <TextBlock Text="A low case is less urgent than low buds, so it is off by default." Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="A low case is less urgent than low buds, so it is off by default" Classes="meta" TextWrapping="Wrap" />
   </StackPanel>
   <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding IncludeCase}" AutomationProperties.Name="Include the charging case" />
 </Grid>
@@ -270,7 +341,7 @@
   </Border>
   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
     <TextBlock Text="System notifications" />
-    <TextBlock Text="Also show battery alerts as system notifications." Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="Also show battery alerts as system notifications" Classes="meta" TextWrapping="Wrap" />
   </StackPanel>
   <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding SystemNotifications}" AutomationProperties.Name="System notifications" />
 </Grid>
@@ -281,7 +352,7 @@
   </Border>
   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
     <TextBlock Text="Keep running in the tray" />
-    <TextBlock Text="Closing the window hides Samaat instead of quitting." Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="Closing the window hides Samaat instead of quitting" Classes="meta" TextWrapping="Wrap" />
   </StackPanel>
   <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding CloseToTray}" AutomationProperties.Name="Keep running in the tray" />
 </Grid>
@@ -293,7 +364,7 @@
   </Border>
   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
     <TextBlock Text="Start with Windows" />
-    <TextBlock Text="Opens Samaat minimized when you sign in." Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="Opens Samaat minimized when you sign in" Classes="meta" TextWrapping="Wrap" />
     <TextBlock Text="{Binding StartupNote}" Classes="meta" IsVisible="{Binding !StartupSupported}" />
   </StackPanel>
   <ToggleSwitch Grid.Column="2" Classes="share" IsChecked="{Binding StartWithWindows}" IsEnabled="{Binding StartupSupported}" AutomationProperties.Name="Start with Windows" />
@@ -305,9 +376,14 @@
 <Grid ColumnDefinitions="Auto,*">
   <Image Source="{x:Static uilogo:Logo.Image}" Width="40" Height="40" VerticalAlignment="Top" AutomationProperties.Name="Samaat logo" />
   <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-    <TextBlock Text="Samaat" Classes="display" FontSize="16" />
+    <TextBlock Text="Samaat" Classes="display" FontSize="{StaticResource Samaat.FontSize.Heading}" />
     <TextBlock Text="{Binding VersionText}" Classes="meta" />
-    <TextBlock Text="A companion for Bluetooth earbuds from any brand." Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="A companion for Bluetooth earbuds from any brand" Classes="meta" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding LicenceNotice}" Classes="meta" TextWrapping="Wrap" Margin="0,8,0,0" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <HyperlinkButton Content="Licence" NavigateUri="{Binding LicenceUri}" Padding="0" Foreground="{DynamicResource Samaat.Accent}" AutomationProperties.Name="Read the GNU GPL v3 licence" />
+      <HyperlinkButton Content="Source code" NavigateUri="{Binding SourceUri}" Padding="0" Foreground="{DynamicResource Samaat.Accent}" AutomationProperties.Name="Open Samaat's source code" />
+    </StackPanel>
   </StackPanel>
 </Grid>
 </Border>

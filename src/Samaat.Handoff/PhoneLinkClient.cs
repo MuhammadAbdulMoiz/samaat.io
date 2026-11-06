@@ -8,6 +8,7 @@ using Samaat.Handoff.Moving;
 using Samaat.Handoff.Pairing;
 using Samaat.Handoff.Protocol;
 using Samaat.Handoff.Storage;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Handoff;
 
@@ -232,6 +233,7 @@ public sealed class PhoneLinkClient : IAsyncDisposable
             catch (HandshakeException ex)
             {
                 LastError = ex.Message;
+                SamaatLog.Info("Phone link", "Connecting to the computer failed", ex);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -340,6 +342,11 @@ public sealed class PhoneLinkClient : IAsyncDisposable
         }
     }
 
+    /// <summary>What the phone shows when it can't open a connection to the computer.</summary>
+    internal static string DialError(SocketError error) => error == SocketError.ConnectionRefused
+        ? "The computer refused the connection. Check that Samaat is running on it."
+        : "Couldn't reach the computer. Check that both are on the same Wi-Fi.";
+
     private async Task<FrameStream> DialAsync(IPEndPoint endpoint, CancellationToken ct)
     {
         var client = new TcpClient(endpoint.AddressFamily) { NoDelay = true };
@@ -358,7 +365,7 @@ public sealed class PhoneLinkClient : IAsyncDisposable
         catch (SocketException ex)
         {
             client.Dispose();
-            throw new HandshakeException($"Couldn't reach the computer ({ex.SocketErrorCode}).");
+            throw new HandshakeException(DialError(ex.SocketErrorCode));
         }
         catch
         {
