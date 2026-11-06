@@ -78,9 +78,11 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 ## 2. What's remaining
 
 ### Blocking: needs a decision from you
+
+*Also settled 2026-11-06 ([record](decisions/2026-11-06-settled-decisions.md)): the `.claude/` keep-list, and the battery tile label ("Overall" is now "Lowest bud").*
 1. **Which earbuds to target first** (PLAN §13 Q1). Every real ANC, multipoint and L/R/case battery feature depends on it. The Quantum Zbuds were tested and have no usable vendor protocol; pick a model with a companion app or a BLE side.
 2. **Windows-first or Android-first** (§13 Q2). The core and the UI are portable; the platform layer isn't. An Android app now exists (for moving earbuds between phone and computer), so this is about which platform gets hardware attention first.
-3. **License / open source** (§13 Q4). This affects which references we can learn from (§11).
+3. ~~**License / open source** (§13 Q4)~~ **Settled 2026-11-06:** GPL-3.0-or-later for both repos ([decision](decisions/2026-11-06-settled-decisions.md)).
 
 ### Next engineering steps
 | # | Item | Notes |

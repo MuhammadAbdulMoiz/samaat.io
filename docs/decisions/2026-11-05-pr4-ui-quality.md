@@ -25,7 +25,7 @@
 
 **Reverted:** capping the rail title at two lines. Avalonia's `MaxLines` drops the overflow without an ellipsis, so a cut name looked complete.
 
-**Open decision:** "Overall" shows the lowest bud, e.g. 1 % beside a bud at 100 %. Labelling it "lowest bud" is undecided.
+**Decision:** "Overall" shows the lowest bud, e.g. 1 % beside a bud at 100 %. Settled 2026-11-06: renamed "Lowest bud" ([record](2026-11-06-settled-decisions.md)).
 
 ## Decisions: motion (review-animations)
 
@@ -63,7 +63,7 @@ The review blocked on two findings; all findings were then applied.
 ## Open items
 
 - Give `RendersScreenshots` a fake clock so the docs screenshots are identical on every run.
-- Decide on the "Overall" label.
+- ~~Decide on the "Overall" label.~~ Done: "Lowest bud".
 
 ## Merge note
 

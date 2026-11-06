@@ -176,7 +176,7 @@
   <Style Selector="Path.tileGlyph">
     <Setter Property="Fill" Value="{DynamicResource Samaat.Faint}" />
   </Style>
-  <!-- One tile (only Overall is reported) stays tile-sized instead of stretching across the panel -->
+  <!-- One tile (only Lowest bud is reported) stays tile-sized instead of stretching across the panel -->
   <Style Selector="ItemsControl.figures.single">
     <Setter Property="MaxWidth" Value="280" />
     <Setter Property="HorizontalAlignment" Value="Left" />
