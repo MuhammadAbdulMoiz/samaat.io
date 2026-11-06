@@ -1,0 +1,15 @@
+{
+  // Not observed on hardware: model from SonyHeadphonesClient's headset reports and Gadgetbridge's device list (behaviour reference); protocol in docs/protocols/sony.md. A lead, not evidence.
+  "id": "sony.wh-1000xm4",
+  "displayName": "WH-1000XM4",
+  "manufacturer": "Sony",
+  "driver": "sony-mdr",
+  "match": {
+    // Matched against the Bluetooth name, e.g. "WH-1000XM4".
+    "namePattern": "WH-1000XM4"
+  },
+  "verified": false,
+  "features": ["battery.combined", "noise.anc", "noise.transparency"],
+  "verifiedFirmware": [],
+  "notes": "Works with WH-1000XM4 over Sony's RFCOMM protocol (v1). Battery and noise mode read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-sony-port.md."
+}

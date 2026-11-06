@@ -1,0 +1,15 @@
+{
+  // Not observed on hardware: model from SonyHeadphonesClient's headset reports and Gadgetbridge's device list (behaviour reference); protocol in docs/protocols/sony.md. A lead, not evidence.
+  "id": "sony.wf-1000xm3",
+  "displayName": "WF-1000XM3",
+  "manufacturer": "Sony",
+  "driver": "sony-mdr",
+  "match": {
+    // Matched against the Bluetooth name, e.g. "WF-1000XM3".
+    "namePattern": "WF-1000XM3"
+  },
+  "verified": false,
+  "features": ["battery.left", "battery.right", "battery.case", "noise.anc", "noise.transparency"],
+  "verifiedFirmware": [],
+  "notes": "Works with WF-1000XM3 over Sony's RFCOMM protocol (v1). Battery and noise mode read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-sony-port.md."
+}

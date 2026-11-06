@@ -1,0 +1,15 @@
+{
+  // Not observed on hardware: name and features come from OpenSCQ30's model list (https://github.com/Oppzippy/OpenSCQ30 @ e75a68b7, README and lib/src/devices/soundcore/a3931.rs). A lead, not evidence.
+  "id": "soundcore.life-dot-2-nc",
+  "displayName": "Life Dot 2 NC",
+  "manufacturer": "Soundcore",
+  "driver": "soundcore-spp",
+  "match": {
+    // Matched against the Bluetooth name, e.g. "Soundcore Life Dot 2 NC".
+    "namePattern": "Life Dot 2 NC"
+  },
+  "verified": false,
+  "features": ["battery.left", "battery.right", "eq.presets"],
+  "verifiedFirmware": [],
+  "notes": "Works with Life Dot 2 NC over Soundcore's RFCOMM protocol, ported from OpenSCQ30. Battery and EQ preset are read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-soundcore-port.md."
+}

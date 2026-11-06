@@ -20,6 +20,8 @@ public sealed class ArchitectureTests
     private const string FastPair = "Samaat.Protocols.FastPair";
     private const string Bose = "Samaat.Protocols.Bose";
     private const string Samsung = "Samaat.Protocols.Samsung";
+    private const string Soundcore = "Samaat.Protocols.Soundcore";
+    private const string Sony = "Samaat.Protocols.Sony";
     private const string Windows = "Samaat.Platform.Windows";
 
     /// <summary>Which projects each source project may reference. Anything not listed is a layering violation.</summary>
@@ -38,13 +40,15 @@ public sealed class ArchitectureTests
         [FastPair] = [Core, Transport],
         [Bose] = [Core, Transport],
         [Samsung] = [Core, Transport],
+        [Soundcore] = [Core, Transport],
+        [Sony] = [Core, Transport],
 
         // Feature modules beside Core.
         [Handoff] = [Core],
         [Simulator] = [Core],
 
         // The single list of shipped drivers.
-        [Drivers] = [Core, Transport, Jieli, FastPair, Bose, Samsung],
+        [Drivers] = [Core, Transport, Jieli, FastPair, Bose, Samsung, Soundcore, Sony],
 
         // A platform implements Core, Transport and Handoff contracts, and reads the standard Battery Service.
         [Windows] = [Core, Transport, Handoff, Standard],

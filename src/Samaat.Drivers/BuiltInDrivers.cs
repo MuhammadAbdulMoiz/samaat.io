@@ -3,6 +3,8 @@ using Samaat.Protocols.Bose;
 using Samaat.Protocols.FastPair;
 using Samaat.Protocols.Jieli;
 using Samaat.Protocols.Samsung;
+using Samaat.Protocols.Soundcore;
+using Samaat.Protocols.Sony;
 
 namespace Samaat.Drivers;
 
@@ -19,6 +21,8 @@ public static class BuiltInDrivers
         new FastPairDriver(),
         new BoseBmapDriver(),
         new SamsungDriver(),
+        new SoundcoreDriver(),
+        new SonyDriver(),
     ];
 
     /// <summary>
