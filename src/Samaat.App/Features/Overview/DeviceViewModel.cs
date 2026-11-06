@@ -267,7 +267,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
     /// <summary>The four numbers of the battery panel: overall, left, right, case.</summary>
     public ObservableCollection<BatteryFigureViewModel> Figures { get; } =
-        [new("Overall"), new("Left bud"), new("Right bud"), new("Case")];
+        [new("Lowest bud"), new("Left bud"), new("Right bud"), new("Case")];
 
     /// <summary>The figures the battery panel shows: all four for earbuds, only the overall level otherwise.</summary>
     public ObservableCollection<BatteryFigureViewModel> ShownFigures { get; } = [];
@@ -495,7 +495,7 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
                 : string.Join(" · ", new[] { tile.IsLow || tile.IsCritical ? tile.StateText : "", tile.DetailText }.Where(t => t.Length > 0));
         }
 
-        // Collapse to Overall only when no component (left, right or case) is reported.
+        // Collapse to Lowest bud only when no component (left, right or case) is reported.
         var components = Figures.Skip(1).Any(f => f.IsReported);
         var shown = components ? Figures.ToList() : [overall];
         ShowsComponentFigures = components;
