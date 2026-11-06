@@ -14,6 +14,7 @@ using Samaat.Core.Connections;
 using Samaat.Core.Devices;
 using Samaat.Core.NoiseControl;
 using Samaat.Core.Profiles;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App.Features.Overview;
 
@@ -120,6 +121,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     /// <summary>The Links page's "Your phone" card; set by the shell.</summary>
     public Phone.PhoneMoveViewModel? PhoneMove { get; set; }
 
+    /// <summary>The phone handoff is switched off (<see cref="AppOptions.PhoneHandoff"/>): the Links page says it's coming.</summary>
+    public bool ShowPhoneComingSoon { get; set; }
+
     public ConnectionsViewModel Connections { get; }
 
     public DeviceInfoViewModel Info { get; }
@@ -143,8 +147,9 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
         {
             return path is null ? null : new Avalonia.Media.Imaging.Bitmap(path);
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            SamaatLog.Warn("Artwork", $"Couldn't load {path}; drawing the artwork instead", e);
             return null; // a broken image file falls back to the drawn artwork
         }
     }

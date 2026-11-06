@@ -6,6 +6,7 @@ using NAudio.Dmo;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using Samaat.Core.Audio;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Platform.Windows;
 
@@ -215,8 +216,8 @@ public sealed class WasapiBackend : IAudioBackend
             _capture.DataAvailable -= OnData;
             _capture.RecordingStopped -= OnCaptureStopped;
             if (_output is { } o) o.PlaybackStopped -= OnOutputStopped;
-            try { _capture.StopRecording(); } catch (Exception e) { Trace.TraceWarning($"AudioShare: capture stop failed: {e.Message}"); }
-            try { _output?.Stop(); } catch (Exception e) { Trace.TraceWarning($"AudioShare: output stop failed: {e.Message}"); }
+            try { _capture.StopRecording(); } catch (Exception e) { SamaatLog.Warn("Audio share", "Stopping the capture failed", e); }
+            try { _output?.Stop(); } catch (Exception e) { SamaatLog.Warn("Audio share", "Stopping the output failed", e); }
             _capture.Dispose();
             _output?.Dispose();
         }

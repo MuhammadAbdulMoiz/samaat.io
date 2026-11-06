@@ -1,6 +1,7 @@
 using Samaat.Core.Devices;
 using Samaat.Core.Drivers;
 using Samaat.Transport;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Protocols.FastPair;
 
@@ -47,16 +48,18 @@ public sealed class FastPairDriver(TimeSpan? refreshTimeout = null, TimeSpan? sa
                     return [feature, multipoint];
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Any SASS failure just means battery only.
+                SamaatLog.Info("Fast Pair", "Multipoint (SASS) unavailable", ex);
             }
 
             return [feature];
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Timeouts, a closed channel and Bluetooth errors all just mean no driver features.
+            SamaatLog.Info("Fast Pair", "The Message Stream didn't open", ex);
         }
 
         try

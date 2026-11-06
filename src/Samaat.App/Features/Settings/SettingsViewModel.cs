@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Samaat.Core.Battery;
 using Samaat.Core.Platform;
 using Samaat.Core.Settings;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App.Features.Settings;
 
@@ -88,6 +89,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>The Phone section; set by the shell.</summary>
     public Phone.PhoneLinkViewModel? PhoneLink { get; set; }
+
+    /// <summary>The phone handoff is switched off (<see cref="AppOptions.PhoneHandoff"/>): the Phone panel says it's coming.</summary>
+    public bool ShowPhoneComingSoon { get; set; }
 
     // Doubles because Avalonia's Slider binds to double; values are always whole numbers.
     [ObservableProperty]
@@ -203,6 +207,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             Show(Current with { StartWithWindows = !value });
             ErrorText = $"Couldn't change start with Windows: {e.Message}";
+            SamaatLog.Warn("Settings", "Changing start with Windows failed", e);
             return;
         }
 

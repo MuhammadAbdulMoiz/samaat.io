@@ -7,9 +7,23 @@ using Samaat.Simulator;
 
 namespace Samaat.App;
 
+/// <param name="PhoneHandoff">
+/// The phone-handoff feature flag: whether the phone panels (Settings, Links), the tray's pairing item and the phone
+/// link itself exist. Off, nothing pairs, listens or broadcasts. Defaults to <see cref="PhoneHandoffDefault"/>.
+/// </param>
 public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimized = false, bool TestNotification = false,
-    SimulatorScenario Scenario = SimulatorScenario.Demo)
+    SimulatorScenario Scenario = SimulatorScenario.Demo, bool PhoneHandoff = AppOptions.PhoneHandoffDefault)
 {
+    /// <summary>
+    /// On for normal and Debug builds; off for the Microsoft Store (MSIX) build, which packaging/msix/build-msix.ps1
+    /// compiles with <c>-p:SamaatStoreBuild=true</c>, until the handoff has run on a real phone.
+    /// </summary>
+#if SAMAAT_STORE
+    public const bool PhoneHandoffDefault = false;
+#else
+    public const bool PhoneHandoffDefault = true;
+#endif
+
     public static AppOptions Parse(string[] args)
     {
         // --simulate, or --simulate=worst / --simulate=empty for the stress-test data sets (dev only).
@@ -18,7 +32,7 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
         return new(
             Simulate: simulate is not null,
             IncludeNonAudio: args.Contains("--all-devices"),
-            Minimized: args.Contains("--minimized"),
+            Minimized: args.Contains("--minimized") || LaunchedAtStartup(),
             TestNotification: args.Contains("--test-notification"),
             Scenario: scenario);
     }
@@ -29,6 +43,14 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
         "empty" => SimulatorScenario.Empty,
         _ => SimulatorScenario.Demo,
     };
+
+    // The packaged startup task launches the exe without arguments.
+    private static bool LaunchedAtStartup() =>
+#if SAMAAT_WINDOWS
+        Samaat.Platform.Windows.PackagedApp.LaunchedAtStartup;
+#else
+        false;
+#endif
 
 #if SAMAAT_WINDOWS
     public bool HasRealBluetooth => true;

@@ -22,9 +22,25 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet build Samaat.slnx -c Release
-      - run: dotnet test Samaat.slnx -c Release --no-build
+      # tests/Samaat.Platform.Windows.Tests is a test project on Windows only (IsTestProject), so it runs on windows-latest
+      # and is built, not run, on ubuntu-latest.
+      - run: dotnet test Samaat.slnx -c Release --no-build --collect "XPlat Code Coverage" --results-directory artifacts/coverage
         env:
           SAMAAT_SCREENSHOTS: ${{ github.workspace }}/artifacts/screenshots
+      - name: Coverage summary
+        if: always()
+        run: python .github/scripts/coverage-summary.py artifacts/coverage artifacts/coverage/summary.md
+      - name: Coverage in the job summary
+        if: always()
+        shell: bash
+        run: cat artifacts/coverage/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.os }}
+          path: |
+            artifacts/coverage/summary.md
+            artifacts/coverage/**/coverage.cobertura.xml
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'ubuntu-latest'
         with:

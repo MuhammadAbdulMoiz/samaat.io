@@ -1,6 +1,7 @@
 using Samaat.Core.Capabilities;
 using Samaat.Core.Commands;
 using Samaat.Core.Equalizer;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Protocols.Jieli;
 
@@ -138,20 +139,14 @@ public sealed class JieliEqualizerFeature : IEqualizerFeature, IAsyncDisposable
         }
     }
 
-    private async void OnAuthenticated()
+    // On failure the next push or reconnect brings the state back; the log records why it was missed.
+    private void OnAuthenticated() => _ = SamaatLog.Guard("Jieli", "Reading the EQ preset after authentication", async () =>
     {
-        try
+        if (await ReadCurrentModeAsync(CancellationToken.None) is { } mode && !_disposed)
         {
-            if (await ReadCurrentModeAsync(CancellationToken.None) is { } mode && !_disposed)
-            {
-                Apply(mode);
-            }
+            Apply(mode);
         }
-        catch (Exception)
-        {
-            // The next push or reconnect brings the state back; nothing to report here.
-        }
-    }
+    });
 
     private void Apply(byte mode)
     {

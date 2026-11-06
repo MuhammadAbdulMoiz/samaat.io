@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Samaat.Core.Capabilities;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.Core.Drivers;
 
@@ -58,6 +59,7 @@ public sealed class DeviceCatalog
             catch (Exception ex) when (ex is JsonException or FormatException or ArgumentException)
             {
                 errors.Add(ex.Message);
+                SamaatLog.Warn("Catalog", "A device catalog entry couldn't be loaded", ex);
             }
         }
 

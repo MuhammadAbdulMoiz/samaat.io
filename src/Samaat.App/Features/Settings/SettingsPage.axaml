@@ -22,6 +22,22 @@
       </StackPanel>
     </Border>
 
+    <!-- Phone handoff switched off (AppOptions.PhoneHandoff, off in the Store build): show it as coming soon -->
+    <Border Classes="panel" IsVisible="{Binding ShowPhoneComingSoon}">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <Border Classes="optionIcon" VerticalAlignment="Center">
+          <PathIcon Data="{StaticResource Icon.Phone}" Width="16" Height="16" />
+        </Border>
+        <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="2">
+          <TextBlock Text="Phone" Classes="panelTitle" />
+          <TextBlock Text="Move your earbuds between this computer and your Android phone from either one." Classes="meta" TextWrapping="Wrap" />
+        </StackPanel>
+        <Border Grid.Column="2" Classes="chip" VerticalAlignment="Center">
+          <TextBlock Text="Coming soon" />
+        </Border>
+      </Grid>
+    </Border>
+
     <!-- Phone: pair phones running Samaat, to move earbuds between them and this computer -->
     <Border Classes="panel" IsVisible="{Binding PhoneLink, Converter={x:Static ObjectConverters.IsNotNull}}">
       <StackPanel Spacing="8" DataContext="{Binding PhoneLink}" x:DataType="phone:PhoneLinkViewModel">

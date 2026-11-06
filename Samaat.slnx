@@ -18,6 +18,7 @@
     <Project Path="tests/Samaat.App.Tests/Samaat.App.Tests.csproj" />
     <Project Path="tests/Samaat.Core.Tests/Samaat.Core.Tests.csproj" />
     <Project Path="tests/Samaat.Handoff.Tests/Samaat.Handoff.Tests.csproj" />
+    <Project Path="tests/Samaat.Platform.Windows.Tests/Samaat.Platform.Windows.Tests.csproj" />
     <Project Path="tests/Samaat.Protocols.Tests/Samaat.Protocols.Tests.csproj" />
   </Folder>
 </Solution>

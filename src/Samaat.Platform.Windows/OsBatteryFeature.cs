@@ -52,7 +52,7 @@ internal sealed class OsBatteryFeature : IBatteryFeature, IDisposable
     /// <summary>Returns null when Windows has never reported a battery level for this container.</summary>
     public static async Task<OsBatteryFeature?> CreateAsync(Guid containerId, TimeProvider time, CancellationToken cancellationToken)
     {
-        var selector = $"System.Devices.ContainerId:=\"{{{containerId}}}\"";
+        var selector = WindowsSelectors.ContainerId(containerId);
         var percent = await QueryAsync(selector, cancellationToken);
         return percent is null ? null : new OsBatteryFeature(selector, percent, time);
     }
@@ -71,7 +71,8 @@ internal sealed class OsBatteryFeature : IBatteryFeature, IDisposable
         return nodes.Select(n => ReadPercent(n.Properties)).FirstOrDefault(p => p is not null);
     }
 
-    private static int? ReadPercent(IReadOnlyDictionary<string, object> properties) =>
+    /// <summary>The level Windows reports, clamped to 0–100; null when it reports none.</summary>
+    internal static int? ReadPercent(IReadOnlyDictionary<string, object> properties) =>
         properties.TryGetValue(BatteryProperty, out var value) && value is not null
             ? Math.Clamp(Convert.ToInt32(value), 0, 100)
             : null;

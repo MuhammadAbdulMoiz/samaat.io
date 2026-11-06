@@ -9,7 +9,7 @@ Install the [.NET 10 SDK](https://dotnet.microsoft.com/download), then:
 ```bash
 git clone https://github.com/MuhammadAbdulMoiz/samaat.io.git
 cd samaat.io
-git checkout claude/phone-handoff
+git checkout feature/ui-redesign   # dev, where new work lands; master holds releases
 
 # Windows, your real paired earbuds
 dotnet run --project src/Samaat.App -f net10.0-windows10.0.19041.0

@@ -156,7 +156,7 @@ Module pages: [battery](docs/modules/battery.md), [noise control](docs/modules/n
 
 ```bash
 dotnet build Samaat.slnx    # warnings are errors
-dotnet test Samaat.slnx     # over 950 tests, about a minute
+dotnet test Samaat.slnx     # over 1,000 tests, about a minute
 ```
 
 We work test-first: write a failing test, make it pass, then refactor ([STATUS.md §4](docs/STATUS.md#4-working-on-samaat-tdd)). CI runs the same two commands on Ubuntu and Windows for every pull request.

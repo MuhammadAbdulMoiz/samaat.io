@@ -36,7 +36,7 @@ Dependencies point inwards. `tests/Samaat.Core.Tests/ArchitectureTests.cs` reads
 |---|---|---|
 | `Samaat.Transport` | Byte transports: GATT, RFCOMM, a receive buffer | nothing |
 | `Samaat.UI` | Design system shared with the phone: tokens, metrics, icons, fonts, artwork, battery ring | nothing (Avalonia only) |
-| `Samaat.Core` | The domain: feature interfaces and models, capability model, commands, driver contracts, device catalog and registry, settings, platform interfaces (`INotifier`, `IStartupRegistration`, …) | Transport |
+| `Samaat.Core` | The domain: feature interfaces and models, capability model, commands, driver contracts, device catalog and registry, settings, platform interfaces (`INotifier`, `IStartupRegistration`, …), and the `SamaatLog` logging facade | Transport |
 | `Samaat.Protocols.*` | One vendor or standard each: framing codec (bytes ↔ messages) and an `IEarbudDriver` | Core, Transport |
 | `Samaat.Handoff` | Phone link: discovery, pairing, encrypted sessions, moving earbuds with rollback | Core |
 | `Samaat.Simulator` | Simulated earbuds with realistic latency and injectable failures | Core |
@@ -111,6 +111,14 @@ The phone app lives in its own repo, [samaat-mobile](https://github.com/Muhammad
 4. Add `devices/<vendor>/<model>.json` with `"driver": "<id>"`. `BuiltInDriversTests` fails if the id doesn't match a registered driver.
 5. No UI changes are needed. A model is only `"verified": true` with hardware evidence ([CONTRIBUTING.md](../CONTRIBUTING.md)).
 
+## Logging
+
+`Samaat.Core/Diagnostics/SamaatLog` is a static facade with a swappable `ILogSink`, so any layer can record a failure it
+handles without a logging framework or a logger in every constructor. Writing never throws. `SamaatLog.Guard` runs
+fire-and-forget work (event handlers) and logs its failure instead of crashing, replacing `async void`. The app installs
+`RollingFileLog` at start-up (`logs/samaat.log` beside the settings, rolled at 256 KB), and Diagnostics → Copy report ends
+with its last 40 lines. Expected events (a phone dropping, a cancelled command) aren't logged.
+
 ## Quality gates
 
 | Gate | What it protects |
@@ -120,10 +128,11 @@ The phone app lives in its own repo, [samaat-mobile](https://github.com/Muhammad
 | Protocol tests with recorded traces | Codecs stay byte-exact |
 | `DesignSystemTests`, `ContrastTests` | Tokens are the only source of colour, type and shape; text stays readable |
 | Headless UI tests | Every page renders in both themes; every button is at least 32 px and named |
-| CI (Ubuntu and Windows) | `dotnet build` with warnings as errors, then `dotnet test` |
+| `Samaat.Platform.Windows.Tests` | The Windows platform's pure logic (selectors, signal mapping, KS-property requests, toast text); runs on the Windows CI job |
+| CI (Ubuntu and Windows) | `dotnet build` with warnings as errors, then `dotnet test` with line coverage in the job summary |
 
 ## Known debt
 
 - `DeviceCatalog` (driver matching) and `DeviceProfileDb` (artwork and identity) both parse `devices/**/*.json`, each with its own DTO. Merging them into one parsed model would remove the duplicated parsing rules.
 - `AppOptions` chooses platform services with `#if SAMAAT_WINDOWS` in each factory method. A single platform-services object per OS would keep that choice in one place once a second desktop platform arrives.
-- The largest classes, `DeviceViewModel` (615 lines), `PhoneLinkHost` (628) and `PhoneLinkClient` (408), are the first candidates to split.
+- The largest classes, `DeviceViewModel` (634 lines), `PhoneLinkHost` (707) and `PhoneLinkClient` (410), are the first candidates to split.

@@ -1,3 +1,5 @@
+using Samaat.Core.Diagnostics;
+
 namespace Samaat.Core.Devices;
 
 /// <summary>Merges the devices of every registered source into one list.</summary>
@@ -54,7 +56,7 @@ public sealed class DeviceRegistry : IAsyncDisposable
         DevicesChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private async void OnSourceChanged(object? sender, EventArgs e)
+    private void OnSourceChanged(object? sender, EventArgs e) => _ = SamaatLog.Guard("Devices", "Refreshing after a source changed", async () =>
     {
         try
         {
@@ -64,7 +66,7 @@ public sealed class DeviceRegistry : IAsyncDisposable
         {
             // Disposed while a change notification was in flight.
         }
-    }
+    });
 
     public async ValueTask DisposeAsync()
     {
