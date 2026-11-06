@@ -9,11 +9,11 @@ We work test-first (see [docs/STATUS.md §4](docs/STATUS.md#4-working-on-samaat-
 | Branch | What it's for | How changes get in |
 |---|---|---|
 | `master` | Released versions only. Each release is tagged, e.g. `v0.2.0` | A release pull request from dev. No direct pushes |
-| dev (`feature/ui-redesign` for now) | Integration: every change lands here first | Pull requests with CI green |
+| `dev` | Integration: every change lands here first | Pull requests with CI green |
 | `feat/*`, `fix/*`, `docs/*`, `claude/*` | One change each, short-lived | Branch from dev, open a pull request into dev, delete the branch after merge |
 | `hotfix/*` | An urgent fix to a released version | Branch from `master`, merge into `master`, then merge `master` back into dev |
 
-- **Start work from dev:** `git switch -c feat/<short-name> origin/feature/ui-redesign`, and open the pull request against `feature/ui-redesign`, not `master`.
+- **Start work from dev:** `git switch -c feat/<short-name> origin/dev`, and open the pull request against `dev`, not `master`.
 - **Release:**
   1. On dev, set `<Version>` in `Directory.Build.props` to the new version (it starts at `1.0.0`, the Store package's version; the Store only accepts increasing versions).
   2. Open a pull request from dev into `master` and merge it once CI passes.
