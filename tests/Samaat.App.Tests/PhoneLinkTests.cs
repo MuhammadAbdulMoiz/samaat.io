@@ -277,7 +277,7 @@ public sealed class PhoneLinkFlowTests
             await move.PendingMove;
 
             Assert.True(move.ResultIsError);
-            Assert.Contains("back on this computer", move.ResultText);
+            Assert.Contains("kept them on this computer", move.ResultText);
             Assert.Equal(ConnectionState.Connected, buds.Device.Connection);
             Assert.Contains(viewModel.Alerts, a => a.Contains("You didn't pick the earbuds."));
         }

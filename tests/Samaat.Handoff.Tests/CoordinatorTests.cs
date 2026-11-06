@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Time.Testing;
+using System.Net.Sockets;
 using Samaat.Core.Commands;
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 using Samaat.Handoff.Moving;
 using Samaat.Handoff.Protocol;
 
@@ -22,8 +24,8 @@ public class CoordinatorTests
 
     private List<string> AllCalls => [.. _calls, .. _device.Calls];
 
-    private Task<HandoffResult> Run(HandoffDirection direction, IProgress<HandoffProgress>? progress = null, TimeProvider? time = null) =>
-        new HandoffCoordinator(time).RunAsync(_device, _phone, direction, progress);
+    private Task<HandoffResult> Run(HandoffDirection direction, IProgress<HandoffProgress>? progress = null, TimeProvider? time = null, CancellationToken ct = default) =>
+        new HandoffCoordinator(time).RunAsync(_device, _phone, direction, progress, ct);
 
     [Fact]
     public async Task ToPhone_HappyPath_ChecksDisconnectsThenConnects()
@@ -72,7 +74,7 @@ public class CoordinatorTests
         Assert.Equal(HandoffOutcome.RolledBack, result.Outcome);
         Assert.Equal(["pc.disconnect", "pc.connect"], _device.Calls);
         Assert.Equal(ConnectionState.Connected, _device.Connection);
-        Assert.Contains("back on this computer", result.Message);
+        Assert.Contains("kept them on this computer", result.Message);
         Assert.Contains("You didn't pick the earbuds.", result.Message);
     }
 
@@ -101,6 +103,40 @@ public class CoordinatorTests
 
         Assert.Equal(HandoffOutcome.RolledBack, result.Outcome);
         Assert.Contains("pc.connect", _device.Calls);
+    }
+
+    [Fact]
+    public async Task ToPhone_CallerCancelsWhilePhoneConnects_RollsBackInsteadOfThrowing()
+    {
+        _phone.HangConnect = true;
+        using var cts = new CancellationTokenSource();
+        var run = Run(HandoffDirection.ToPhone, ct: cts.Token);
+        await Eventually.TrueAsync(() => _calls.Contains("phone.connect"), "the phone to be asked");
+
+        await cts.CancelAsync();
+        var result = await run;
+
+        Assert.Equal(HandoffOutcome.RolledBack, result.Outcome);
+        Assert.Contains("pc.connect", _device.Calls);
+        Assert.Equal(ConnectionState.Connected, _device.Connection);
+        Assert.Contains("kept them on this computer", result.Message);
+    }
+
+    [Fact]
+    public async Task ToPhone_CallerCancelsDuringDisconnect_DisconnectFinishesAndBudsComeBack()
+    {
+        _device.DisconnectGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cts = new CancellationTokenSource();
+        var run = Run(HandoffDirection.ToPhone, ct: cts.Token);
+        await Eventually.TrueAsync(() => _device.Calls.Contains("pc.disconnect"), "the disconnect to start");
+
+        await cts.CancelAsync();
+        _device.DisconnectGate.SetResult();
+        var result = await run;
+
+        Assert.Equal(HandoffOutcome.RolledBack, result.Outcome);
+        Assert.Contains("pc.connect", _device.Calls);
+        Assert.Equal(ConnectionState.Connected, _device.Connection);
     }
 
     [Fact]
@@ -325,10 +361,109 @@ public class PhoneAgentTests
     public async Task OtherMessages_NotHandled() => Assert.Null(await Agent.HandleAsync(new PingMessage(), default));
 
     [Fact]
+    public async Task Connect_BluetoothTurnsOffWhileWaiting_FailsFast()
+    {
+        _audio.HangConnect = true;
+        var reply = Agent.HandleAsync(new ConnectAudioMessage(Address) { Id = 7 }, default);
+        await Eventually.TrueAsync(() => _audio.Calls.Count == 1, "the connect to start");
+
+        _audio.TurnBluetoothOff();
+
+        var done = await Task.WhenAny(reply, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.Same(reply, done);
+        var result = await reply;
+        Assert.Equal(CommandStatus.Rejected, result!.Status);
+        Assert.Equal("Bluetooth turned off on the phone.", result.Message);
+    }
+
+    [Fact]
     public void ListDevices_NormalizesAddresses()
     {
         _audio.With("aa:bb:cc:dd:ee:02", connected: true, "Other");
 
         Assert.Contains(Agent.ListDevices(), d => d.Address == "AA:BB:CC:DD:EE:02" && d.Connected);
+    }
+}
+
+[CollectionDefinition("Handoff log", DisableParallelization = true)]
+public sealed class HandoffLogCollection;
+
+/// <summary>Swaps the process-wide log sink, so these tests must not run beside others that read it.</summary>
+[Collection("Handoff log")]
+public sealed class CoordinatorLoggingTests : IDisposable
+{
+    private readonly ILogSink _previous = SamaatLog.Sink;
+    private readonly Capture _log = new();
+
+    public CoordinatorLoggingTests() => SamaatLog.Sink = _log;
+
+    public void Dispose() => SamaatLog.Sink = _previous;
+
+    [Fact]
+    public async Task ARolledBackMove_IsLoggedStepByStep_WithoutTheAddress()
+    {
+        // Other tests log under "Handoff" too, so this run's lines are the ones naming these earbuds.
+        const string buds = "LogTest Buds 7f3a";
+        var device = new FakeLinkDevice { Identity = new DeviceIdentity("log-test", buds, Details: new DeviceDetails { Address = FakeLinkDevice.DefaultAddress }) };
+        var phone = new FakePhoneEndpoint([]);
+        phone.ConnectResults.Enqueue(CommandResult.Rejected("You didn't pick the earbuds."));
+
+        var result = await new HandoffCoordinator().RunAsync(device, phone, HandoffDirection.ToPhone);
+
+        var mine = _log.Entries.Where(e => e.Source == "Handoff" && e.Message.Contains(buds)).ToList();
+        Assert.All(mine, e => Assert.Equal(LogLevel.Info, e.Level));
+        Assert.Contains(mine, e => e.Message.Contains("Starting") && e.Message.Contains("Test Phone") && e.Message.Contains("ToPhone"));
+        Assert.Contains(mine, e => e.Message.Contains("disconnect") && e.Message.Contains("Confirmed"));
+        Assert.Contains(mine, e => e.Message.Contains("connect") && e.Message.Contains("Rejected") && e.Message.Contains("You didn't pick the earbuds."));
+        Assert.Contains(mine, e => e.Message.Contains("Rolling back"));
+        Assert.Contains(mine, e => e.Message.Contains("RolledBack") && e.Message.Contains(result.Message));
+        Assert.DoesNotContain(_log.Entries, e => e.Message.Contains(buds) && e.Message.Contains(FakeLinkDevice.DefaultAddress, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private sealed class Capture : ILogSink
+    {
+        private readonly List<(LogLevel Level, string Source, string Message)> _entries = [];
+
+        public IReadOnlyList<(LogLevel Level, string Source, string Message)> Entries
+        {
+            get
+            {
+                lock (_entries)
+                {
+                    return [.. _entries];
+                }
+            }
+        }
+
+        public void Write(LogLevel level, string source, string message, Exception? error)
+        {
+            lock (_entries)
+            {
+                _entries.Add((level, source, message));
+            }
+        }
+    }
+}
+
+public class DialErrorTests
+{
+    [Fact]
+    public void ConnectionRefused_SaysSamaatMustBeRunning() =>
+        Assert.Equal("The computer refused the connection. Check that Samaat is running on it.", PhoneLinkClient.DialError(SocketError.ConnectionRefused));
+
+    [Fact]
+    public void EveryOtherError_IsPlainEnglish()
+    {
+        foreach (var error in Enum.GetValues<SocketError>().Where(e => e != SocketError.ConnectionRefused).Distinct())
+        {
+            var text = PhoneLinkClient.DialError(error);
+            Assert.Equal("Couldn't reach the computer. Check that both are on the same Wi-Fi.", text);
+            Assert.DoesNotContain("(", text);
+            var name = error.ToString();
+            if (name.Length > 4)
+            {
+                Assert.DoesNotContain(name, text);
+            }
+        }
     }
 }

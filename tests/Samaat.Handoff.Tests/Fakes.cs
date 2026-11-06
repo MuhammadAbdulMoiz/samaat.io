@@ -37,6 +37,9 @@ internal sealed class FakeLinkDevice : IEarbudDevice, IPcLinkFeature
     /// <summary>Set to make a call never finish (for timeouts).</summary>
     public bool Hang { get; set; }
 
+    /// <summary>When set, disconnect waits for it (ignoring cancellation, like a real Bluetooth call) before finishing.</summary>
+    public TaskCompletionSource? DisconnectGate { get; set; }
+
     public Task<CommandResult> ConnectAsync(CancellationToken ct = default) => Run("pc.connect", ConnectResults, ConnectionState.Connected, ct);
 
     public Task<CommandResult> DisconnectAsync(CancellationToken ct = default) => Run("pc.disconnect", DisconnectResults, ConnectionState.Disconnected, ct);
@@ -47,6 +50,11 @@ internal sealed class FakeLinkDevice : IEarbudDevice, IPcLinkFeature
         if (Hang)
         {
             await Task.Delay(Timeout.Infinite, ct);
+        }
+
+        if (name == "pc.disconnect" && DisconnectGate is { } gate)
+        {
+            await gate.Task;
         }
 
         var result = results.Count > 0 ? results.Dequeue() : CommandResult.Confirmed;
@@ -126,7 +134,16 @@ internal sealed class FakePhoneAudio : IPhoneAudioLink
 
     public List<string> Calls { get; } = [];
 
+    /// <summary>Set to make connect never finish, ignoring cancellation too (the earbuds never show up, the platform call never returns).</summary>
+    public bool HangConnect { get; set; }
+
     public event EventHandler? Changed;
+
+    public void TurnBluetoothOff()
+    {
+        IsBluetoothOn = false;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     public FakePhoneAudio With(string address, bool connected, string name = "Test Buds")
     {
@@ -139,16 +156,21 @@ internal sealed class FakePhoneAudio : IPhoneAudioLink
         return this;
     }
 
-    public Task<CommandResult> ConnectAsync(string address, TimeSpan timeout, CancellationToken ct)
+    public async Task<CommandResult> ConnectAsync(string address, TimeSpan timeout, CancellationToken ct)
     {
         Calls.Add("connect " + address);
+        if (HangConnect)
+        {
+            await Task.Delay(Timeout.Infinite, CancellationToken.None);
+        }
+
         var result = ConnectResults.Count > 0 ? ConnectResults.Dequeue() : CommandResult.Confirmed;
         if (result.Succeeded)
         {
             Set(address, true);
         }
 
-        return Task.FromResult(result);
+        return result;
     }
 
     public Task<CommandResult> DisconnectAsync(string address, TimeSpan timeout, CancellationToken ct)

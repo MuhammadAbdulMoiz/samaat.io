@@ -74,8 +74,45 @@ public sealed class PhoneAgent(IPhoneAudioLink audio)
             return check;
         }
 
-        return Find(address)!.Connected ? CommandResult.Confirmed : await Audio.ConnectAsync(Find(address)!.Address, PhoneTimeout, ct);
+        return Find(address)!.Connected ? CommandResult.Confirmed : await ConnectUnlessBluetoothGoesOffAsync(Find(address)!.Address, ct);
     }
+
+    /// <summary>Stops waiting as soon as the phone's Bluetooth turns off, so the computer hears why at once and takes the earbuds back.</summary>
+    private async Task<CommandResult> ConnectUnlessBluetoothGoesOffAsync(string address, CancellationToken ct)
+    {
+        using var bluetoothOff = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        void OnChanged(object? sender, EventArgs e)
+        {
+            if (!Audio.IsBluetoothOn)
+            {
+                bluetoothOff.Cancel();
+            }
+        }
+
+        Task<CommandResult>? connect = null;
+        Audio.Changed += OnChanged;
+        try
+        {
+            OnChanged(null, EventArgs.Empty); // in case it went off before the subscription
+            bluetoothOff.Token.ThrowIfCancellationRequested(); // never start a connect that could land after we said no
+            connect = Audio.ConnectAsync(address, PhoneTimeout, bluetoothOff.Token);
+            // WaitAsync: don't depend on the platform honouring the token to answer promptly.
+            var result = await connect.WaitAsync(bluetoothOff.Token);
+            return Audio.IsBluetoothOn || ct.IsCancellationRequested ? result : BluetoothTurnedOff;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return BluetoothTurnedOff;
+        }
+        finally
+        {
+            Audio.Changed -= OnChanged;
+            // An abandoned connect may still fault later; observe it so it isn't reported as unobserved.
+            _ = connect?.ContinueWith(t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+        }
+    }
+
+    private static CommandResult BluetoothTurnedOff => CommandResult.Rejected("Bluetooth turned off on the phone.");
 
     private async Task<CommandResult> ReleaseAsync(string address, CancellationToken ct)
     {
