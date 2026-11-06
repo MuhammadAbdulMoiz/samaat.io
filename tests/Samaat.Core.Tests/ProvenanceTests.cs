@@ -113,7 +113,8 @@ public sealed partial class ProvenanceTests
     [Fact]
     public void PortedFrom_WithoutAnSpdxLine_Fails()
     {
-        var text = GoodHeader.Replace("// SPDX-License-Identifier: GPL-3.0-or-later\n", "", StringComparison.Ordinal);
+        // Drop the SPDX line by lines, not by "\n": on Windows git checks this file out with CRLF line endings.
+        var text = string.Join('\n', GoodHeader.Split('\n').Where(l => !l.Contains("SPDX-License-Identifier", StringComparison.Ordinal)));
 
         Assert.Contains(Violations("Foo.cs", text, Notices), p => p.Contains("no SPDX-License-Identifier", StringComparison.Ordinal));
     }
