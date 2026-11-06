@@ -245,6 +245,43 @@ public sealed class FastPairDriverTests
     }
 
     [Fact]
+    public async Task Refresh_RaisesChangedBeforeItReturns()
+    {
+        var first = new FakeRfcommChannel();
+        var second = new FakeRfcommChannel();
+        var channels = new Queue<FakeRfcommChannel>([first, second]);
+        var transports = new FakeRfcommTransports((_, _) =>
+        {
+            var next = channels.Dequeue();
+            if (next == first)
+            {
+                next.Emit(FastPairCaptured.Greeting);
+            }
+
+            return Task.FromResult<IRfcommChannel?>(next);
+        });
+        var battery = await OpenFeature(transports);
+        var raised = false;
+        battery.Changed += (_, _) =>
+        {
+            Thread.Sleep(200); // a slow subscriber must still finish before the refresh returns
+            raised = true;
+        };
+
+        var refresh = battery.RefreshAsync();
+        for (var i = 0; i < 200 && transports.Opened.Count < 2; i++)
+        {
+            await Task.Delay(10);
+        }
+
+        await Task.Delay(50);
+        _ = Task.Run(() => second.Emit(FastPairCaptured.Battery50_40));
+        await refresh.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.True(raised);
+    }
+
+    [Fact]
     public async Task FailedRefresh_KeepsTheLastReading_AndDoesNotThrow()
     {
         var first = new FakeRfcommChannel();

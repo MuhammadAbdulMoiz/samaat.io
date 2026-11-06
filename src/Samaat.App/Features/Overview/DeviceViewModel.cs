@@ -443,9 +443,27 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RefreshAsync()
     {
-        if (_battery is not null)
+        if (_battery is null)
+        {
+            return;
+        }
+
+        // Watch for a reading during the refresh rather than comparing timestamps: equal levels and clocks still count.
+        var answered = false;
+        void OnReading(object? sender, BatteryState state) => answered = true;
+        _battery.Changed += OnReading;
+        try
         {
             await _battery.RefreshAsync();
+        }
+        finally
+        {
+            _battery.Changed -= OnReading;
+        }
+
+        if (!answered)
+        {
+            _onMessage?.Invoke($"{Name} sent no new battery reading. Samaat shows its next update as soon as it arrives.");
         }
     }
 
