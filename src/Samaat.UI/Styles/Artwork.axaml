@@ -48,7 +48,11 @@
     <Setter Property="Foreground" Value="{DynamicResource Samaat.Accent}" />
   </Style>
 
-  <!-- Unknown headset look: faint icon with a small "?" badge -->
+  <!-- Unknown looks: faint silhouette with a small "?" badge -->
+  <Style Selector="Path.unknownShape">
+    <Setter Property="Fill" Value="{DynamicResource Samaat.Faint}" />
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
   <Style Selector="Border.unknownBadge">
     <Setter Property="Width" Value="20" />
     <Setter Property="Height" Value="20" />

@@ -283,6 +283,7 @@ public class RedesignShellTests
         Assert.Equal(["Lowest bud", "Left bud", "Right bud", "Case"], pro.ShownFigures.Select(f => f.Label));
         Assert.True(pro.ShowsComponentFigures);
         Assert.Equal([false, true, true, false], pro.ShownFigures.Select(f => f.IsBud));
+        Assert.True(pro.ShownFigures.Single(f => f.Label == "Right bud").IsRightBud);
         Assert.True(pro.ShownFigures.Single(f => f.Label == "Case").IsCase);
 
         vm.SelectDeviceCommand.Execute(headset);

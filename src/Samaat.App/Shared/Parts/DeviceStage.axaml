@@ -30,12 +30,15 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <!-- Unknown look, separate pieces: mystery left bud, right bud and case, same layout as the split photo -->
+      <!-- Unknown look, separate pieces: faint left bud, right bud and case, same layout as the split photo -->
       <Grid Classes="unknownPieces" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="8"
             HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowUnknownPieces}">
         <StackPanel Classes="artworkPart" Classes.missing="{Binding !Figures[1].HasLevel}" Spacing="2"
                     AutomationProperties.Name="{Binding Figures[1].AccessibleText}" ToolTip.Tip="{Binding Figures[1].AccessibleText}">
-          <Image Source="avares://Samaat.UI/Assets/Unknown/unknown-bud.png" Height="64" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <Panel Height="64" HorizontalAlignment="Center">
+            <Viewbox Height="64"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+          </Panel>
           <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
             <TextBlock Classes="number" Text="{Binding Figures[1].Value}" />
             <TextBlock Classes="meta" Text="{Binding Figures[1].Unit}" VerticalAlignment="Bottom" />
@@ -43,7 +46,10 @@
         </StackPanel>
         <StackPanel Grid.Column="1" Classes="artworkPart" Classes.missing="{Binding !Figures[2].HasLevel}" Spacing="2"
                     AutomationProperties.Name="{Binding Figures[2].AccessibleText}" ToolTip.Tip="{Binding Figures[2].AccessibleText}">
-          <Image Source="avares://Samaat.UI/Assets/Unknown/unknown-bud.png" Height="64" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <Panel Height="64" HorizontalAlignment="Center">
+            <Viewbox Height="64" RenderTransform="scaleX(-1)"><Canvas Width="40" Height="56"><Path Data="{StaticResource Glyph.Bud}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+          </Panel>
           <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
             <TextBlock Classes="number" Text="{Binding Figures[2].Value}" />
             <TextBlock Classes="meta" Text="{Binding Figures[2].Unit}" VerticalAlignment="Bottom" />
@@ -51,7 +57,10 @@
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="artworkPart" Classes.missing="{Binding !Figures[3].HasLevel}" Spacing="2"
                     AutomationProperties.Name="{Binding Figures[3].AccessibleText}" ToolTip.Tip="{Binding Figures[3].AccessibleText}">
-          <Image Source="avares://Samaat.UI/Assets/Unknown/unknown-case.png" Height="50" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality" />
+          <Panel Height="50" HorizontalAlignment="Center">
+            <Viewbox Height="50"><Canvas Width="64" Height="48"><Path Data="{StaticResource Glyph.Case}" Classes="unknownShape" /></Canvas></Viewbox>
+            <Border Classes="unknownBadge" HorizontalAlignment="Right" VerticalAlignment="Bottom"><TextBlock Text="?" /></Border>
+          </Panel>
           <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
             <TextBlock Classes="number" Text="{Binding Figures[3].Value}" />
             <TextBlock Classes="meta" Text="{Binding Figures[3].Unit}" VerticalAlignment="Bottom" />
