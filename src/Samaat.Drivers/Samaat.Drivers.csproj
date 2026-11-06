@@ -11,5 +11,6 @@
     <ProjectReference Include="..\Samaat.Protocols.Bose\Samaat.Protocols.Bose.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.Samsung\Samaat.Protocols.Samsung.csproj" />
     <ProjectReference Include="..\Samaat.Protocols.Soundcore\Samaat.Protocols.Soundcore.csproj" />
+    <ProjectReference Include="..\Samaat.Protocols.Sony\Samaat.Protocols.Sony.csproj" />
   </ItemGroup>
 </Project>

@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\Samaat.Protocols.Bose\Samaat.Protocols.Bose.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Protocols.Samsung\Samaat.Protocols.Samsung.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Protocols.Soundcore\Samaat.Protocols.Soundcore.csproj" />
+    <ProjectReference Include="..\..\src\Samaat.Protocols.Sony\Samaat.Protocols.Sony.csproj" />
     <ProjectReference Include="..\..\src\Samaat.Drivers\Samaat.Drivers.csproj" />
   </ItemGroup>
 </Project>

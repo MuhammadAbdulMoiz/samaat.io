@@ -1,0 +1,15 @@
+{
+  // Not observed on hardware: model from SonyHeadphonesClient's headset reports and Gadgetbridge's device list (behaviour reference); protocol in docs/protocols/sony.md. A lead, not evidence.
+  "id": "sony.mdr-xb950bt",
+  "displayName": "MDR-XB950BT",
+  "manufacturer": "Sony",
+  "driver": "sony-mdr",
+  "match": {
+    // Matched against the Bluetooth name, e.g. "MDR-XB950BT".
+    "namePattern": "MDR-XB950BT"
+  },
+  "verified": false,
+  "features": ["battery.combined"],
+  "verifiedFirmware": [],
+  "notes": "Works with MDR-XB950BT over Sony's RFCOMM protocol (v1). Battery read-only for now. Not yet verified on hardware; see docs/decisions/2026-11-06-sony-port.md."
+}

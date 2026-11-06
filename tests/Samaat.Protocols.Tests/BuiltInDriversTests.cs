@@ -5,6 +5,7 @@ using Samaat.Protocols.FastPair;
 using Samaat.Protocols.Jieli;
 using Samaat.Protocols.Samsung;
 using Samaat.Protocols.Soundcore;
+using Samaat.Protocols.Sony;
 
 namespace Samaat.Protocols.Tests;
 
@@ -32,7 +33,7 @@ public sealed class BuiltInDriversTests
     {
         var ids = BuiltInDrivers.Create().Select(d => d.Id).ToList();
 
-        Assert.Equal([JieliDriver.DriverId, FastPairDriver.DriverId, BoseBmapDriver.DriverId, SamsungDriver.DriverId, SoundcoreDriver.DriverId], ids);
+        Assert.Equal([JieliDriver.DriverId, FastPairDriver.DriverId, BoseBmapDriver.DriverId, SamsungDriver.DriverId, SoundcoreDriver.DriverId, SonyDriver.DriverId], ids);
     }
 
     [Fact]
@@ -60,7 +61,7 @@ public sealed class BuiltInDriversTests
         var registry = BuiltInDrivers.CreateRegistry(Path.Combine(Path.GetTempPath(), $"samaat-missing-{Guid.NewGuid():N}"));
 
         Assert.Empty(registry.Catalog.Entries);
-        Assert.Equal(5, registry.Drivers.Count);
+        Assert.Equal(6, registry.Drivers.Count);
     }
 
     /// <summary>A typo in a catalog's "driver" field would silently demote that model to "recognised, no driver".</summary>
