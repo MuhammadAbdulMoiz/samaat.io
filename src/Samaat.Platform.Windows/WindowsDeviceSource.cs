@@ -26,6 +26,8 @@ public sealed class WindowsDeviceSource : IDeviceSource
 
     // shortcut: a 3 s cap keeps driverless models quick to appear when the probe fails; raise it if real fallback buds need longer to answer
     private static readonly TimeSpan FallbackProbeBudget = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan LateBatteryDelay = TimeSpan.FromSeconds(10);
+    private readonly CancellationTokenSource _disposeCts = new();
 
     private static readonly string[] AepProperties = [ContainerIdProperty, ManufacturerProperty, ModelNameProperty];
 
@@ -133,8 +135,20 @@ public sealed class WindowsDeviceSource : IDeviceSource
                     RaiseIfEnumerated();
                 });
             }
+            else if (device.GetFeature<IBatteryFeature>() is null)
+            {
+                _reconnectWatches[info.Id] = DriverRetry.WatchForReconnect(device, RaiseLater);
+            }
         }
     }
+
+    // Windows publishes the battery level a few seconds after the link comes up, so look again then, once.
+    private void RaiseLater() =>
+        _ = SamaatLog.Guard("Windows Bluetooth", "Rechecking the battery after a reconnect", async () =>
+        {
+            await Task.Delay(LateBatteryDelay, _time, _disposeCts.Token);
+            RaiseIfEnumerated();
+        });
 
     private async Task<WindowsEarbudDevice?> CreateDeviceAsync(
         DeviceInformation info,
@@ -419,6 +433,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
 
     public async ValueTask DisposeAsync()
     {
+        await _disposeCts.CancelAsync();
         if (_pairedWatcher.Status is DeviceWatcherStatus.Started or DeviceWatcherStatus.EnumerationCompleted)
         {
             _pairedWatcher.Stop();
