@@ -7,7 +7,7 @@ Last updated: 2026-11-06
 - **Done:** project foundation, the capability engine, the first three modules (battery, noise control, multipoint), the driver registry and device catalog, and **Settings, Bluetooth details, the device profile DB, and the tray with system notifications**. Real Bluetooth on Windows has now **run on hardware** (Zero Lifestyle Quantum Zbuds, [test notes](hardware-tests/2026-11-02-quantum.md)): discovery, the Windows battery level, device details and profile matching work. The **first vendor adapter** (Jieli RCSP over BLE) reads per-bud battery and switches noise control (off, noise cancelling, transparency) and EQ presets on the Audionic ParadoX-E ([test notes](hardware-tests/2026-11-03-audionic-paradox-e.md), [protocol](protocols/jieli-rcsp.md)). Fast Pair reads battery and firmware on the realme Buds T200 Lite, and the **Bose QC Headphones** show the Windows battery and their current noise mode (Quiet or Aware), read-only over BMAP ([test notes](hardware-tests/2026-11-05-bose-qc-headphones.md), [protocol](protocols/bose-bmap.md)). Everything else runs against **simulated devices**.
 - **New: move earbuds between this computer and a phone, and the Android app** ([details](modules/phone-handoff.md)). Works with single-connection earbuds: the computer checks the phone, disconnects here, the phone connects, and the computer reconnects if the phone doesn't. Pairing by a 6-digit code, encrypted link over the local network. The Android app (Avalonia, sharing Core and the drivers) has battery, noise control, EQ and the move card. **Not run on a phone yet**; CI builds the APK. One switch, `AppOptions.PhoneHandoff`, turns it on or off: on by default, off in the Microsoft Store (MSIX) build.
 - **Not done:** multipoint and custom EQ bands on real earbuds, switching noise modes on the Bose, and any write on real devices other than the ParadoX-E. The Quantum Zbuds have no usable vendor protocol.
-- **Tests:** 1,360 automated tests here (Core 348, Protocols 424, App 428, Handoff 131, and Platform.Windows 29, which runs on Windows only), plus 18 phone tests in [samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile). CI runs them on Linux and Windows and reports line coverage; samaat-mobile's CI builds the Android APK. The UI tests render dark and light screenshots of every page, on a fixed clock so the images only change when the UI does.
+- **Tests:** 1,403 automated tests here (Core 349, Protocols 442, App 435, Handoff 148, and Platform.Windows 29, which runs on Windows only), plus 18 phone tests in [samaat-mobile](https://github.com/MuhammadAbdulMoiz/samaat-mobile). CI runs them on Linux and Windows and reports line coverage; samaat-mobile's CI builds the Android APK. The UI tests render dark and light screenshots of every page, on a fixed clock so the images only change when the UI does.
 
 | Overview | Sound | Links |
 |---|---|---|
@@ -85,6 +85,8 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 3. ~~**License / open source** (§13 Q4)~~ **Settled 2026-11-06:** GPL-3.0-or-later for both repos ([decision](decisions/2026-11-06-settled-decisions.md)).
 
 ### Next engineering steps
+
+*Proposed, waiting for review: [the device platform plan](plans/2026-11-10-device-platform.md) (driver lifecycle in Core, one RFCOMM session core, one catalog with a support status, better diagnostics, a driver conformance kit).*
 | # | Item | Notes |
 |---|---|---|
 | 1 | **Run on real Windows hardware** | Done once with the Quantum Zbuds. Re-check Samaat's battery refresh after a reconnect (`--watch` during a case-lid test), the Start with Windows toggle, and a notification on a clean Windows profile. |
@@ -111,9 +113,9 @@ Tray icon with battery tooltip and menu, close to tray, `--minimized`, and Windo
 - Windows gives a single combined battery level only. L/R/case needs a vendor adapter.
 - A disconnected device still shows the last battery level Windows stored (Windows Settings hides it). It no longer raises low-battery alerts while disconnected.
 - After earbuds drop and come back, the Nothing, Sony, Soundcore, Samsung and Bose drivers are reopened (Jieli and Fast Pair re-handshake on their own). **Not yet checked on hardware**: see [the 2026-11-10 audit](decisions/2026-11-10-audit.md#reconnect-handling-added-after-the-audit) for what to try.
-- While a phone is paired, the computer listens on every network interface, not only the home network. What an unpaired device can reach is limited to the pairing handshake.
+- While a phone is paired, the computer listens on every network interface but only accepts connections from its own local network. Not yet checked with a real phone.
 - Connect / Disconnect for this computer (Links page, overview, tray) uses the same Bluetooth audio KS property as Windows Settings. Built and checked against the real filters read-only; **not yet run on hardware** (undocumented API, fallback is `ms-settings:bluetooth`).
-- A device that starts reporting battery after launch appears on the next **Refresh**.
+- A device with no battery level yet is checked again 10 seconds after it connects (not yet checked on hardware). One that is already connected and starts reporting later still needs **Refresh**.
 - System notifications are verified on one PC only.
 - Moving earbuds to a phone needs both on the same network, and Android usually needs one tap from the user to connect. Not run on a phone yet.
 
