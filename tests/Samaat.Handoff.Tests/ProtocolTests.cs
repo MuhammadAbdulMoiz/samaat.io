@@ -311,12 +311,70 @@ public sealed class PeerStoreTests : IDisposable
         Assert.NotNull(store.LastError);
     }
 
+    [Fact]
+    public void CorruptFile_IsKeptAsBad_BeforeALaterSaveOverwritesIt()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(FilePath, "{ nope");
+
+        var store = new PeerStore(FilePath);
+        store.Add(new PairedPeer("p1", "Pixel", [1], DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("{ nope", File.ReadAllText(FilePath + ".bad"));
+    }
+
+    [Fact]
+    public void CorruptFile_SetsLastError()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(FilePath, "{ nope");
+
+        Assert.NotNull(new PeerStore(FilePath).LastError);
+    }
+
+    [Theory]
+    [InlineData("""{"id":"b","name":"Bad","pairedAt":"1970-01-01T00:00:00+00:00"}""")]
+    [InlineData("""{"id":"b","name":"Bad","secret":null,"pairedAt":"1970-01-01T00:00:00+00:00"}""")]
+    [InlineData("""{"id":null,"name":"Bad","secret":"AQID","pairedAt":"1970-01-01T00:00:00+00:00"}""")]
+    public void BadEntry_IsSkipped_AndTheGoodOneStillLoads(string bad)
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(FilePath, """{"selfId":"me","peers":[""" + bad + ""","""
+            + """{"id":"a","name":"Good","secret":"AQID","pairedAt":"1970-01-01T00:00:00+00:00"}]}""");
+
+        var store = new PeerStore(FilePath);
+
+        var peer = Assert.Single(store.Peers);
+        Assert.Equal("Good", peer.Name);
+        Assert.Equal("me", store.SelfId);
+    }
+
+    [Fact]
+    public void ProtectorFailure_SkipsThatEntryOnly()
+    {
+        var good = new PeerStore(FilePath);
+        good.Add(new PairedPeer("a", "Good", [1], DateTimeOffset.UnixEpoch));
+        good.Add(new PairedPeer("b", "Other account", [2], DateTimeOffset.UnixEpoch));
+
+        var store = new PeerStore(FilePath, new FailingFor(2));
+
+        Assert.Equal("Good", Assert.Single(store.Peers).Name);
+        Assert.NotNull(store.LastError);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_dir))
         {
             Directory.Delete(_dir, recursive: true);
         }
+    }
+
+    private sealed class FailingFor(byte first) : ISecretProtector
+    {
+        public byte[] Protect(byte[] secret) => secret;
+
+        public byte[] Unprotect(byte[] stored) => stored[0] == first ? throw new InvalidOperationException("no key") : stored;
     }
 
     private sealed class XorProtector : ISecretProtector

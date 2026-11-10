@@ -147,12 +147,18 @@ public sealed class PeerStore
             {
                 try
                 {
-                    peers.Add(new PairedPeer(entry.Id, entry.Name, _protector.Unprotect(entry.Secret), entry.PairedAt, entry.Endpoint));
+                    if (entry is not { Id: not null, Secret: not null })
+                    {
+                        throw new InvalidDataException("incomplete entry");
+                    }
+
+                    peers.Add(new PairedPeer(entry.Id, entry.Name ?? "", _protector.Unprotect(entry.Secret), entry.PairedAt, entry.Endpoint));
                 }
-                catch (System.Security.Cryptography.CryptographicException)
+                catch (Exception e)
                 {
-                    LastError = $"The pairing with {entry.Name} can't be read on this account; pair it again.";
-                    SamaatLog.Warn("Phone link", LastError);
+                    // Only the entry's name and the failure kind are logged, never its secret.
+                    LastError = $"The pairing with {entry?.Name} can't be read on this account; pair it again.";
+                    SamaatLog.Warn("Phone link", $"Skipped a stored pairing ({e.GetType().Name})");
                 }
             }
 
@@ -162,6 +168,20 @@ public sealed class PeerStore
         {
             LastError = $"Paired devices could not be read ({e.Message}); starting unpaired.";
             SamaatLog.Warn("Phone link", LastError, e);
+            TryKeepCopy();
+        }
+    }
+
+    // A later save would overwrite the unreadable file; keep it so the pairings can be recovered by hand.
+    private void TryKeepCopy()
+    {
+        try
+        {
+            File.Copy(_path!, _path + ".bad", overwrite: true);
+        }
+        catch (Exception)
+        {
+            // Best effort; the load already failed.
         }
     }
 
