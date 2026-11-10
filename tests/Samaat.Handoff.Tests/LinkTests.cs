@@ -288,7 +288,8 @@ public class SessionTests
         Assert.Equal(CommandStatus.Confirmed, next.Status);
         lock (received)
         {
-            Assert.Equal(["AA", "BB"], received.OfType<ConnectAudioMessage>().Select(m => m.Address));
+            // Handlers run on their own tasks, so both must arrive but their order isn't fixed.
+            Assert.Equal(["AA", "BB"], received.OfType<ConnectAudioMessage>().Select(m => m.Address).Order());
         }
 
         await phone.DisposeAsync();
