@@ -36,6 +36,9 @@ public sealed record PhoneLinkHostOptions(string ComputerName)
 
     /// <summary>Connections still in their handshake (not yet a paired session or a pairing prompt) at once; more are refused.</summary>
     public int MaxPendingHandshakes { get; init; } = DefaultMaxPendingHandshakes;
+
+    /// <summary>Decides whether a connecting address may talk to the host at all. Null uses <see cref="LocalNetwork.IsLocal"/>.</summary>
+    public Func<IPAddress, bool>? AcceptRemote { get; init; }
 }
 
 /// <summary>A paired phone and what it last reported.</summary>
@@ -393,7 +396,26 @@ public sealed class PhoneLinkHost : IAsyncDisposable
                 return;
             }
 
+            // Refused before a byte is read or a handshake place is taken, and not logged, so a flood can't fill the log.
+            if (!IsAccepted(client))
+            {
+                client.Dispose();
+                continue;
+            }
+
             _ = Task.Run(() => HandleClientAsync(client, ct), ct);
+        }
+    }
+
+    private bool IsAccepted(TcpClient client)
+    {
+        try
+        {
+            return client.Client.RemoteEndPoint is IPEndPoint remote && (_options.AcceptRemote ?? LocalNetwork.IsLocal)(remote.Address);
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
 

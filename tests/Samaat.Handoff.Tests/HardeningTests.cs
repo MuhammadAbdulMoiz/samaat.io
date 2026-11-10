@@ -34,12 +34,12 @@ public sealed class HardeningTests : IAsyncDisposable
     private readonly InMemoryBeaconBus _bus = new();
     private readonly List<IAsyncDisposable> _owned = [];
 
-    private PhoneLinkHost Host(PeerStore? store = null, IBeaconSender? beacons = null, int port = 0, int maxHandshakes = PhoneLinkHostOptions.DefaultMaxPendingHandshakes)
+    private PhoneLinkHost Host(PeerStore? store = null, IBeaconSender? beacons = null, int port = 0, int maxHandshakes = PhoneLinkHostOptions.DefaultMaxPendingHandshakes, Func<IPAddress, bool>? acceptRemote = null)
     {
         var host = new PhoneLinkHost(store ?? new PeerStore(null),
             new PhoneLinkHostOptions("Desk PC")
             {
-                BindAddress = IPAddress.Loopback, Port = port, BeaconInterval = TimeSpan.FromMilliseconds(50), MaxPendingHandshakes = maxHandshakes,
+                BindAddress = IPAddress.Loopback, Port = port, BeaconInterval = TimeSpan.FromMilliseconds(50), MaxPendingHandshakes = maxHandshakes, AcceptRemote = acceptRemote,
             },
             () => [], beacons ?? _bus.CreateSender());
         _owned.Add(host);
@@ -122,6 +122,40 @@ public sealed class HardeningTests : IAsyncDisposable
         // Once they go, phones get through again.
         idle.ForEach(c => c.Dispose());
         await Eventually.TrueAsync(() => host.PendingHandshakes == 0, "the idle handshakes to end");
+        var session = await Phone("Pixel").BeginPairingAsync(Endpoint(host));
+        await session.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task RefusedRemote_IsClosedWithoutAHandshake()
+    {
+        var host = Host(acceptRemote: _ => false);
+        var prompts = 0;
+        host.PairingRequested += (_, _) => Interlocked.Increment(ref prompts);
+        host.Start();
+        host.OpenPairing();
+
+        using var tcp = new TcpClient();
+        await tcp.ConnectAsync(Endpoint(host));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        Assert.Equal(0, await ReadOrResetAsync(tcp, new byte[16], timeout.Token));
+        Assert.Equal(0, host.PendingHandshakes);
+        Assert.Equal(0, Volatile.Read(ref prompts));
+    }
+
+    [Fact]
+    public async Task ThrowingPredicate_RefusesThatConnection_ButTheHostKeepsAccepting()
+    {
+        var calls = 0;
+        var host = Host(acceptRemote: _ => Interlocked.Increment(ref calls) == 1 ? throw new InvalidOperationException("boom") : true);
+        host.Start();
+        host.OpenPairing();
+
+        using var first = new TcpClient();
+        await first.ConnectAsync(Endpoint(host));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        Assert.Equal(0, await ReadOrResetAsync(first, new byte[16], timeout.Token));
+
         var session = await Phone("Pixel").BeginPairingAsync(Endpoint(host));
         await session.DisposeAsync();
     }
