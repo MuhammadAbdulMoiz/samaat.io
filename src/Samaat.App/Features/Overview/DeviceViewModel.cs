@@ -622,6 +622,13 @@ public sealed partial class DeviceViewModel : ObservableObject, IDisposable
 
         UpdateAges();
 
+        // Windows keeps the last level of disconnected earbuds; a stale one must not alert. The detector keeps
+        // its state while skipped, so a still-low level alerts once the device connects.
+        if (!IsConnected)
+        {
+            return;
+        }
+
         foreach (var alert in _alerts.Evaluate(_device.Identity.Id, state))
         {
             _onAlert(this, alert);

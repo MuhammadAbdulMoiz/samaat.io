@@ -7,6 +7,7 @@ using Avalonia.Controls.Platform;
 using Samaat.App.Features.Overview;
 using Samaat.App.Features.Settings;
 using Samaat.App.Shell;
+using Samaat.Core.Diagnostics;
 
 namespace Samaat.App.Tray;
 
@@ -117,7 +118,7 @@ public sealed class TrayController : IDisposable
             {
                 "Open Samaat" => Open,
                 TraySummary.PairPhoneItem => OpenPhoneSettings,
-                "Refresh devices" => () => _ = _viewModel.RefreshDevicesAsync(),
+                "Refresh devices" => () => _ = SamaatLog.Guard("App", "Refreshing devices", () => _viewModel.RefreshDevicesAsync()),
                 _ => Quit,
             }));
         }

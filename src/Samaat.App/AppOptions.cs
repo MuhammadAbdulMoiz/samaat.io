@@ -1,4 +1,5 @@
 using Samaat.Core.Devices;
+using Samaat.Core.Diagnostics;
 using Samaat.Core.Drivers;
 using Samaat.Core.Platform;
 using Samaat.Handoff;
@@ -28,6 +29,12 @@ public sealed record AppOptions(bool Simulate, bool IncludeNonAudio, bool Minimi
     {
         // --simulate, or --simulate=worst / --simulate=empty for the stress-test data sets (dev only).
         var simulate = args.FirstOrDefault(a => a == "--simulate" || a.StartsWith("--simulate=", StringComparison.Ordinal));
+        foreach (var arg in args.Where(a => a is not ("--all-devices" or "--minimized" or "--test-notification" or "--multi-instance" or "--simulate")
+            && !a.StartsWith("--simulate=", StringComparison.Ordinal)))
+        {
+            SamaatLog.Warn("App", $"Unknown option {arg} ignored");
+        }
+
         var scenario = simulate?.Split('=', 2) is [_, var name] ? ParseScenario(name) : SimulatorScenario.Demo;
         return new(
             Simulate: simulate is not null,

@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Samaat.App.Shell;
 using Samaat.App.Tray;
 using Samaat.Core.Diagnostics;
@@ -11,6 +12,9 @@ namespace Samaat.App;
 public partial class App : Application
 {
     public static AppOptions Options { get; set; } = new(Simulate: false, IncludeNonAudio: false);
+
+    /// <summary>Set once the window exists; the single-instance guard calls it (from any thread) on a second launch.</summary>
+    public static Action? ShowMainWindow { get; private set; }
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -83,11 +87,48 @@ public partial class App : Application
                 }
             };
 
-            desktop.ShutdownRequested += async (_, _) =>
+            // Run once from both events: whichever Avalonia raises on this exit path.
+            var cleaned = 0;
+            void Cleanup()
             {
+                if (Interlocked.Exchange(ref cleaned, 1) == 1)
+                {
+                    return;
+                }
+
                 tray?.Dispose();
-                await viewModel.DisposeAsync();
+                viewModel.Shutdown(TimeSpan.FromSeconds(3));
+            }
+
+            desktop.Exit += (_, _) => Cleanup();
+            desktop.ShutdownRequested += (_, _) => Cleanup();
+
+            Dispatcher.UIThread.UnhandledException += (_, e) =>
+            {
+                SamaatLog.Error("App", "Unhandled UI exception", e.Exception);
+                e.Handled = true;
+                try
+                {
+                    viewModel.ShowMessage("Something went wrong. Details are in the log (Diagnostics, Copy report).");
+                }
+                catch (Exception toastError)
+                {
+                    SamaatLog.Warn("App", "Showing the error message failed", toastError);
+                }
             };
+
+            // Raised by a second launch: bring the running window forward.
+            ShowMainWindow = () => Dispatcher.UIThread.Post(() =>
+            {
+                if (tray is not null)
+                {
+                    tray.Open();
+                    return;
+                }
+
+                window.Show();
+                window.Activate();
+            });
 
             // Starting hidden only makes sense when the tray can bring the window back.
             if (!(Options.Minimized && tray is not null))
@@ -95,7 +136,7 @@ public partial class App : Application
                 desktop.MainWindow = window;
             }
 
-            _ = viewModel.RefreshDevicesAsync();
+            _ = SamaatLog.Guard("App", "Refreshing devices", () => viewModel.RefreshDevicesAsync());
             if (Options.TestNotification)
             {
                 notifier.Show("Samaat", "Test notification");

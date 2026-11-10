@@ -1,3 +1,4 @@
+using Samaat.Core.Diagnostics;
 using Samaat.Simulator;
 
 namespace Samaat.App.Tests;
@@ -17,5 +18,39 @@ public sealed class AppOptionsTests
 
         Assert.Equal(simulate, options.Simulate);
         Assert.Equal(scenario, options.Scenario);
+    }
+
+    private sealed class Capture : ILogSink
+    {
+        public List<string> Warnings { get; } = [];
+
+        public void Write(LogLevel level, string source, string message, Exception? error)
+        {
+            if (level == LogLevel.Warning && message.StartsWith("Unknown option", StringComparison.Ordinal))
+            {
+                lock (Warnings)
+                {
+                    Warnings.Add(message);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void Parse_WarnsAboutUnknownOptionsOnly()
+    {
+        var capture = new Capture();
+        var previous = SamaatLog.Sink;
+        SamaatLog.Sink = capture;
+        try
+        {
+            AppOptions.Parse(["--simulate=worst", "--all-devices", "--minimized", "--test-notification", "--multi-instance", "--bogus"]);
+        }
+        finally
+        {
+            SamaatLog.Sink = previous;
+        }
+
+        Assert.Equal(["Unknown option --bogus ignored"], capture.Warnings);
     }
 }

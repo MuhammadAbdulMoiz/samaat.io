@@ -1,3 +1,4 @@
+using Samaat.Core.Diagnostics;
 using Samaat.App.Features.Overview;
 using Samaat.App.Features.Phone;
 using Samaat.App.Features.Settings;
@@ -403,9 +404,42 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         }
     }
 
+    private int _uiDisposed, _servicesDisposed;
+
     public async ValueTask DisposeAsync()
     {
-        await AudioShare.DisposeAsync();
+        DisposeUiParts();
+        await DisposeServicesAsync();
+    }
+
+    /// <summary>
+    /// Exit path: the dispatcher is blocked here, so the async disposals run on the pool and are waited for at most
+    /// <paramref name="timeout"/>. Never throws; a second call does nothing.
+    /// </summary>
+    public void Shutdown(TimeSpan timeout)
+    {
+        DisposeUiParts();
+        try
+        {
+            if (!Task.Run(() => DisposeServicesAsync().AsTask()).Wait(timeout))
+            {
+                SamaatLog.Warn("App", $"Shutdown didn't finish within {timeout.TotalSeconds:0.#}s; exiting anyway");
+            }
+        }
+        catch (Exception e)
+        {
+            SamaatLog.Warn("App", "Shutdown failed", e);
+        }
+    }
+
+    // The UI-affine part: timers and the per-device view models.
+    private void DisposeUiParts()
+    {
+        if (Interlocked.Exchange(ref _uiDisposed, 1) == 1)
+        {
+            return;
+        }
+
         _ageTimer.Stop();
         MarkConnectedNow(Devices);
         foreach (var timer in _toastTimers)
@@ -418,7 +452,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
         {
             device.Dispose();
         }
+    }
 
+    // The async part; it must not need the UI thread, because Shutdown runs it while the dispatcher is blocked.
+    private async ValueTask DisposeServicesAsync()
+    {
+        if (Interlocked.Exchange(ref _servicesDisposed, 1) == 1)
+        {
+            return;
+        }
+
+        await AudioShare.DisposeAsync();
         if (PhoneLink is not null)
         {
             await PhoneLink.DisposeAsync();
