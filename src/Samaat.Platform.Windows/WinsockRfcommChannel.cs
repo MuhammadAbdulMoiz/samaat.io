@@ -92,9 +92,13 @@ internal sealed class WinsockRfcommChannel : IRfcommChannel
                 _received.Publish(buffer.AsMemory(0, count).ToArray());
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Link dropped or channel disposed; reported through Closed.
+            // Link dropped or channel disposed (reported through Closed); a throwing Received handler lands here too.
+            if (ex is not OperationCanceledException && !_stop.IsCancellationRequested)
+            {
+                SamaatLog.Warn("RFCOMM", "Read loop ended", ex);
+            }
         }
         finally
         {

@@ -20,6 +20,21 @@ public sealed class OsBatteryTests
         Assert.Equal(expected, OsBatteryFeature.ReadPercent(properties));
     }
 
+    [Theory]
+    [InlineData("not a number")]
+    [InlineData(long.MaxValue)]
+    [InlineData(1e30)]
+    public void Percent_IsUnknown_WhenValueIsUnreadable(object reported)
+    {
+        var properties = new Dictionary<string, object> { [OsBatteryFeature.BatteryProperty] = reported };
+
+        Assert.Null(OsBatteryFeature.ReadPercent(properties));
+    }
+
+    [Fact]
+    public void Percent_IsUnknown_WhenValueIsNotConvertible() =>
+        Assert.Null(OsBatteryFeature.ReadPercent(new Dictionary<string, object> { [OsBatteryFeature.BatteryProperty] = new object() }));
+
     [Fact]
     public void Percent_IsUnknown_WhenWindowsHasNone()
     {

@@ -106,8 +106,21 @@ internal sealed class WinRtGattClient(BluetoothLEDevice device) : IGattClient, I
             void Handler(GattCharacteristic sender, GattValueChangedEventArgs args) => onValue(ToArray(args.CharacteristicValue));
 
             characteristic.ValueChanged += Handler;
-            await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
-                GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(cancellationToken);
+            try
+            {
+                var status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                    GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(cancellationToken);
+                if (status != GattCommunicationStatus.Success)
+                {
+                    SamaatLog.Warn("Bluetooth LE", $"Enabling notifications returned {status}");
+                }
+            }
+            catch
+            {
+                characteristic.ValueChanged -= Handler;
+                throw;
+            }
+
             return new Subscription(characteristic, Handler);
         }
     }

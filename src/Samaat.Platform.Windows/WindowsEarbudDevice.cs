@@ -47,7 +47,19 @@ internal sealed class WindowsEarbudDevice : IEarbudDevice, IAsyncDisposable
         _bluetooth.ConnectionStatusChanged -= OnConnectionStatusChanged;
         foreach (var feature in Features)
         {
-            switch (feature)
+            await DisposeQuietlyAsync(feature);
+        }
+
+        _gatt?.Dispose();
+        _bluetooth.Dispose();
+    }
+
+    /// <summary>Disposes whichever dispose interface the resource has; a failure is logged, never thrown.</summary>
+    internal static async ValueTask DisposeQuietlyAsync(object? resource)
+    {
+        try
+        {
+            switch (resource)
             {
                 case IAsyncDisposable asyncDisposable:
                     await asyncDisposable.DisposeAsync();
@@ -57,8 +69,9 @@ internal sealed class WindowsEarbudDevice : IEarbudDevice, IAsyncDisposable
                     break;
             }
         }
-
-        _gatt?.Dispose();
-        _bluetooth.Dispose();
+        catch (Exception ex)
+        {
+            SamaatLog.Warn("Windows Bluetooth", $"Couldn't release {resource?.GetType().Name}", ex);
+        }
     }
 }

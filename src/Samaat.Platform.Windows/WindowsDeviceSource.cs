@@ -72,27 +72,15 @@ public sealed class WindowsDeviceSource : IDeviceSource
             var seen = new HashSet<string>();
             foreach (var info in classic)
             {
-                if (_devices.TryGetValue(info.Id, out var existing))
+                try
                 {
-                    if (DriverRetry.CanReuse(existing))
-                    {
-                        seen.Add(info.Id);
-                        continue;
-                    }
-
-                    // No battery yet, or its vendor driver failed: rebuild so a Refresh can pick them up.
-                    await RemoveAsync(info.Id);
+                    await RefreshDeviceAsync(info, bleByContainer, seen, cancellationToken);
                 }
-
-                var device = await CreateDeviceAsync(info, bleByContainer, cancellationToken);
-                if (device is not null)
+                catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
                 {
-                    _devices[info.Id] = device;
-                    seen.Add(info.Id);
-                    if (DriverRetry.NeedsDriverRetry(device))
-                    {
-                        _reconnectWatches[info.Id] = DriverRetry.WatchForReconnect(device, RaiseIfEnumerated);
-                    }
+                    // One failing device must not hide the others; it is simply absent this round.
+                    SamaatLog.Error("Windows Bluetooth", $"Couldn't read {info.Name}", ex);
+                    await RemoveAsync(info.Id);
                 }
             }
 
@@ -106,6 +94,36 @@ public sealed class WindowsDeviceSource : IDeviceSource
         finally
         {
             _discoverLock.Release();
+        }
+    }
+
+    private async Task RefreshDeviceAsync(
+        DeviceInformation info,
+        IReadOnlyDictionary<Guid, string> bleByContainer,
+        HashSet<string> seen,
+        CancellationToken cancellationToken)
+    {
+        if (_devices.TryGetValue(info.Id, out var existing))
+        {
+            if (DriverRetry.CanReuse(existing))
+            {
+                seen.Add(info.Id);
+                return;
+            }
+
+            // No battery yet, or its vendor driver failed: rebuild so a Refresh can pick them up.
+            await RemoveAsync(info.Id);
+        }
+
+        var device = await CreateDeviceAsync(info, bleByContainer, cancellationToken);
+        if (device is not null)
+        {
+            _devices[info.Id] = device;
+            seen.Add(info.Id);
+            if (DriverRetry.NeedsDriverRetry(device))
+            {
+                _reconnectWatches[info.Id] = DriverRetry.WatchForReconnect(device, RaiseIfEnumerated);
+            }
         }
     }
 
@@ -126,6 +144,30 @@ public sealed class WindowsDeviceSource : IDeviceSource
             return null;
         }
 
+        // Everything built before a failure is released here; on success WindowsEarbudDevice owns it.
+        var owned = new List<object> { bluetooth };
+        try
+        {
+            return await BuildDeviceAsync(info, bluetooth, bleByContainer, owned, cancellationToken);
+        }
+        catch (Exception)
+        {
+            for (var i = owned.Count - 1; i >= 0; i--)
+            {
+                await WindowsEarbudDevice.DisposeQuietlyAsync(owned[i]);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task<WindowsEarbudDevice?> BuildDeviceAsync(
+        DeviceInformation info,
+        BluetoothDevice bluetooth,
+        IReadOnlyDictionary<Guid, string> bleByContainer,
+        List<object> owned,
+        CancellationToken cancellationToken)
+    {
         var containerId = WindowsSelectors.TryReadContainerId(info.Properties);
 
         var ids = await ReadVidPidAsync(containerId, cancellationToken);
@@ -154,7 +196,12 @@ public sealed class WindowsDeviceSource : IDeviceSource
                 if (le is not null)
                 {
                     gatt = new WinRtGattClient(le);
+                    owned.Add(gatt);
                     battery = await GattBatteryFeature.CreateAsync(gatt, _time, bleToken);
+                    if (battery is not null)
+                    {
+                        owned.Add(battery);
+                    }
                 }
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -169,10 +216,15 @@ public sealed class WindowsDeviceSource : IDeviceSource
         {
             var fallback = gatt is null ? await ConnectLowEnergyByAddressAsync(bluetooth.BluetoothAddress, budget.Token) : null;
             gatt ??= fallback;
+            if (fallback is not null)
+            {
+                owned.Add(fallback);
+            }
 
             // A driver supersedes the generic battery sources.
             var opened = await driver.OpenAsync(new DriverContext(signals, entry, new WinRtDeviceTransports(bluetooth, gatt), _time), budget.Token);
             features.AddRange(opened);
+            owned.AddRange(opened);
             if (opened.Count > 0)
             {
                 tier = SupportTier.Full;
@@ -193,6 +245,10 @@ public sealed class WindowsDeviceSource : IDeviceSource
         if (battery is null && !features.Any(f => f is IBatteryFeature) && containerId is { } c)
         {
             battery = await OsBatteryFeature.CreateAsync(c, _time, cancellationToken);
+            if (battery is not null)
+            {
+                owned.Add(battery);
+            }
         }
 
         if (battery is not null)
@@ -205,6 +261,7 @@ public sealed class WindowsDeviceSource : IDeviceSource
         {
             pcLink = new WindowsPcLinkFeature(linkContainer, _time);
             features.Add(pcLink);
+            owned.Add(pcLink);
         }
 
         var identity = new DeviceIdentity(
@@ -337,8 +394,10 @@ public sealed class WindowsDeviceSource : IDeviceSource
             watch.Dispose();
         }
 
-        await _devices[id].DisposeAsync();
-        _devices.Remove(id);
+        if (_devices.Remove(id, out var device))
+        {
+            await WindowsEarbudDevice.DisposeQuietlyAsync(device);
+        }
     }
 
     private void RaiseIfEnumerated()
@@ -356,18 +415,31 @@ public sealed class WindowsDeviceSource : IDeviceSource
             _pairedWatcher.Stop();
         }
 
-        foreach (var watch in _reconnectWatches.Values)
+        // Never touch the maps while a refresh may be iterating them; the process is exiting if this times out.
+        if (!await _discoverLock.WaitAsync(TimeSpan.FromSeconds(2)))
         {
-            watch.Dispose();
+            SamaatLog.Warn("Windows Bluetooth", "A refresh was still running at shutdown; skipping cleanup");
+            return;
         }
 
-        _reconnectWatches.Clear();
-        foreach (var device in _devices.Values)
+        try
         {
-            await device.DisposeAsync();
-        }
+            foreach (var watch in _reconnectWatches.Values)
+            {
+                watch.Dispose();
+            }
 
-        _devices.Clear();
-        _discoverLock.Dispose();
+            _reconnectWatches.Clear();
+            foreach (var device in _devices.Values)
+            {
+                await WindowsEarbudDevice.DisposeQuietlyAsync(device);
+            }
+
+            _devices.Clear();
+        }
+        finally
+        {
+            _discoverLock.Release();
+        }
     }
 }

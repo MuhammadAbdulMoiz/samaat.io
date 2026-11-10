@@ -1,5 +1,6 @@
 using Samaat.Core.Battery;
 using Samaat.Core.Capabilities;
+using Samaat.Core.Diagnostics;
 using Windows.Devices.Enumeration;
 
 namespace Samaat.Platform.Windows;
@@ -21,6 +22,7 @@ internal sealed class OsBatteryFeature : IBatteryFeature, IDisposable
     private readonly TimeProvider _time;
     private readonly DeviceWatcher _watcher;
     private BatteryState _current = BatteryState.Empty;
+    private int _warnedUnreadable;
 
     private OsBatteryFeature(string selector, int? initialPercent, TimeProvider time)
     {
@@ -72,16 +74,33 @@ internal sealed class OsBatteryFeature : IBatteryFeature, IDisposable
     }
 
     /// <summary>The level Windows reports, clamped to 0–100; null when it reports none.</summary>
-    internal static int? ReadPercent(IReadOnlyDictionary<string, object> properties) =>
-        properties.TryGetValue(BatteryProperty, out var value) && value is not null
-            ? Math.Clamp(Convert.ToInt32(value), 0, 100)
-            : null;
+    internal static int? ReadPercent(IReadOnlyDictionary<string, object> properties)
+    {
+        if (!properties.TryGetValue(BatteryProperty, out var value) || value is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return Math.Clamp(Convert.ToInt32(value), 0, 100);
+        }
+        catch (Exception ex) when (ex is FormatException or InvalidCastException or OverflowException)
+        {
+            return null;
+        }
+    }
 
     private void Apply(IReadOnlyDictionary<string, object> properties)
     {
         if (ReadPercent(properties) is { } percent)
         {
             Publish(percent);
+        }
+        else if (properties.TryGetValue(BatteryProperty, out var value) && value is not null
+            && Interlocked.Exchange(ref _warnedUnreadable, 1) == 0)
+        {
+            SamaatLog.Warn("Windows Bluetooth", $"Ignoring an unreadable battery value of type {value.GetType().Name}");
         }
     }
 

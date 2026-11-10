@@ -1,3 +1,4 @@
+using Samaat.Core.Diagnostics;
 using Samaat.Transport;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Rfcomm;
@@ -17,6 +18,7 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly RfcommReceiveBuffer _received;
     private int _closed;
+    private int _disposed;
 
     private WinRtRfcommChannel(Guid serviceUuid, StreamSocket socket)
     {
@@ -50,7 +52,17 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
 
         var service = services.Services[0];
         var socket = new StreamSocket();
-        await socket.ConnectAsync(service.ConnectionHostName, service.ConnectionServiceName).AsTask(cancellationToken);
+        try
+        {
+            await socket.ConnectAsync(service.ConnectionHostName, service.ConnectionServiceName).AsTask(cancellationToken);
+        }
+        catch
+        {
+            socket.Dispose();
+            service.Dispose();
+            throw;
+        }
+
         return new WinRtRfcommChannel(serviceUuid, socket);
     }
 
@@ -86,9 +98,13 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
                 _received.Publish(buffer);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Link dropped or channel disposed; reported through Closed.
+            // Link dropped or channel disposed (reported through Closed); a throwing Received handler lands here too.
+            if (ex is not OperationCanceledException && !_stop.IsCancellationRequested)
+            {
+                SamaatLog.Warn("RFCOMM", "Read loop ended", ex);
+            }
         }
         finally
         {
@@ -106,12 +122,17 @@ internal sealed class WinRtRfcommChannel : IRfcommChannel
 
     public ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
+        {
+            return ValueTask.CompletedTask;
+        }
+
         _stop.Cancel();
         _writer.DetachStream();
         _writer.Dispose();
         _socket.Dispose();
         _stop.Dispose();
-        _writeLock.Dispose();
+        // _writeLock is left undisposed: a WriteAsync in flight must still be able to Release() it.
         RaiseClosed();
         return ValueTask.CompletedTask;
     }
