@@ -22,10 +22,13 @@ jobs:
       - name: Check the tag matches Directory.Build.props
         id: version
         shell: pwsh
+        # The tag name comes in through the environment, never pasted into the script, so a tag can't inject commands.
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           $props = [xml](Get-Content Directory.Build.props -Raw)
           $version = @($props.Project.PropertyGroup.Version | Where-Object { $_ })[0]
-          $tag = '${{ github.ref_name }}'
+          $tag = $env:REF_NAME
           if ($tag -ne "v$version") { throw "Tag $tag doesn't match <Version>$version</Version> in Directory.Build.props." }
           "version=$version" >> $env:GITHUB_OUTPUT
 
@@ -34,8 +37,10 @@ jobs:
 
       - name: Publish the Windows app
         shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          $version = '${{ steps.version.outputs.version }}'
+          $version = $env:VERSION
           dotnet publish src/Samaat.App/Samaat.App.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --self-contained -o artifacts/app
           if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)." }
           Compress-Archive -Path artifacts/app/* -DestinationPath "artifacts/Samaat-$version-win-x64.zip"
@@ -46,12 +51,16 @@ jobs:
         id: msix
         continue-on-error: true
         shell: pwsh
-        run: ./packaging/msix/build-msix.ps1 -Version '${{ steps.version.outputs.version }}.0'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./packaging/msix/build-msix.ps1 -Version "$($env:VERSION).0"
 
       - name: Create the GitHub release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           $files = @(Get-ChildItem artifacts -File -Include *.zip, *.msix -Recurse | ForEach-Object { $_.FullName })
-          gh release create '${{ github.ref_name }}' $files --title 'Samaat ${{ steps.version.outputs.version }}' --generate-notes --verify-tag
+          gh release create $env:REF_NAME $files --title "Samaat $env:VERSION" --generate-notes --verify-tag
