@@ -21,7 +21,7 @@ internal static class Program
         // --multi-instance (dev) skips the guard so a second copy can run beside the first.
         if (!args.Contains("--multi-instance"))
         {
-            _singleInstance = SingleInstance.TryAcquire(@"Local\Samaat.SingleInstance", () => App.ShowMainWindow?.Invoke());
+            _singleInstance = SingleInstance.TryAcquire(@"Local\Samaat.SingleInstance", App.RequestShowMainWindow);
             if (_singleInstance is null)
             {
                 SamaatLog.Info("App", "Already running; showing the first window");

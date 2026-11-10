@@ -13,8 +13,41 @@ public partial class App : Application
 {
     public static AppOptions Options { get; set; } = new(Simulate: false, IncludeNonAudio: false);
 
-    /// <summary>Set once the window exists; the single-instance guard calls it (from any thread) on a second launch.</summary>
-    public static Action? ShowMainWindow { get; private set; }
+    private static readonly Lock ShowGate = new();
+    private static Action? _showMainWindow;
+    private static bool _showPending;
+
+    /// <summary>
+    /// Called by the single-instance guard (from any thread) on a second launch. A request that arrives before the
+    /// window exists is kept and honoured as soon as it does.
+    /// </summary>
+    public static void RequestShowMainWindow()
+    {
+        Action? show;
+        lock (ShowGate)
+        {
+            show = _showMainWindow;
+            _showPending = show is null;
+        }
+
+        show?.Invoke();
+    }
+
+    private static void SetShowMainWindow(Action show)
+    {
+        bool pending;
+        lock (ShowGate)
+        {
+            _showMainWindow = show;
+            pending = _showPending;
+            _showPending = false;
+        }
+
+        if (pending)
+        {
+            show();
+        }
+    }
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -118,7 +151,7 @@ public partial class App : Application
             };
 
             // Raised by a second launch: bring the running window forward.
-            ShowMainWindow = () => Dispatcher.UIThread.Post(() =>
+            SetShowMainWindow(() => Dispatcher.UIThread.Post(() =>
             {
                 if (tray is not null)
                 {
@@ -128,7 +161,7 @@ public partial class App : Application
 
                 window.Show();
                 window.Activate();
-            });
+            }));
 
             // Starting hidden only makes sense when the tray can bring the window back.
             if (!(Options.Minimized && tray is not null))

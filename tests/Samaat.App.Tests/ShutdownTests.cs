@@ -73,10 +73,13 @@ public sealed class ShutdownTests
     }
 
     [AvaloniaFact]
-    public void Shutdown_DoesNotThrow_WhenADisposalThrows()
+    public void Shutdown_DoesNotThrow_AndStillReleasesDevices_WhenADisposalThrows()
     {
-        var vm = Create(new CountingSource(), () => new FakeAudioShare { ThrowOnDispose = true });
+        var source = new CountingSource();
+        var vm = Create(source, () => new FakeAudioShare { ThrowOnDispose = true });
 
         vm.Shutdown(TimeSpan.FromSeconds(3));
+
+        Assert.Equal(1, source.Disposed);
     }
 }

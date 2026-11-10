@@ -462,12 +462,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
             return;
         }
 
-        await AudioShare.DisposeAsync();
-        if (PhoneLink is not null)
+        // Each on its own: one failing must not leave the others (Bluetooth, the phone listener) open.
+        await SamaatLog.Guard("App", "Stopping audio sharing", async () => await AudioShare.DisposeAsync());
+        if (PhoneLink is { } phoneLink)
         {
-            await PhoneLink.DisposeAsync();
+            await SamaatLog.Guard("App", "Closing the phone link", async () => await phoneLink.DisposeAsync());
         }
 
-        await _registry.DisposeAsync();
+        await SamaatLog.Guard("App", "Releasing devices", async () => await _registry.DisposeAsync());
     }
 }

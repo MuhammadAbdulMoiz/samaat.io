@@ -13,6 +13,14 @@ public sealed class AppDataFolderTests
     }
 
     [Fact]
+    public void Choose_SkipsARelativeRoot_SoDataNeverLandsInTheWorkingDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "real-root");
+
+        Assert.Equal(Path.Combine(root, "Samaat"), AppDataFolder.Choose("relative", Path.Combine("a", "b"), root));
+    }
+
+    [Fact]
     public void Default_IsRooted_SoItCanNeverResolveAgainstTheWorkingDirectory()
     {
         Assert.True(Path.IsPathRooted(AppDataFolder.Path));

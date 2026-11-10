@@ -8,7 +8,7 @@ public static class AppDataFolder
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify),
         System.IO.Path.GetTempPath());
 
-    /// <summary>The "Samaat" folder under the first root that isn't null, empty or blank.</summary>
+    /// <summary>The "Samaat" folder under the first root that is an absolute path; blank and relative roots are skipped.</summary>
     public static string Choose(params string?[] roots) =>
-        System.IO.Path.Combine(roots.First(r => !string.IsNullOrWhiteSpace(r))!, "Samaat");
+        System.IO.Path.Combine(roots.First(r => !string.IsNullOrWhiteSpace(r) && System.IO.Path.IsPathFullyQualified(r))!, "Samaat");
 }
