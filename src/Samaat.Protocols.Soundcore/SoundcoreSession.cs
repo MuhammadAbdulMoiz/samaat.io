@@ -100,10 +100,13 @@ internal sealed class SoundcoreSession(IRfcommChannel channel, bool allowWrites,
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var deadline = Task.Delay(commandTimeout, time, timeoutCts.Token);
-            if (await Task.WhenAny(acked.Task, deadline) != acked.Task)
+            var finished = await Task.WhenAny(acked.Task, deadline, _closed.Task);
+            if (finished != acked.Task)
             {
+                await timeoutCts.CancelAsync();
                 cancellationToken.ThrowIfCancellationRequested();
-                return new CommandResult(CommandStatus.TimedOut);
+                // A dropped link fails at once instead of waiting out the timeout.
+                return new CommandResult(finished == _closed.Task ? CommandStatus.Failed : CommandStatus.TimedOut);
             }
 
             await timeoutCts.CancelAsync();
