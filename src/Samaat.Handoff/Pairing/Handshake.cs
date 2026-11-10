@@ -197,7 +197,7 @@ public static class Handshake
         var secret = KeyDerivation.PairingSecret(shared, nonce, computerNonce);
         var code = KeyDerivation.ComparisonCode(shared, publicKey, computerKey, nonce, computerNonce);
         var (toComputer, toPhone) = KeyDerivation.PairConfirmKeys(secret, nonce, computerNonce);
-        return new PairingSession(frames, Required(reply.PeerId, "id"), reply.Name ?? "Computer", code, secret, toComputer, toPhone);
+        return new PairingSession(frames, Required(reply.PeerId, "id"), Discovery.Beacon.Clip(reply.Name ?? "Computer"), code, secret, toComputer, toPhone);
     }
 
     /// <summary>Computer: answer a <see cref="HandshakeFrame.PairStart"/> already read from the connection.</summary>
@@ -228,7 +228,7 @@ public static class Handshake
         var secret = KeyDerivation.PairingSecret(shared, phoneNonce, nonce);
         var code = KeyDerivation.ComparisonCode(shared, phoneKey, publicKey, phoneNonce, nonce);
         var (toComputer, toPhone) = KeyDerivation.PairConfirmKeys(secret, phoneNonce, nonce);
-        return new PairingSession(frames, phoneId, start.Name ?? "Phone", code, secret, toPhone, toComputer);
+        return new PairingSession(frames, phoneId, Discovery.Beacon.Clip(start.Name ?? "Phone"), code, secret, toPhone, toComputer);
     }
 
     /// <summary>Phone: open an encrypted session with a computer it's paired with.</summary>

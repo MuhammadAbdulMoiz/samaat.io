@@ -13,12 +13,29 @@ public sealed record Beacon(int V, string Id, string Name, int Port, bool Pairin
 
     public byte[] Encode() => JsonSerializer.SerializeToUtf8Bytes(this, HandoffJson.Default.Beacon);
 
+    /// <summary>Longest id or name taken from a peer; longer names are cut, never refused.</summary>
+    public const int MaxTextLength = 64;
+
+    /// <summary>A peer-supplied name that is safe to store and show: never null, at most <see cref="MaxTextLength"/> chars.</summary>
+    internal static string Clip(string? text)
+    {
+        if (text is null || text.Length <= MaxTextLength)
+        {
+            return text ?? "";
+        }
+
+        // Don't leave half of a surrogate pair at the cut.
+        return text[..(char.IsHighSurrogate(text[MaxTextLength - 1]) ? MaxTextLength - 1 : MaxTextLength)];
+    }
+
     public static Beacon? Decode(ReadOnlySpan<byte> data)
     {
         try
         {
             var beacon = JsonSerializer.Deserialize(data, HandoffJson.Default.Beacon);
-            return beacon is { V: MessageCodec.ProtocolVersion, Id.Length: > 0, Port: > 0 and < 65536 } ? beacon : null;
+            return beacon is { V: MessageCodec.ProtocolVersion, Id: { Length: > 0 and <= MaxTextLength }, Port: > 0 and < 65536 }
+                ? beacon with { Name = Clip(beacon.Name) }
+                : null;
         }
         catch (JsonException)
         {
@@ -159,9 +176,16 @@ public sealed class UdpBeaconListener(int port = Beacon.DefaultPort, TimeProvide
                 continue;
             }
 
-            if (Beacon.Decode(received.Buffer) is { } beacon)
+            try
             {
-                Heard?.Invoke(this, new HeardBeacon(beacon, new IPEndPoint(received.RemoteEndPoint.Address, beacon.Port), _time.GetUtcNow()));
+                if (Beacon.Decode(received.Buffer) is { } beacon)
+                {
+                    Heard?.Invoke(this, new HeardBeacon(beacon, new IPEndPoint(received.RemoteEndPoint.Address, beacon.Port), _time.GetUtcNow()));
+                }
+            }
+            catch (Exception)
+            {
+                // Anyone on the network can send a datagram; whatever is wrong with this one must not end the loop, and stays silent so it can't flood the log.
             }
         }
     }

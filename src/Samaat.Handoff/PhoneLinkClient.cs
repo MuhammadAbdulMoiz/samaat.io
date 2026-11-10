@@ -57,7 +57,9 @@ public sealed class PhoneLinkClient : IAsyncDisposable
     private readonly IBeaconListener _beacons;
     private readonly TimeProvider _time;
     private readonly PhoneLinkClientOptions _options;
+    private const int MaxHeard = 64;
     private readonly ConcurrentDictionary<string, HeardBeacon> _heard = new();
+    private readonly Lock _heardGate = new();
     private readonly SemaphoreSlim _wake = new(0);
     private readonly CancellationTokenSource _cts = new();
     private Task _loop = Task.CompletedTask;
@@ -89,6 +91,8 @@ public sealed class PhoneLinkClient : IAsyncDisposable
 
     /// <summary>Why the last connection attempt failed, in words for the screen; null once online.</summary>
     public string? LastError { get; private set; }
+
+    internal int HeardCount => _heard.Count;
 
     /// <summary>Computers heard recently that have pairing open.</summary>
     public IReadOnlyList<NearbyComputer> PairableComputers
@@ -328,8 +332,19 @@ public sealed class PhoneLinkClient : IAsyncDisposable
 
     private void OnBeacon(object? sender, HeardBeacon heard)
     {
-        var previous = _heard.TryGetValue(heard.Beacon.Id, out var old) ? old : null;
-        _heard[heard.Beacon.Id] = heard;
+        HeardBeacon? previous;
+        lock (_heardGate)
+        {
+            previous = _heard.TryGetValue(heard.Beacon.Id, out var old) ? old : null;
+            if (previous is null && _heard.Count >= MaxHeard)
+            {
+                // Beacons are unauthenticated: random ids from the LAN must not grow this forever.
+                _heard.TryRemove(_heard.MinBy(h => h.Value.HeardAt).Key, out _);
+            }
+
+            _heard[heard.Beacon.Id] = heard;
+        }
+
         if (previous is null || (heard.Beacon.Id == Computer?.Id && _state != ComputerLinkState.Online && !Equals(previous.Endpoint, heard.Endpoint)))
         {
             Wake();

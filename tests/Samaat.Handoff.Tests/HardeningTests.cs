@@ -223,6 +223,80 @@ public sealed class HardeningTests : IAsyncDisposable
         }
     }
 
+    private static int FreeUdpPort()
+    {
+        using var probe = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+        return ((IPEndPoint)probe.Client.LocalEndPoint!).Port;
+    }
+
+    [Theory]
+    [InlineData("""{"v":1,"id":null,"name":"x","port":5000,"pairing":true}""")]
+    [InlineData("""{"v":1,"id":"","name":"x","port":5000,"pairing":true}""")]
+    [InlineData("""{"v":1,"name":"x","port":5000,"pairing":true}""")]
+    public async Task Listener_IgnoresBeaconsWithoutAUsableId_AndKeepsListening(string bad)
+    {
+        var port = FreeUdpPort();
+        var listener = new UdpBeaconListener(port);
+        _owned.Add(listener);
+        var heard = new System.Collections.Concurrent.ConcurrentQueue<HeardBeacon>();
+        listener.Heard += (_, h) => heard.Enqueue(h);
+        listener.Start();
+
+        using var udp = new UdpClient();
+        var target = new IPEndPoint(IPAddress.Loopback, port);
+        var overLong = new Beacon(1, new string('a', 65), "x", 5000, true).Encode();
+        foreach (var datagram in new[] { System.Text.Encoding.UTF8.GetBytes(bad), overLong })
+        {
+            await udp.SendAsync(datagram, target);
+        }
+
+        await Eventually.TrueAsync(() =>
+        {
+            _ = udp.SendAsync(new Beacon(1, "good", "Desk PC", 5000, true).Encode(), target);
+            return !heard.IsEmpty;
+        }, "the valid beacon");
+        Assert.All(heard, h => Assert.Equal("good", h.Beacon.Id));
+    }
+
+    [Fact]
+    public void Decode_TruncatesALongName_AndTurnsAMissingOneIntoEmpty()
+    {
+        var long_ = Beacon.Decode(new Beacon(1, "id", new string('n', 500), 5000, true).Encode());
+        var missing = Beacon.Decode("""{"v":1,"id":"id","port":5000,"pairing":false}"""u8);
+
+        Assert.Equal(64, long_!.Name.Length);
+        Assert.Equal("", missing!.Name);
+    }
+
+    [Fact]
+    public async Task HeardBeacons_AreCappedAt64_KeepingTheNewest()
+    {
+        var phone = Phone("Pixel");
+        phone.Start();
+        var sender = _bus.CreateSender();
+
+        await Parallel.ForEachAsync(Enumerable.Range(0, 200), new ParallelOptions { MaxDegreeOfParallelism = 16 },
+            async (i, ct) => await sender.SendAsync(new Beacon(1, "id" + i, "PC " + i, 5000, true), ct));
+        await sender.SendAsync(new Beacon(1, "newest", "PC", 5000, true));
+
+        Assert.Equal(64, phone.HeardCount);
+        Assert.Contains(phone.PairableComputers, c => c.Id == "newest");
+    }
+
+    [Fact]
+    public async Task LongPhoneName_IsTruncatedNotRejected_WhenPairing()
+    {
+        var host = Host();
+        host.Start();
+        host.OpenPairing();
+        var seen = new TaskCompletionSource<string>();
+        host.PairingRequested += (_, e) => seen.TrySetResult(e.PhoneName);
+
+        await using var session = await Phone(new string('p', 300)).BeginPairingAsync(Endpoint(host));
+
+        Assert.Equal(64, (await seen.Task.WaitAsync(TimeSpan.FromSeconds(5))).Length);
+    }
+
     public async ValueTask DisposeAsync()
     {
         foreach (var owned in Enumerable.Reverse(_owned))
