@@ -23,6 +23,9 @@ internal sealed class WindowsEarbudDevice : IEarbudDevice, IAsyncDisposable
 
     public DeviceIdentity Identity { get; }
 
+    /// <summary>The driver's session died with the connection; the next discovery rebuilds this device. Lives on the device so it can never mark its replacement.</summary>
+    internal volatile bool SessionStale;
+
     public ConnectionState Connection => _bluetooth.ConnectionStatus == BluetoothConnectionStatus.Connected
         ? ConnectionState.Connected
         : ConnectionState.Disconnected;

@@ -39,6 +39,49 @@ public class DriverRetryTests
     public void NeedsDriverRetry_GenericOrKnownModelNoDriver_False(DriverResolutionKind kind) =>
         Assert.False(DriverRetry.NeedsDriverRetry(Device(new DriverResolution(kind, null, null), SupportTier.Basic)));
 
+    private sealed class FakeDriver(bool reconnectsItself) : IEarbudDriver
+    {
+        public string Id => "fake";
+
+        public string DisplayName => "Fake";
+
+        public bool ReconnectsItself => reconnectsItself;
+
+        public Task<IReadOnlyList<IFeature>> OpenAsync(DriverContext context, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<IFeature>>([]);
+    }
+
+    private static DriverResolution DriverWith(bool reconnectsItself) =>
+        new(DriverResolutionKind.Driver, null, new FakeDriver(reconnectsItself));
+
+    [Fact]
+    public void NeedsRebuildOnReconnect_FullTierDriverThatCannotReviveItself_True() =>
+        Assert.True(DriverRetry.NeedsRebuildOnReconnect(Device(DriverWith(false), SupportTier.Full)));
+
+    [Fact]
+    public void NeedsRebuildOnReconnect_DriverThatReconnectsItself_False() =>
+        Assert.False(DriverRetry.NeedsRebuildOnReconnect(Device(DriverWith(true), SupportTier.Full)));
+
+    [Theory]
+    [InlineData(SupportTier.Standard)]
+    [InlineData(SupportTier.Basic)]
+    public void NeedsRebuildOnReconnect_BelowFullTier_False(SupportTier tier) =>
+        Assert.False(DriverRetry.NeedsRebuildOnReconnect(Device(DriverWith(false), tier)));
+
+    [Fact]
+    public void NeedsRebuildOnReconnect_NoDriverInResolution_False() =>
+        Assert.False(DriverRetry.NeedsRebuildOnReconnect(Device(Driver(), SupportTier.Full)));
+
+    [Fact]
+    public void NeedsRebuildOnReconnect_NoDiagnostics_False() =>
+        Assert.False(DriverRetry.NeedsRebuildOnReconnect(Device(null, SupportTier.Full)));
+
+    [Theory]
+    [InlineData(DriverResolutionKind.Generic)]
+    [InlineData(DriverResolutionKind.KnownModelNoDriver)]
+    public void NeedsRebuildOnReconnect_GenericOrKnownModelNoDriver_False(DriverResolutionKind kind) =>
+        Assert.False(DriverRetry.NeedsRebuildOnReconnect(Device(new DriverResolution(kind, null, new FakeDriver(false)), SupportTier.Full)));
+
     [Fact]
     public void WaitsForConnection_ModelDriverWhileDisconnected_True()
     {

@@ -37,6 +37,18 @@ public sealed class BuiltInDriversTests
         Assert.Equal([JieliDriver.DriverId, FastPairDriver.DriverId, BoseBmapDriver.DriverId, SamsungDriver.DriverId, SoundcoreDriver.DriverId, SonyDriver.DriverId, NothingDriver.DriverId], ids);
     }
 
+    /// <summary>A driver that doesn't re-open its own session gets rebuilt on reconnect, so a new driver must choose on purpose.</summary>
+    [Fact]
+    public void ReconnectsItself_IsTrueForExactlyJieliAndFastPair()
+    {
+        var itself = BuiltInDrivers.Create().Where(d => d.ReconnectsItself).Select(d => d.Id).Order().ToList();
+
+        Assert.Equal(["fast-pair", "jieli-rcsp"], itself);
+        Assert.Equal(
+            ["bose-bmap", "fast-pair", "jieli-rcsp", "nothing-spp", "samsung-spp", "sony-mdr", "soundcore-spp"],
+            BuiltInDrivers.Create().Select(d => d.Id).Order().ToList());
+    }
+
     [Fact]
     public void Create_ReturnsNewInstancesEachTime()
     {

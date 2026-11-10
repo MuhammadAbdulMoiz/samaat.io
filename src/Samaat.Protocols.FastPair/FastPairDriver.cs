@@ -20,6 +20,8 @@ public sealed class FastPairDriver(TimeSpan? refreshTimeout = null, TimeSpan? sa
 
     public string DisplayName => "Google Fast Pair";
 
+    public bool ReconnectsItself => true;
+
     /// <summary>Returns the battery feature once a valid battery message has arrived, plus multipoint if SASS reports it; otherwise nothing. Never throws.</summary>
     public async Task<IReadOnlyList<IFeature>> OpenAsync(DriverContext context, CancellationToken cancellationToken = default)
     {

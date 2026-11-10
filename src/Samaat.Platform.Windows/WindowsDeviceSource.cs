@@ -105,13 +105,14 @@ public sealed class WindowsDeviceSource : IDeviceSource
     {
         if (_devices.TryGetValue(info.Id, out var existing))
         {
-            if (DriverRetry.CanReuse(existing))
+            if (DriverRetry.CanReuse(existing) && !existing.SessionStale)
             {
                 seen.Add(info.Id);
                 return;
             }
 
             // No battery yet, or its vendor driver failed: rebuild so a Refresh can pick them up.
+            // A session that died with the connection is rebuilt too.
             await RemoveAsync(info.Id);
         }
 
@@ -123,6 +124,14 @@ public sealed class WindowsDeviceSource : IDeviceSource
             if (DriverRetry.NeedsDriverRetry(device))
             {
                 _reconnectWatches[info.Id] = DriverRetry.WatchForReconnect(device, RaiseIfEnumerated);
+            }
+            else if (DriverRetry.NeedsRebuildOnReconnect(device))
+            {
+                _reconnectWatches[info.Id] = DriverRetry.WatchForReconnect(device, () =>
+                {
+                    device.SessionStale = true;
+                    RaiseIfEnumerated();
+                });
             }
         }
     }

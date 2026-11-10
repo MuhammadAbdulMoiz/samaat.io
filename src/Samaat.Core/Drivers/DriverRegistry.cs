@@ -17,6 +17,9 @@ public interface IEarbudDriver
 
     string DisplayName { get; }
 
+    /// <summary>True when the driver's features re-open their own session after the earbuds return (on RefreshAsync). False: the platform rebuilds the device on reconnect.</summary>
+    bool ReconnectsItself => false;
+
     Task<IReadOnlyList<IFeature>> OpenAsync(DriverContext context, CancellationToken cancellationToken = default);
 }
 

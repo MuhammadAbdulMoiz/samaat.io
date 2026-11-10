@@ -19,6 +19,11 @@ public static class DriverRetry
     public static bool CanReuse(IEarbudDevice device) =>
         device.GetFeature<Battery.IBatteryFeature>() is not null && !NeedsDriverRetry(device);
 
+    /// <summary>A working (Full tier) device whose driver can't revive its own session: rebuild it when the buds come back.</summary>
+    public static bool NeedsRebuildOnReconnect(IEarbudDevice device) =>
+        device.GetFeature<IDeviceDiagnostics>()?.Resolution is { Kind: DriverResolutionKind.Driver, Driver: { ReconnectsItself: false } }
+        && device.Identity.Tier == SupportTier.Full;
+
     /// <summary>Calls <paramref name="retry"/> once per transition into Connected. Dispose to stop.</summary>
     public static IDisposable WatchForReconnect(IEarbudDevice device, Action retry)
     {

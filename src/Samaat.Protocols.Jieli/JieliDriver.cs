@@ -18,6 +18,8 @@ public sealed class JieliDriver(TimeSpan? authStepTimeout = null, TimeSpan? resp
 
     public string DisplayName => "Jieli RCSP";
 
+    public bool ReconnectsItself => true;
+
     /// <summary>
     /// Returns the battery feature once real data has arrived, plus noise control and EQ when the buds
     /// answered with usable lists. No battery push means no features at all. Never throws.
