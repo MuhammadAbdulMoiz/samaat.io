@@ -106,6 +106,7 @@ dotnet run --project src/Samaat.App -f net10.0
 | `--simulate=empty` | Simulate no earbuds at all, to see the empty states |
 | `--all-devices` | List every paired Bluetooth device, not only audio devices |
 | `--minimized` | Start in the tray |
+| `--multi-instance` | Run beside a copy that is already open. Without it, a second launch brings the running window forward and exits |
 
 To check what Samaat detects on real hardware without the UI, run the console tool:
 
@@ -158,7 +159,7 @@ Module pages: [battery](docs/modules/battery.md), [noise control](docs/modules/n
 
 ```bash
 dotnet build Samaat.slnx    # warnings are errors
-dotnet test Samaat.slnx     # over 1,000 tests, about a minute
+dotnet test Samaat.slnx     # over 1,300 tests, about two minutes
 ```
 
 We work test-first: write a failing test, make it pass, then refactor ([STATUS.md §4](docs/STATUS.md#4-working-on-samaat-tdd)). CI runs the same two commands on Ubuntu and Windows for every pull request.
