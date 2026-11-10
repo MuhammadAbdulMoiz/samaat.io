@@ -141,6 +141,12 @@ public sealed class RcspSession : IAsyncDisposable
             }
             finally
             {
+                // A throw or cancellation above must not leave chunks routed to an inbox nobody reads.
+                lock (_gate)
+                {
+                    _authInbox = null;
+                }
+
                 _send.Release();
             }
 
@@ -227,6 +233,15 @@ public sealed class RcspSession : IAsyncDisposable
         }
 
         FailPending();
-        await ReleaseSubscriptionAsync();
+        // Wait out a RunAsync in progress so it can't assign a subscription after this one is released.
+        await _lifecycle.WaitAsync();
+        try
+        {
+            await ReleaseSubscriptionAsync();
+        }
+        finally
+        {
+            _lifecycle.Release();
+        }
     }
 }

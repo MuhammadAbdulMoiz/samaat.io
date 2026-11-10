@@ -530,6 +530,37 @@ public sealed class RcspSessionTests
         Assert.Equal(2, buds.AuthStarts);
     }
 
+    // The driver cancels a restart that overruns its budget; pushes must keep flowing afterwards, not into a dead inbox.
+    [Fact]
+    public async Task RestartCancelledDuringAuth_StillDeliversDevicePushes_AndSoDoesTheNextRestart()
+    {
+        var buds = new FakeBuds();
+        await using var session = NewSession(buds);
+        var seen = new List<RcspPacket>();
+        session.Packet += seen.Add;
+        await session.StartAsync(default);
+        var answer = buds.Write.OnWrite;
+        using var cts = new CancellationTokenSource();
+        buds.Write.OnWrite = _ =>
+        {
+            cts.Cancel(); // the budget runs out with the first auth step on the wire
+            return true;
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => session.RestartAsync(cts.Token));
+        seen.Clear();
+        buds.Push(Captured.AdvInfoFrame);
+
+        Assert.Contains(seen, p => p.Op == 0xC2);
+
+        buds.Write.OnWrite = answer;
+        Assert.True(await session.RestartAsync(default));
+        seen.Clear();
+        buds.Push(Captured.AdvInfoFrame);
+
+        Assert.Contains(seen, p => p.Op == 0xC2);
+    }
+
     [Fact]
     public async Task Dispose_UnsubscribesIsIdempotentAndStopsSending()
     {
