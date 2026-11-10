@@ -54,6 +54,25 @@ public class AudioShareTests
     }
 
     [Fact]
+    public async Task Start_WhenConfiguringThePipeThrows_StopsAndDisposesThePipe()
+    {
+        var backend = Backend(Speakers, Buds);
+        backend.PipeDelayThrows = true;
+        backend.OpenGate = new TaskCompletionSource();
+        await using var share = new AudioShare(backend);
+
+        var start = share.StartAsync("buds");
+        await WaitUntil(() => backend.OpenEntered);
+        share.DelayMs = 40; // changes during Open, so the new pipe gets it and throws
+        backend.OpenGate.SetResult();
+        await start;
+
+        Assert.Equal(AudioShareState.Stopped, share.State);
+        Assert.True(Assert.Single(backend.Pipes).Disposed);
+        Assert.Equal(0, backend.OpenPipes);
+    }
+
+    [Fact]
     public async Task Start_RejectsDefaultAsTarget_WithoutOpening()
     {
         var backend = Backend(Speakers, Buds);

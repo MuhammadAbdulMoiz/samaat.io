@@ -13,8 +13,9 @@ public sealed class SettingsStore(string path)
         Converters = { new LenientEnumConverterFactory() },
     };
 
-    public static string DefaultPath { get; } = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Samaat", "settings.json");
+    private static readonly Lock SaveGate = new();
+
+    public static string DefaultPath { get; } = System.IO.Path.Combine(AppDataFolder.Path, "settings.json");
 
     public string Path { get; } = path;
 
@@ -68,7 +69,7 @@ public sealed class SettingsStore(string path)
     public bool Save(AppSettings settings)
     {
         LastError = null;
-        var temp = Path + ".tmp";
+        var temp = Path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
             if (System.IO.Path.GetDirectoryName(Path) is { Length: > 0 } directory)
@@ -76,8 +77,17 @@ public sealed class SettingsStore(string path)
                 Directory.CreateDirectory(directory);
             }
 
-            File.WriteAllText(temp, JsonSerializer.Serialize(settings, Json));
-            File.Move(temp, Path, overwrite: true);
+            using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write))
+            {
+                stream.Write(JsonSerializer.SerializeToUtf8Bytes(settings, Json));
+                stream.Flush(true); // so a power loss can't leave an empty settings.json after the move
+            }
+
+            lock (SaveGate)
+            {
+                File.Move(temp, Path, overwrite: true); // Windows refuses overlapping overwrites of one target
+            }
+
             return true;
         }
         catch (Exception e)

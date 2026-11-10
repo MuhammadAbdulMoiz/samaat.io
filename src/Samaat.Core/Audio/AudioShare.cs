@@ -177,6 +177,7 @@ public sealed class AudioShare : IAudioShare
         catch (Exception ex)
         {
             SamaatLog.Error("Audio share", "Starting failed", ex);
+            RetirePipe();
             Stop(AudioShareState.Stopped, $"Couldn't start: {ex.Message}");
         }
     }

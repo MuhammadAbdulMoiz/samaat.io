@@ -14,6 +14,21 @@ public sealed class SettingsTests : IDisposable
     private string InDir(string name = "settings.json") => Path.Combine(_dir, name);
 
     [Fact]
+    public async Task Save_ManyInParallel_AllSucceedAndLeaveNoTempFiles()
+    {
+        var store = new SettingsStore(InDir());
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 32).Select(i =>
+            Task.Run(() => store.Save(new AppSettings { ReduceMotion = i % 2 == 0 }))));
+
+        Assert.All(results, Assert.True);
+        Assert.Empty(Directory.GetFiles(_dir, "*.tmp"));
+        var reader = new SettingsStore(InDir());
+        reader.Load();
+        Assert.Null(reader.LastError);
+    }
+
+    [Fact]
     public void Defaults_AreSensible()
     {
         var s = new AppSettings();

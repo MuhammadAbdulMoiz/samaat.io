@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Samaat.Handoff.Protocol;
 using Samaat.Core.Diagnostics;
+using Samaat.Core.Settings;
 
 namespace Samaat.Handoff.Storage;
 
@@ -51,8 +52,7 @@ public sealed class PeerStore
         Load();
     }
 
-    public static string DefaultComputerPath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Samaat", "phones.json");
+    public static string DefaultComputerPath { get; } = Path.Combine(AppDataFolder.Path, "phones.json");
 
     /// <summary>This device's id, created on first run and kept.</summary>
     public string SelfId { get; private set; }

@@ -45,7 +45,15 @@ internal sealed class FakeDevice(
 
 internal sealed class FakeAudioPipe(FakeAudioBackend owner) : IAudioPipe
 {
-    public int DelayMs { get; set; }
+    private int _delayMs;
+
+    public int DelayMs
+    {
+        get => _delayMs;
+        set => _delayMs = ThrowOnDelaySet ? throw new InvalidOperationException("delay refused") : value;
+    }
+
+    public bool ThrowOnDelaySet { get; set; }
 
     public bool Disposed { get; private set; }
 
@@ -91,6 +99,8 @@ internal sealed class FakeAudioBackend : IAudioBackend
 
     public bool RaiseStoppedOnDispose { get; set; }
 
+    public bool PipeDelayThrows { get; set; }
+
     public bool Disposed { get; private set; }
 
     public int OpenPipes => Volatile.Read(ref _open);
@@ -112,7 +122,7 @@ internal sealed class FakeAudioBackend : IAudioBackend
             throw OpenThrows;
         }
 
-        var pipe = new FakeAudioPipe(this) { DelayMs = delayMs, RaiseStoppedOnDispose = RaiseStoppedOnDispose };
+        var pipe = new FakeAudioPipe(this) { DelayMs = delayMs, RaiseStoppedOnDispose = RaiseStoppedOnDispose, ThrowOnDelaySet = PipeDelayThrows };
         lock (Pipes)
         {
             Opens.Add((sourceId, targetId, delayMs));
