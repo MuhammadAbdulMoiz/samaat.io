@@ -88,6 +88,7 @@ public partial class App : Application
             var notifier = Options.CreateNotifier(IconPng);
             var viewModel = new MainWindowViewModel(Options, notifier: notifier);
             var window = new MainWindow { DataContext = viewModel };
+            viewModel.IsWindowHidden = () => !window.IsVisible;
             var icon = LoadIcon();
             window.Icon = icon;
 
@@ -113,6 +114,7 @@ public partial class App : Application
                 {
                     e.Cancel = true;
                     window.Hide();
+                    viewModel.OnHiddenToTray();
                 }
                 else if (!quitting)
                 {

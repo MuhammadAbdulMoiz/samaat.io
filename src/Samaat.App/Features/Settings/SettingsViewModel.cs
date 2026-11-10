@@ -22,6 +22,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private Dictionary<string, string> _artworkChoices = new();
     private Dictionary<string, DateTimeOffset> _lastConnected = new();
     private int _version = AppSettings.CurrentVersion;
+    private bool _trayHintShown;
 
     public SettingsViewModel(SettingsStore store, LowBatteryDetector detector, IStartupRegistration startup, IMotionPreference? motion = null)
     {
@@ -156,6 +157,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SystemNotifications = SystemNotifications,
         CloseToTray = CloseToTray,
         StartWithWindows = StartWithWindows,
+        TrayHintShown = _trayHintShown,
         ShareDelays = new Dictionary<string, int>(_shareDelays),
         ArtworkChoices = new Dictionary<string, string>(_artworkChoices),
     }.Normalize().Upgraded();
@@ -220,6 +222,16 @@ public sealed partial class SettingsViewModel : ObservableObject
             return;
         }
 
+        Changed();
+    }
+
+    /// <summary>Whether the first-time tray hint has been shown.</summary>
+    public bool TrayHintShown => _trayHintShown;
+
+    /// <summary>Remembers that the tray hint was shown, so it never appears again.</summary>
+    public void MarkTrayHintShown()
+    {
+        _trayHintShown = true;
         Changed();
     }
 
@@ -299,6 +311,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             _artworkChoices = new Dictionary<string, string>(settings.ArtworkChoices);
             _lastConnected = new Dictionary<string, DateTimeOffset>(settings.LastConnected);
             _version = settings.Version;
+            _trayHintShown = settings.TrayHintShown;
             Dashboard = settings.Dashboard;
             DeviceFilter = settings.DeviceFilter;
         }

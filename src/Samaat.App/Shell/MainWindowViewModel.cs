@@ -385,7 +385,30 @@ public sealed partial class MainWindowViewModel : ObservableObject, IAsyncDispos
     }
 
     /// <summary>A short message from anywhere in the app (a failed connect, say), shown on the toast list.</summary>
-    public void ShowMessage(string text) => PushToast(text);
+    public void ShowMessage(string text)
+    {
+        PushToast(text);
+        // Nobody sees the toast while the window is hidden in the tray.
+        if (IsWindowHidden?.Invoke() == true && Settings.SystemNotifications)
+        {
+            _notifier.Show("Samaat", text);
+        }
+    }
+
+    /// <summary>Set by the app: true while the window is hidden, so messages go to a system notification too.</summary>
+    public Func<bool>? IsWindowHidden { get; set; }
+
+    /// <summary>Called when the window hides to the tray; explains it once.</summary>
+    public void OnHiddenToTray()
+    {
+        if (Settings.TrayHintShown || !Settings.SystemNotifications)
+        {
+            return;
+        }
+
+        _notifier.Show("Samaat is still running", "It's in the notification area. Open it from the icon there, or turn off 'Keep running in the tray' in Settings.");
+        Settings.MarkTrayHintShown();
+    }
 
     private void PushToast(string text)
     {

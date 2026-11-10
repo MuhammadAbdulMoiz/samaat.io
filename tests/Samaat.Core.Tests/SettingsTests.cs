@@ -69,6 +69,17 @@ public sealed class SettingsTests : IDisposable
     }
 
     [Fact]
+    public void TrayHintShown_DefaultsToFalseForOlderFilesAndRoundTrips()
+    {
+        File.WriteAllText(InDir(), """{ "theme": "light" }""");
+        Assert.False(new SettingsStore(InDir()).Load().TrayHintShown);
+
+        Assert.True(new SettingsStore(InDir()).Save(new AppSettings { TrayHintShown = true }));
+
+        Assert.True(new SettingsStore(InDir()).Load().TrayHintShown);
+    }
+
+    [Fact]
     public void NoMotionPreference_NeverReducesMotion() =>
         Assert.False(new Samaat.Core.Platform.NoMotionPreference().ReduceMotion);
 

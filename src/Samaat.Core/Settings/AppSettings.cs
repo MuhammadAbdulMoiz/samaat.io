@@ -54,6 +54,9 @@ public sealed record AppSettings
 
     public bool StartWithWindows { get; init; }
 
+    /// <summary>True once the "still running in the tray" hint has been shown.</summary>
+    public bool TrayHintShown { get; init; }
+
     /// <summary>Share delay in milliseconds per output id, so each device remembers its own.</summary>
     public IReadOnlyDictionary<string, int> ShareDelays { get; init; } = FrozenDictionary<string, int>.Empty;
 
