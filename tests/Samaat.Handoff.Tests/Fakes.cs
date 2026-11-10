@@ -208,7 +208,7 @@ internal sealed class LoopbackPair : IAsyncDisposable
 
     public FrameStream Server { get; }
 
-    public static async Task<LoopbackPair> CreateAsync()
+    public static async Task<LoopbackPair> CreateAsync(Func<Stream, Stream>? wrapClient = null)
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
@@ -218,7 +218,7 @@ internal sealed class LoopbackPair : IAsyncDisposable
             var accept = listener.AcceptTcpClientAsync();
             await client.ConnectAsync((IPEndPoint)listener.LocalEndpoint);
             var server = await accept;
-            return new LoopbackPair(new FrameStream(client.GetStream()), new FrameStream(server.GetStream()));
+            return new LoopbackPair(new FrameStream(wrapClient?.Invoke(client.GetStream()) ?? client.GetStream()), new FrameStream(server.GetStream()));
         }
         finally
         {

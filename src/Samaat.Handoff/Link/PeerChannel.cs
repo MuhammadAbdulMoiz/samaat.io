@@ -138,7 +138,8 @@ public sealed class PeerChannel : IAsyncDisposable
         {
             ObjectDisposedException.ThrowIf(IsClosed, this);
             // Sealing and writing under one lock keeps the counter nonces in the order the peer reads them.
-            await _frames.WriteAsync(_send.Seal(MessageCodec.Encode(message)), ct);
+            // Not cancellable: abandoning a sealed frame would leave the counter ahead of what the peer has read.
+            await _frames.WriteAsync(_send.Seal(MessageCodec.Encode(message)), CancellationToken.None);
         }
         catch (Exception ex) when (ex is IOException or System.Net.Sockets.SocketException)
         {
@@ -213,7 +214,8 @@ public sealed class PeerChannel : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            reply = new ReplyMessage(message.Id, CommandStatus.Failed, ex.Message);
+            SamaatLog.Warn("Phone link", "A request from the other device failed", ex);
+            reply = new ReplyMessage(message.Id, CommandStatus.Failed, "The other device couldn't complete that request.");
         }
 
         if (message.ExpectsReply)

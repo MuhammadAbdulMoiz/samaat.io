@@ -251,6 +251,60 @@ public class SessionTests
     }
 
     [Fact]
+    public async Task CancelledWhileWriting_StillDeliversTheSealedFrame_SoTheSessionSurvives()
+    {
+        GatedStream? gated = null;
+        await using var pair = await LoopbackPair.CreateAsync(s => gated = new GatedStream(s));
+        var (phone, computer) = await OpenAsync(pair);
+        var received = new List<PeerMessage>();
+        computer.Start((m, _) =>
+        {
+            lock (received)
+            {
+                received.Add(m);
+            }
+
+            return Task.FromResult<ReplyMessage?>(new ReplyMessage(0, CommandStatus.Confirmed));
+        });
+        phone.Start((_, _) => Task.FromResult<ReplyMessage?>(null));
+
+        gated!.Arm();
+        using var cts = new CancellationTokenSource();
+        var cancelled = phone.RequestAsync(new ConnectAudioMessage("AA"), TimeSpan.FromSeconds(10), ct: cts.Token);
+        await gated.WriteStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cts.CancelAsync();
+        gated.Release();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled);
+
+        var next = await phone.RequestAsync(new ConnectAudioMessage("BB"), TimeSpan.FromSeconds(5));
+
+        Assert.Equal(CommandStatus.Confirmed, next.Status);
+        lock (received)
+        {
+            Assert.Equal(["AA", "BB"], received.OfType<ConnectAudioMessage>().Select(m => m.Address));
+        }
+
+        await phone.DisposeAsync();
+        await computer.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task HandlerThrows_PeerGetsAFixedMessage_NotTheExceptionText()
+    {
+        await using var pair = await LoopbackPair.CreateAsync();
+        var (phone, computer) = await OpenAsync(pair);
+        phone.Start((_, _) => throw new InvalidOperationException("secret path C:\\Users\\x"));
+        computer.Start((_, _) => Task.FromResult<ReplyMessage?>(null));
+
+        var reply = await computer.RequestAsync(new ConnectAudioMessage("AA"), TimeSpan.FromSeconds(5));
+
+        Assert.Equal(CommandStatus.Failed, reply.Status);
+        Assert.Equal("The other device couldn't complete that request.", reply.Message);
+        await phone.DisposeAsync();
+        await computer.DisposeAsync();
+    }
+
+    [Fact]
     public async Task NoReply_TimesOut()
     {
         await using var pair = await LoopbackPair.CreateAsync();
